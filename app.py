@@ -41,7 +41,7 @@ def main():
     
     # Sidebar navigation
     with st.sidebar:
-        st.image("https://via.placeholder.com/200x100/4F46E5/FFFFFF?text=AI-STER", width=200)
+        st.image("logo.png", width=200)
         
         page = st.selectbox(
             "Navigation",
@@ -80,7 +80,7 @@ def show_dashboard():
     # Convert to DataFrame for analysis
     df = pd.DataFrame(evaluations)
     
-    # Metrics
+    # Enhanced Metrics Row 1
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Total Evaluations", len(df))
@@ -103,7 +103,26 @@ def show_dashboard():
         else:
             st.metric("Success Rate", "N/A")
     
-    # Charts
+    # Enhanced Metrics Row 2 - Context Information
+    if 'school_setting' in df.columns and 'subject_area' in df.columns:
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            unique_schools = df['school_name'].nunique() if 'school_name' in df.columns else 0
+            st.metric("Schools", unique_schools)
+        with col2:
+            unique_settings = df['school_setting'].nunique() if 'school_setting' in df.columns else 0
+            st.metric("School Types", unique_settings)
+        with col3:
+            unique_subjects = df['subject_area'].nunique() if 'subject_area' in df.columns else 0
+            st.metric("Subject Areas", unique_subjects)
+        with col4:
+            current_semester = df['semester'].mode()[0] if 'semester' in df.columns and len(df) > 0 else "N/A"
+            st.metric("Current Semester", current_semester)
+    
+    # Enhanced Charts Section
+    st.subheader("📈 Evaluation Analytics")
+    
+    # Row 1: Status and Type Charts (existing)
     col1, col2 = st.columns(2)
     
     with col1:
@@ -122,43 +141,159 @@ def show_dashboard():
         else:
             st.info("No type data available")
     
-    # Recent evaluations table
-    st.subheader("Recent Evaluations")
+    # Row 2: New Enhanced Charts
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Score Distribution")
+        if 'total_score' in df.columns and completed > 0:
+            completed_df = df[df['status'] == 'completed']
+            score_bins = pd.cut(completed_df['total_score'], bins=[0, 10, 15, 20, 25, 30], labels=['0-10', '11-15', '16-20', '21-25', '26+'])
+            score_dist = score_bins.value_counts().sort_index()
+            st.bar_chart(score_dist)
+        else:
+            st.info("No score data available")
+    
+    with col2:
+        st.subheader("Subject Areas")
+        if 'subject_area' in df.columns:
+            subject_counts = df['subject_area'].value_counts()
+            st.bar_chart(subject_counts)
+        else:
+            st.info("No subject data available")
+    
+    # Row 3: School Context Charts
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("School Settings")
+        if 'school_setting' in df.columns:
+            setting_counts = df['school_setting'].value_counts()
+            st.bar_chart(setting_counts)
+        else:
+            st.info("No school setting data available")
+    
+    with col2:
+        st.subheader("Grade Levels")
+        if 'grade_levels' in df.columns:
+            grade_counts = df['grade_levels'].value_counts()
+            st.bar_chart(grade_counts)
+        else:
+            st.info("No grade level data available")
+    
+    # Competency Area Analysis
+    st.subheader("🎯 Competency Area Performance")
+    
+    completed_evals = [e for e in evaluations if e.get('status') == 'completed']
+    if completed_evals:
+        competency_analysis = analyze_competency_performance(completed_evals)
+        
+        if competency_analysis:
+            # Create competency performance chart
+            comp_df = pd.DataFrame(list(competency_analysis.items()), columns=['Competency Area', 'Average Score'])
+            comp_df = comp_df.sort_values('Average Score', ascending=True)
+            
+            st.bar_chart(comp_df.set_index('Competency Area'))
+            
+            # Show detailed breakdown
+            with st.expander("Detailed Competency Analysis"):
+                for area, avg_score in sorted(competency_analysis.items(), key=lambda x: x[1], reverse=True):
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.write(f"**{area}**")
+                    with col2:
+                        if avg_score >= 2.5:
+                            st.success(f"{avg_score:.2f}")
+                        elif avg_score >= 2.0:
+                            st.warning(f"{avg_score:.2f}")
+                        else:
+                            st.error(f"{avg_score:.2f}")
+    else:
+        st.info("No completed evaluations for competency analysis")
+    
+    # Professional Dispositions Summary
+    st.subheader("🌟 Professional Dispositions Summary")
+    
+    if completed_evals:
+        disposition_analysis = analyze_disposition_performance(completed_evals)
+        
+        if disposition_analysis:
+            disp_df = pd.DataFrame(list(disposition_analysis.items()), columns=['Disposition', 'Average Score'])
+            disp_df = disp_df.sort_values('Average Score', ascending=True)
+            
+            st.bar_chart(disp_df.set_index('Disposition'))
+            
+            # Alert for dispositions below requirement
+            failing_dispositions = [disp for disp, score in disposition_analysis.items() if score < 3.0]
+            if failing_dispositions:
+                st.error(f"⚠️ Dispositions below Level 3 requirement: {', '.join(failing_dispositions)}")
+            else:
+                st.success("✅ All dispositions meeting requirements (Level 3+)")
+    else:
+        st.info("No completed evaluations for disposition analysis")
+    
+    # Enhanced Recent Evaluations Table
+    st.subheader("📋 Recent Evaluations")
     
     # Check if created_at column exists and sort accordingly
     if 'created_at' in df.columns:
         recent_df = df.sort_values('created_at', ascending=False).head(10)
-        display_columns = ['student_name', 'evaluator_name', 'rubric_type', 'status', 'total_score', 'created_at']
-        # Format the display
-        display_df = recent_df[display_columns].copy()
-        display_df['created_at'] = pd.to_datetime(display_df['created_at']).dt.strftime('%Y-%m-%d')
     else:
-        # Fallback: just show first 10 without sorting
         recent_df = df.head(10)
-        display_columns = ['student_name', 'evaluator_name', 'rubric_type', 'status', 'total_score']
-        display_df = recent_df[display_columns].copy()
     
-    # Configure column display based on available columns
+    # Enhanced display columns
+    display_columns = ['student_name', 'evaluator_name', 'school_name', 'subject_area', 
+                      'grade_levels', 'rubric_type', 'status', 'total_score']
+    
+    # Only include columns that exist
+    available_columns = [col for col in display_columns if col in recent_df.columns]
+    display_df = recent_df[available_columns].copy()
+    
+    # Add date if available
+    if 'created_at' in df.columns:
+        display_df['created_at'] = pd.to_datetime(recent_df['created_at']).dt.strftime('%Y-%m-%d')
+        available_columns.append('created_at')
+    
+    # Enhanced column configuration
     column_config = {
-        "student_name": "Student",
-        "evaluator_name": "Evaluator", 
-        "rubric_type": "Type",
-        "status": "Status",
-        "total_score": "Score"
+        "student_name": st.column_config.TextColumn("Student", width="medium"),
+        "evaluator_name": st.column_config.TextColumn("Evaluator", width="medium"),
+        "school_name": st.column_config.TextColumn("School", width="large"),
+        "subject_area": st.column_config.TextColumn("Subject", width="medium"),
+        "grade_levels": st.column_config.TextColumn("Grades", width="small"),
+        "rubric_type": st.column_config.TextColumn("Type", width="medium"),
+        "status": st.column_config.TextColumn("Status", width="small"),
+        "total_score": st.column_config.NumberColumn("Score", format="%d", width="small"),
+        "created_at": st.column_config.DateColumn("Date", width="medium")
     }
     
-    # Add date column if available
-    if 'created_at' in display_df.columns:
-        column_config["created_at"] = "Date"
+    # Filter column config to only available columns
+    filtered_config = {k: v for k, v in column_config.items() if k in available_columns}
     
     st.dataframe(
         display_df,
-        column_config=column_config,
-        hide_index=True
+        column_config=filtered_config,
+        hide_index=True,
+        use_container_width=True
     )
     
+    # Detailed Evaluation Viewer
+    st.subheader("🔍 Detailed Evaluation Viewer")
+    
+    if completed_evals:
+        eval_options = [f"{e['student_name']} - {e.get('school_name', 'Unknown School')} ({e['created_at'][:10]})" 
+                       for e in completed_evals]
+        
+        selected_eval_idx = st.selectbox("Select evaluation to view details:", 
+                                        range(len(eval_options)), 
+                                        format_func=lambda x: eval_options[x])
+        
+        if selected_eval_idx is not None:
+            selected_eval = completed_evals[selected_eval_idx]
+            show_detailed_evaluation_view(selected_eval)
+    
     # Export functionality
-    st.subheader("Data Management")
+    st.subheader("💾 Data Management")
     col1, col2 = st.columns(2)
     
     with col1:
@@ -166,7 +301,12 @@ def show_dashboard():
             export_data = {
                 'evaluations': evaluations,
                 'export_date': datetime.now().isoformat(),
-                'version': '1.0'
+                'version': '1.0',
+                'summary': {
+                    'total_evaluations': len(evaluations),
+                    'completed_evaluations': completed,
+                    'average_score': avg_score if completed > 0 else 0
+                }
             }
             st.download_button(
                 "Download JSON",
@@ -185,6 +325,140 @@ def show_dashboard():
                 st.rerun()
             except Exception as e:
                 st.error(f"Import failed: {str(e)}")
+
+def analyze_competency_performance(evaluations):
+    """Analyze performance by competency area"""
+    from data.rubrics import get_field_evaluation_items, get_ster_items
+    
+    competency_scores = {}
+    competency_counts = {}
+    
+    for evaluation in evaluations:
+        rubric_type = evaluation.get('rubric_type', 'field_evaluation')
+        scores = evaluation.get('scores', {})
+        
+        # Get appropriate rubric items
+        items = get_field_evaluation_items() if rubric_type == 'field_evaluation' else get_ster_items()
+        
+        for item in items:
+            item_id = item['id']
+            competency_area = item['competency_area']
+            
+            if item_id in scores:
+                if competency_area not in competency_scores:
+                    competency_scores[competency_area] = 0
+                    competency_counts[competency_area] = 0
+                
+                competency_scores[competency_area] += scores[item_id]
+                competency_counts[competency_area] += 1
+    
+    # Calculate averages
+    competency_averages = {}
+    for area in competency_scores:
+        if competency_counts[area] > 0:
+            competency_averages[area] = competency_scores[area] / competency_counts[area]
+    
+    return competency_averages
+
+def analyze_disposition_performance(evaluations):
+    """Analyze professional disposition performance"""
+    from data.rubrics import get_professional_dispositions
+    
+    dispositions = get_professional_dispositions()
+    disposition_scores = {}
+    disposition_counts = {}
+    
+    for evaluation in evaluations:
+        disp_scores = evaluation.get('disposition_scores', {})
+        
+        for disposition in dispositions:
+            disp_id = disposition['id']
+            disp_name = disposition['name']
+            
+            if disp_id in disp_scores:
+                if disp_name not in disposition_scores:
+                    disposition_scores[disp_name] = 0
+                    disposition_counts[disp_name] = 0
+                
+                disposition_scores[disp_name] += disp_scores[disp_id]
+                disposition_counts[disp_name] += 1
+    
+    # Calculate averages
+    disposition_averages = {}
+    for disp_name in disposition_scores:
+        if disposition_counts[disp_name] > 0:
+            disposition_averages[disp_name] = disposition_scores[disp_name] / disposition_counts[disp_name]
+    
+    return disposition_averages
+
+def show_detailed_evaluation_view(evaluation):
+    """Show detailed view of a specific evaluation"""
+    from data.rubrics import get_field_evaluation_items, get_ster_items, get_professional_dispositions
+    
+    # Basic information
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.info(f"**Student:** {evaluation['student_name']}")
+        st.info(f"**Evaluator:** {evaluation['evaluator_name']}")
+    with col2:
+        st.info(f"**School:** {evaluation.get('school_name', 'N/A')}")
+        st.info(f"**Subject:** {evaluation.get('subject_area', 'N/A')}")
+    with col3:
+        st.info(f"**Type:** {evaluation['rubric_type'].replace('_', ' ').title()}")
+        st.info(f"**Total Score:** {evaluation['total_score']}")
+    
+    # Assessment Items Detail
+    rubric_type = evaluation['rubric_type']
+    items = get_field_evaluation_items() if rubric_type == 'field_evaluation' else get_ster_items()
+    scores = evaluation.get('scores', {})
+    justifications = evaluation.get('justifications', {})
+    
+    st.subheader("Assessment Items Breakdown")
+    
+    for item in items:
+        item_id = item['id']
+        score = scores.get(item_id, 0)
+        justification = justifications.get(item_id, 'No justification provided')
+        
+        with st.expander(f"{item['code']}: {item['title']} (Score: {score})"):
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.write(f"**Competency Area:** {item['competency_area']}")
+                st.write(f"**Score:** Level {score}")
+                
+                # Color code the score
+                if score >= 3:
+                    st.success("Exceeds expectations")
+                elif score >= 2:
+                    st.info("Meets expectations")
+                elif score >= 1:
+                    st.warning("Approaching expectations")
+                else:
+                    st.error("Does not demonstrate")
+            
+            with col2:
+                st.write("**Justification:**")
+                st.write(justification)
+    
+    # Dispositions Detail
+    st.subheader("Professional Dispositions")
+    
+    dispositions = get_professional_dispositions()
+    disposition_scores = evaluation.get('disposition_scores', {})
+    
+    for disposition in dispositions:
+        disp_id = disposition['id']
+        score = disposition_scores.get(disp_id, 0)
+        
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.write(f"**{disposition['name']}**")
+            st.caption(disposition['description'])
+        with col2:
+            if score >= 3:
+                st.success(f"Level {score}")
+            else:
+                st.error(f"Level {score} (Needs Level 3+)")
 
 def show_evaluation_form():
     """Evaluation form for creating new evaluations"""
