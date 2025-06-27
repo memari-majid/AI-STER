@@ -13,9 +13,7 @@
 
 ### 🚀 **Try AI-STER Now!**
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://memari-majid-ai-ster-app-jmoi1a.streamlit.app/)
-
-**🎯 [Launch AI-STER Application →](https://memari-majid-ai-ster-app-jmoi1a.streamlit.app/)**
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://uvu-ai-ster-app.streamlit.app/)
 
 *✨ No installation required - runs directly in your browser! ✨*
 
