@@ -9,12 +9,18 @@
 
 ## 🌐 **Live Application**
 
-### 🎯 **Try AI-STER Now!**
-**➡️ [**Launch Application**](https://memari-majid-ai-ster-app-jmoi1a.streamlit.app/) ⬅️**
+<div align="center">
 
-*Click the link above to access the live AI-STER evaluation system - no installation required!*
+### 🚀 **Try AI-STER Now!**
 
-![AI-STER Demo](https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=AI-STER+Dashboard)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://memari-majid-ai-ster-app-jmoi1a.streamlit.app/)
+
+**🎯 [Launch AI-STER Application →](https://memari-majid-ai-ster-app-jmoi1a.streamlit.app/)**
+
+*✨ No installation required - runs directly in your browser! ✨*
+
+</div>
+
 
 ## ⭐ **Key Features**
 
