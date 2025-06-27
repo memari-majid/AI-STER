@@ -50,19 +50,25 @@ git push -u origin main
 6. **App URL**: Choose a custom name like `ai-ster-demo` (optional)
 
 ### 2.3 Configure Secrets (AI Features)
-1. Click **"Advanced settings"** before deploying
-2. Go to **"Secrets"** section
-3. Add your OpenAI API key:
-```toml
-OPENAI_API_KEY = "your-openai-api-key-here"
-```
+**🔐 IMPORTANT**: You'll configure the OpenAI API key AFTER deployment.
 
-> **🔐 Security Note**: Replace `your-openai-api-key-here` with your actual OpenAI API key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+For now, just click **"Deploy!"** - the app works without AI features initially.
 
 ### 2.4 Deploy!
 1. Click **"Deploy!"**
 2. Wait 2-3 minutes for deployment
 3. Your app will be live at: `https://YOUR_APP_NAME.streamlit.app`
+
+### 2.5 Enable AI Features (After Deployment)
+📖 **Follow the complete guide**: [`docs/STREAMLIT_SECRETS_SETUP.md`](STREAMLIT_SECRETS_SETUP.md)
+
+**Quick Steps**:
+1. Go to your app dashboard → **"Settings"** → **"Secrets"**
+2. Add your OpenAI API key:
+   ```toml
+   OPENAI_API_KEY = "your-actual-openai-api-key"
+   ```
+3. Save and your app automatically restarts with AI features! 🤖
 
 ## 🎉 **Step 3: Share Your App**
 

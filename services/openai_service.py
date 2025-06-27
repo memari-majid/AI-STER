@@ -7,6 +7,12 @@ from typing import Dict, List, Optional
 import openai
 from openai import OpenAI
 
+try:
+    import streamlit as st
+    HAS_STREAMLIT = True
+except ImportError:
+    HAS_STREAMLIT = False
+
 class OpenAIService:
     """Service for OpenAI API integration"""
     
@@ -18,13 +24,26 @@ class OpenAIService:
     
     def _initialize_client(self):
         """Initialize OpenAI client if API key is available"""
-        api_key = os.getenv('OPENAI_API_KEY')
+        api_key = self._get_api_key()
         if api_key:
             try:
                 self.client = OpenAI(api_key=api_key)
             except Exception as e:
                 print(f"Failed to initialize OpenAI client: {e}")
                 self.client = None
+    
+    def _get_api_key(self) -> Optional[str]:
+        """Get OpenAI API key from Streamlit secrets or environment variables"""
+        # First try Streamlit secrets (preferred for Streamlit Cloud)
+        if HAS_STREAMLIT:
+            try:
+                if hasattr(st, 'secrets') and 'OPENAI_API_KEY' in st.secrets:
+                    return st.secrets['OPENAI_API_KEY']
+            except Exception:
+                pass  # Fall back to environment variable
+        
+        # Fall back to environment variable (for local development)
+        return os.getenv('OPENAI_API_KEY')
     
     def is_enabled(self) -> bool:
         """Check if OpenAI service is enabled and configured"""

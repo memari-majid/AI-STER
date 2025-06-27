@@ -9,6 +9,7 @@ Welcome to the AI-STER documentation! This directory contains comprehensive guid
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [🌐 Streamlit Cloud Deployment](STREAMLIT_CLOUD_DEPLOYMENT.md) | **Recommended**: Step-by-step guide for free Streamlit Cloud hosting | All users |
+| [🔐 Streamlit API Key Setup](STREAMLIT_SECRETS_SETUP.md) | **REQUIRED**: Secure OpenAI API key configuration for AI features | All users |
 | [⚙️ Advanced Deployment Options](DEPLOYMENT.md) | Railway, Docker, self-hosting, and enterprise deployment | Advanced users |
 
 ### 🔧 **Configuration**
@@ -95,6 +96,7 @@ ai-ster/
     ├── README.md            # This file
     ├── DEPLOYMENT.md        # Advanced deployment
     ├── STREAMLIT_CLOUD_DEPLOYMENT.md  # Streamlit Cloud guide
+    ├── STREAMLIT_SECRETS_SETUP.md     # API key configuration
     ├── env_template.txt     # Environment setup
     ├── STER CT&US FINAL 3.md  # Original USBE standards
     ├── Field Evaluations.md   # Field requirements
