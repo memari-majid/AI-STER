@@ -1,0 +1,36 @@
+# Environment variables (sensitive information)
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ai-ster-env/
+ENV/
+env.bak/
+venv.bak/
+
+# Streamlit
+streamlit.log
+.streamlit/
+
+# Data storage (will be recreated)
+data_storage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log ai-ster-env/
