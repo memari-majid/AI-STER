@@ -7,11 +7,14 @@
 
 **A comprehensive, AI-enhanced evaluation system for student teachers, fully compliant with Utah State Board of Education (USBE) standards.**
 
+## 🌐 **Live Application**
+
+### 🎯 **Try AI-STER Now!**
+**➡️ [**Launch Application**](https://memari-majid-ai-ster-app-jmoi1a.streamlit.app/) ⬅️**
+
+*Click the link above to access the live AI-STER evaluation system - no installation required!*
+
 ![AI-STER Demo](https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=AI-STER+Dashboard)
-
-## 🚀 **Live Demo**
-
-**Try it now:** [ai-ster-demo.streamlit.app](https://ai-ster-demo.streamlit.app) *(Deploy your own instance)*
 
 ## ⭐ **Key Features**
 
@@ -59,7 +62,7 @@
 
 ### **1. Clone & Install**
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-ster.git
+git clone https://github.com/memari-majid/AI-STER.git
 cd ai-ster
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -164,7 +167,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ### **Development Setup**
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-ster.git
+git clone https://github.com/memari-majid/AI-STER.git
 cd ai-ster
 python -m venv venv
 source venv/bin/activate
@@ -246,8 +249,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 **Support**
 
-- **🐛 Bug Reports**: [GitHub Issues](https://github.com/YOUR_USERNAME/ai-ster/issues)
-- **💡 Feature Requests**: [GitHub Discussions](https://github.com/YOUR_USERNAME/ai-ster/discussions)
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/memari-majid/AI-STER/issues)
+- **💡 Feature Requests**: [GitHub Discussions](https://github.com/memari-majid/AI-STER/discussions)
 - **📧 General Questions**: Create an issue with the "question" label
 - **📖 Documentation**: Check the [docs/](docs/) directory
 
