@@ -85,45 +85,75 @@ def show_dashboard():
     with col1:
         st.metric("Total Evaluations", len(df))
     with col2:
-        completed = len(df[df['status'] == 'completed'])
+        if 'status' in df.columns:
+            completed = len(df[df['status'] == 'completed'])
+        else:
+            completed = 0
         st.metric("Completed", completed)
     with col3:
-        avg_score = df[df['status'] == 'completed']['total_score'].mean() if completed > 0 else 0
-        st.metric("Average Score", f"{avg_score:.1f}")
+        if completed > 0 and 'total_score' in df.columns:
+            avg_score = df[df['status'] == 'completed']['total_score'].mean()
+            st.metric("Average Score", f"{avg_score:.1f}")
+        else:
+            st.metric("Average Score", "N/A")
     with col4:
-        st.metric("Success Rate", f"{(completed/len(df)*100):.1f}%")
+        if len(df) > 0 and 'status' in df.columns:
+            success_rate = (completed/len(df)*100)
+            st.metric("Success Rate", f"{success_rate:.1f}%")
+        else:
+            st.metric("Success Rate", "N/A")
     
     # Charts
     col1, col2 = st.columns(2)
     
     with col1:
         st.subheader("Evaluation Status")
-        status_counts = df['status'].value_counts()
-        st.bar_chart(status_counts)
+        if 'status' in df.columns:
+            status_counts = df['status'].value_counts()
+            st.bar_chart(status_counts)
+        else:
+            st.info("No status data available")
     
     with col2:
         st.subheader("Evaluations by Type")
-        type_counts = df['rubric_type'].value_counts()
-        st.bar_chart(type_counts)
+        if 'rubric_type' in df.columns:
+            type_counts = df['rubric_type'].value_counts()
+            st.bar_chart(type_counts)
+        else:
+            st.info("No type data available")
     
     # Recent evaluations table
     st.subheader("Recent Evaluations")
-    recent_df = df.sort_values('created_at', ascending=False).head(10)
     
-    # Format the display
-    display_df = recent_df[['student_name', 'evaluator_name', 'rubric_type', 'status', 'total_score', 'created_at']].copy()
-    display_df['created_at'] = pd.to_datetime(display_df['created_at']).dt.strftime('%Y-%m-%d')
+    # Check if created_at column exists and sort accordingly
+    if 'created_at' in df.columns:
+        recent_df = df.sort_values('created_at', ascending=False).head(10)
+        display_columns = ['student_name', 'evaluator_name', 'rubric_type', 'status', 'total_score', 'created_at']
+        # Format the display
+        display_df = recent_df[display_columns].copy()
+        display_df['created_at'] = pd.to_datetime(display_df['created_at']).dt.strftime('%Y-%m-%d')
+    else:
+        # Fallback: just show first 10 without sorting
+        recent_df = df.head(10)
+        display_columns = ['student_name', 'evaluator_name', 'rubric_type', 'status', 'total_score']
+        display_df = recent_df[display_columns].copy()
+    
+    # Configure column display based on available columns
+    column_config = {
+        "student_name": "Student",
+        "evaluator_name": "Evaluator", 
+        "rubric_type": "Type",
+        "status": "Status",
+        "total_score": "Score"
+    }
+    
+    # Add date column if available
+    if 'created_at' in display_df.columns:
+        column_config["created_at"] = "Date"
     
     st.dataframe(
         display_df,
-        column_config={
-            "student_name": "Student",
-            "evaluator_name": "Evaluator", 
-            "rubric_type": "Type",
-            "status": "Status",
-            "total_score": "Score",
-            "created_at": "Date"
-        },
+        column_config=column_config,
         hide_index=True
     )
     
