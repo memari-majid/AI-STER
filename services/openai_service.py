@@ -6,6 +6,7 @@ import os
 from typing import Dict, List, Optional
 import openai
 from openai import OpenAI
+import json
 
 try:
     import streamlit as st
@@ -48,6 +49,139 @@ class OpenAIService:
     def is_enabled(self) -> bool:
         """Check if OpenAI service is enabled and configured"""
         return self.client is not None
+    
+    def analyze_lesson_plan(self, lesson_plan_text: str) -> Dict[str, any]:
+        """
+        Analyze lesson plan and extract key information
+        
+        Args:
+            lesson_plan_text: The lesson plan content as text
+        
+        Returns:
+            Dictionary containing extracted information
+        """
+        if not self.is_enabled():
+            raise Exception("OpenAI service is not configured")
+        
+        prompt = self._build_lesson_plan_analysis_prompt(lesson_plan_text)
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert educational supervisor who analyzes lesson plans. Extract key information accurately and provide it in the specified JSON format."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                max_tokens=800,
+                temperature=0.1  # Low temperature for consistent extraction
+            )
+            
+            # Parse the JSON response
+            response_text = response.choices[0].message.content.strip()
+            
+            # Extract JSON from response (in case there's extra text)
+            start_idx = response_text.find('{')
+            end_idx = response_text.rfind('}') + 1
+            
+            if start_idx != -1 and end_idx != -1:
+                json_text = response_text[start_idx:end_idx]
+                extracted_info = json.loads(json_text)
+                
+                # Validate and clean the extracted information
+                return self._validate_lesson_plan_extraction(extracted_info)
+            else:
+                raise Exception("Could not parse JSON from AI response")
+        
+        except json.JSONDecodeError as e:
+            raise Exception(f"Failed to parse AI response as JSON: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Failed to analyze lesson plan: {str(e)}")
+    
+    def _build_lesson_plan_analysis_prompt(self, lesson_plan_text: str) -> str:
+        """Build prompt for lesson plan analysis"""
+        
+        prompt = f"""Analyze the following lesson plan and extract key information. Return ONLY a valid JSON object with the extracted data.
+
+LESSON PLAN TEXT:
+{lesson_plan_text}
+
+Extract the following information and return it as a JSON object:
+
+{{
+    "teacher_name": "Full name of the teacher/student teacher",
+    "lesson_date": "Date of the lesson (YYYY-MM-DD format if possible, or as written)",
+    "subject_area": "Subject being taught",
+    "grade_levels": "Grade level(s) of students",
+    "school_name": "Name of the school",
+    "lesson_topic": "Main topic or title of the lesson",
+    "class_period": "Class period or time if mentioned",
+    "duration": "Lesson duration if mentioned",
+    "total_students": "Number of students in class",
+    "utah_core_standards": "Utah Core Standards referenced if mentioned",
+    "learning_objectives": ["List", "of", "learning", "objectives"],
+    "materials": ["List", "of", "materials", "needed"],
+    "assessment_methods": ["Types", "of", "assessment", "mentioned"],
+    "lesson_structure": "Brief description of lesson flow/structure",
+    "notes": "Any additional notes or special considerations",
+    "confidence_score": 0.95
+}}
+
+IMPORTANT INSTRUCTIONS:
+1. If information is not found or unclear, use null for that field
+2. For grade_levels, extract the specific grade(s) mentioned (e.g., "3rd Grade", "6-8", "K-5")
+3. For lesson_date, convert to YYYY-MM-DD format if possible, otherwise keep as written
+4. Be very careful to extract the actual teacher name, not example names
+5. For total_students, look for class size information
+6. confidence_score should reflect how clear and complete the information is (0.0-1.0)
+7. Return ONLY the JSON object, no additional text
+
+JSON Response:"""
+        
+        return prompt
+    
+    def _validate_lesson_plan_extraction(self, extracted_info: Dict) -> Dict:
+        """Validate and clean extracted lesson plan information"""
+        
+        # Ensure required fields exist with defaults
+        validated = {
+            'teacher_name': extracted_info.get('teacher_name', None),
+            'lesson_date': extracted_info.get('lesson_date', None),
+            'subject_area': extracted_info.get('subject_area', None),
+            'grade_levels': extracted_info.get('grade_levels', None),
+            'school_name': extracted_info.get('school_name', None),
+            'lesson_topic': extracted_info.get('lesson_topic', None),
+            'class_period': extracted_info.get('class_period', None),
+            'duration': extracted_info.get('duration', None),
+            'total_students': extracted_info.get('total_students', None),
+            'utah_core_standards': extracted_info.get('utah_core_standards', None),
+            'learning_objectives': extracted_info.get('learning_objectives', []),
+            'materials': extracted_info.get('materials', []),
+            'assessment_methods': extracted_info.get('assessment_methods', []),
+            'lesson_structure': extracted_info.get('lesson_structure', None),
+            'notes': extracted_info.get('notes', None),
+            'confidence_score': extracted_info.get('confidence_score', 0.8),
+            'extraction_timestamp': None  # Will be set when used
+        }
+        
+        # Clean up lists - ensure they're actually lists
+        for list_field in ['learning_objectives', 'materials', 'assessment_methods']:
+            if not isinstance(validated[list_field], list):
+                validated[list_field] = []
+        
+        # Convert total_students to int if it's a string number
+        if validated['total_students']:
+            try:
+                validated['total_students'] = int(validated['total_students'])
+            except (ValueError, TypeError):
+                validated['total_students'] = None
+        
+        return validated
     
     def generate_justification(
         self,

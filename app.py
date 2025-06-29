@@ -475,19 +475,270 @@ def show_evaluation_form():
     items = get_field_evaluation_items() if rubric_type == "field_evaluation" else get_ster_items()
     dispositions = get_professional_dispositions()
     
-    # Basic information
-    st.subheader("Basic Information")
-    col1, col2, col3 = st.columns(3)
+    # Initialize session state for lesson plan analysis
+    if 'lesson_plan_analysis' not in st.session_state:
+        st.session_state.lesson_plan_analysis = None
+    if 'extracted_info' not in st.session_state:
+        st.session_state.extracted_info = {}
     
+    # STEP 1: Lesson Plan Upload
+    st.subheader("📄 Step 1: Upload Lesson Plan")
+    st.caption("Upload the student teacher's lesson plan to automatically extract evaluation information")
+    
+    # Option to use synthetic data or upload real file
+    input_method = st.radio(
+        "Choose input method:",
+        ["📤 Upload File", "🧪 Use Synthetic Data", "✏️ Paste Text"],
+        horizontal=True
+    )
+    
+    lesson_plan_text = None
+    
+    if input_method == "🧪 Use Synthetic Data":
+        # Load available synthetic lesson plans
+        evaluations = load_evaluations()
+        synthetic_evaluations = [e for e in evaluations if e.get('is_synthetic', False) and e.get('lesson_plan')]
+        
+        if synthetic_evaluations:
+            st.info(f"Found {len(synthetic_evaluations)} synthetic lesson plans available for testing")
+            
+            # Create selection options
+            eval_options = []
+            for i, eval_data in enumerate(synthetic_evaluations):
+                student_name = eval_data.get('student_name', f'Student {i+1}')
+                subject = eval_data.get('subject_area', 'Unknown Subject')
+                grade = eval_data.get('grade_levels', 'Unknown Grade')
+                school = eval_data.get('school_name', 'Unknown School')
+                option_text = f"{student_name} - {subject} ({grade}) at {school}"
+                eval_options.append(option_text)
+            
+            selected_index = st.selectbox(
+                "Select a synthetic lesson plan:",
+                range(len(eval_options)),
+                format_func=lambda x: eval_options[x],
+                help="Choose from available synthetic lesson plans for testing"
+            )
+            
+            if selected_index is not None:
+                selected_evaluation = synthetic_evaluations[selected_index]
+                lesson_plan_text = selected_evaluation.get('lesson_plan', '')
+                
+                # Show preview
+                with st.expander("📋 Preview Selected Lesson Plan"):
+                    st.text_area(
+                        "Lesson Plan Content:",
+                        value=lesson_plan_text[:500] + "..." if len(lesson_plan_text) > 500 else lesson_plan_text,
+                        height=200,
+                        disabled=True
+                    )
+                
+                st.success(f"✅ Loaded synthetic lesson plan for {selected_evaluation.get('student_name', 'Unknown Student')}")
+        else:
+            st.warning("No synthetic lesson plans available. Generate some test data first!")
+            if st.button("🧪 Go to Test Data Generation"):
+                st.session_state.page = "🧪 Test Data"
+                st.rerun()
+    
+    elif input_method == "📤 Upload File":
+        uploaded_file = st.file_uploader(
+            "Choose lesson plan file",
+            type=['txt', 'docx', 'pdf', 'doc'],
+            help="Upload the lesson plan in text, Word, or PDF format"
+        )
+    
+        if uploaded_file is not None:
+            # Read file content based on type
+            try:
+                if uploaded_file.type == "text/plain":
+                    lesson_plan_text = str(uploaded_file.read(), "utf-8")
+                elif uploaded_file.type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                                          "application/msword"]:
+                    st.info("Word document uploaded. Please copy and paste the content below for analysis.")
+                    lesson_plan_text = st.text_area(
+                        "Paste lesson plan content:",
+                        height=200,
+                        placeholder="Copy and paste your lesson plan content here..."
+                    )
+                elif uploaded_file.type == "application/pdf":
+                    st.info("PDF uploaded. Please copy and paste the content below for analysis.")
+                    lesson_plan_text = st.text_area(
+                        "Paste lesson plan content:",
+                        height=200,
+                        placeholder="Copy and paste your lesson plan content here..."
+                    )
+                else:
+                    lesson_plan_text = st.text_area(
+                        "Paste lesson plan content:",
+                        height=200,
+                        placeholder="Copy and paste your lesson plan content here..."
+                    )
+            except Exception as e:
+                st.error(f"Error reading file: {str(e)}")
+                lesson_plan_text = st.text_area(
+                    "Paste lesson plan content:",
+                    height=200,
+                    placeholder="Copy and paste your lesson plan content here..."
+                )
+    
+    elif input_method == "✏️ Paste Text":
+        lesson_plan_text = st.text_area(
+            "Paste lesson plan content directly:",
+            height=200,
+            placeholder="Paste your lesson plan content here...",
+            help="Copy and paste the lesson plan text for AI analysis"
+        )
+    
+    # AI Analysis of Lesson Plan
+    if lesson_plan_text and len(lesson_plan_text.strip()) > 50:
+        if openai_service.is_enabled():
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                if st.button("🤖 Analyze Lesson Plan with AI", type="primary"):
+                    with st.spinner("Analyzing lesson plan..."):
+                        try:
+                            analysis = openai_service.analyze_lesson_plan(lesson_plan_text)
+                            analysis['extraction_timestamp'] = datetime.now().isoformat()
+                            st.session_state.lesson_plan_analysis = analysis
+                            st.success("✅ Lesson plan analyzed successfully!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Analysis failed: {str(e)}")
+            
+            with col2:
+                if st.session_state.lesson_plan_analysis:
+                    st.success("✅ Analysis Complete")
+                    confidence = st.session_state.lesson_plan_analysis.get('confidence_score', 0)
+                    st.metric("AI Confidence", f"{confidence:.1%}")
+        else:
+            st.warning("🤖 AI features disabled. Add OpenAI API key in Settings to enable automatic extraction.")
+    
+    # Display Extracted Information
+    if st.session_state.lesson_plan_analysis:
+        st.subheader("📋 Step 2: Review Extracted Information")
+        st.caption("Review and modify the information extracted from the lesson plan. Supervisor notes override lesson plan data.")
+        
+        analysis = st.session_state.lesson_plan_analysis
+        
+        # Create two columns for extracted vs editable info
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            st.markdown("**🤖 AI Extracted Information**")
+            with st.container():
+                st.text_input("Teacher Name (Extracted)", value=analysis.get('teacher_name', 'Not found'), disabled=True)
+                st.text_input("Lesson Date (Extracted)", value=analysis.get('lesson_date', 'Not found'), disabled=True)
+                st.text_input("Subject (Extracted)", value=analysis.get('subject_area', 'Not found'), disabled=True)
+                st.text_input("Grade Level (Extracted)", value=analysis.get('grade_levels', 'Not found'), disabled=True)
+                st.text_input("School (Extracted)", value=analysis.get('school_name', 'Not found'), disabled=True)
+                st.text_input("Class Size (Extracted)", value=str(analysis.get('total_students', 'Not found')), disabled=True)
+        
+        with col2:
+            st.markdown("**✏️ Supervisor Override (Fill as needed)**")
+            with st.container():
+                student_name = st.text_input(
+                    "Student Teacher Name *", 
+                    value=analysis.get('teacher_name', ''),
+                    key="student_name",
+                    help="Override the extracted teacher name if incorrect"
+                )
+                
+                evaluation_date = st.date_input(
+                    "Evaluation Date *",
+                    value=datetime.now().date(),
+                    help="Date of this evaluation (may differ from lesson date)"
+                )
+                
+                subject_area = st.text_input(
+                    "Subject Area",
+                    value=analysis.get('subject_area', ''),
+                    key="subject_area_override"
+                )
+                
+                grade_levels = st.text_input(
+                    "Grade Levels",
+                    value=analysis.get('grade_levels', ''),
+                    key="grade_levels_override"
+                )
+                
+                school_name = st.text_input(
+                    "School Name",
+                    value=analysis.get('school_name', ''),
+                    key="school_name_override"
+                )
+                
+                class_size = st.number_input(
+                    "Class Size",
+                    min_value=1,
+                    max_value=40,
+                    value=analysis.get('total_students', 20) if analysis.get('total_students') else 20,
+                    key="class_size_override"
+                )
+                
+                # Additional context from lesson plan
+                lesson_topic = st.text_input(
+                    "Lesson Topic",
+                    value=analysis.get('lesson_topic', ''),
+                    key="lesson_topic_override"
+                )
+        
+        # Store the final information (supervisor override takes precedence)
+        st.session_state.extracted_info = {
+            'student_name': student_name,
+            'subject_area': subject_area or analysis.get('subject_area', ''),
+            'grade_levels': grade_levels or analysis.get('grade_levels', ''),
+            'school_name': school_name or analysis.get('school_name', ''),
+            'class_size': class_size,
+            'lesson_topic': lesson_topic or analysis.get('lesson_topic', ''),
+            'evaluation_date': evaluation_date.isoformat(),
+            'lesson_plan_text': lesson_plan_text,
+            'ai_analysis': analysis
+        }
+    
+    # Basic Information (Traditional Form - fallback if no lesson plan)
+    else:
+        st.subheader("📋 Basic Information")
+        st.caption("Enter evaluation information manually")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            student_name = st.text_input("Student Teacher Name *", key="student_name")
+        with col2:
+            evaluation_date = st.date_input("Evaluation Date *", value=datetime.now().date())
+        with col3:
+            subject_area = st.text_input("Subject Area", key="subject_area_manual")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            grade_levels = st.text_input("Grade Levels", key="grade_levels_manual")
+        with col2:
+            school_name = st.text_input("School Name", key="school_name_manual")
+        with col3:
+            class_size = st.number_input("Class Size", min_value=1, max_value=40, value=20)
+        
+        # Store manual information
+        st.session_state.extracted_info = {
+            'student_name': student_name,
+            'subject_area': subject_area,
+            'grade_levels': grade_levels,
+            'school_name': school_name,
+            'class_size': class_size,
+            'evaluation_date': evaluation_date.isoformat(),
+            'lesson_plan_text': lesson_plan_text if lesson_plan_text else None,
+            'ai_analysis': None
+        }
+    
+    # Evaluator Information
+    st.subheader("👨‍🏫 Evaluator Information")
+    col1, col2 = st.columns(2)
     with col1:
-        student_name = st.text_input("Student Name *", key="student_name")
-    with col2:
         evaluator_name = st.text_input("Evaluator Name *", key="evaluator_name")
-    with col3:
+    with col2:
         evaluator_role = st.selectbox("Evaluator Role", ["supervisor", "cooperating_teacher"])
     
+    # Check if we have minimum required information
     if not student_name or not evaluator_name:
-        st.warning("Please enter student name and evaluator name to continue.")
+        st.warning("Please provide student teacher name and evaluator name to continue.")
         return
     
     # Initialize session state for scores
@@ -721,9 +972,98 @@ def show_test_data():
     if test_evaluations:
         st.subheader(f"Current Test Data ({len(test_evaluations)} evaluations)")
         
-        if st.button("🗑️ Clear All Test Data"):
-            # This would need implementation in storage module
-            st.warning("Test data clearing not implemented yet")
+        # Show summary of test data
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            field_count = len([e for e in test_evaluations if e.get('rubric_type') == 'field_evaluation'])
+            st.metric("Field Evaluations", field_count)
+        with col2:
+            ster_count = len([e for e in test_evaluations if e.get('rubric_type') == 'ster'])
+            st.metric("STER Evaluations", ster_count)
+        with col3:
+            lesson_plan_count = len([e for e in test_evaluations if e.get('lesson_plan')])
+            st.metric("With Lesson Plans", lesson_plan_count)
+        
+        # Preview test data
+        if st.checkbox("📋 Show Test Data Preview"):
+            preview_df = pd.DataFrame(test_evaluations)
+            if not preview_df.empty:
+                display_columns = ['student_name', 'subject_area', 'grade_levels', 'school_name', 'rubric_type', 'total_score', 'status']
+                available_columns = [col for col in display_columns if col in preview_df.columns]
+                st.dataframe(
+                    preview_df[available_columns],
+                    use_container_width=True,
+                    hide_index=True
+                )
+        
+        # Management options
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🗑️ Clear All Test Data", type="secondary"):
+                if 'confirm_delete' not in st.session_state:
+                    st.session_state.confirm_delete = False
+                
+                if not st.session_state.confirm_delete:
+                    st.session_state.confirm_delete = True
+                    st.warning("⚠️ Click again to confirm deletion of all test data")
+                    st.rerun()
+                else:
+                    # Delete all synthetic data
+                    real_evaluations = [e for e in evaluations if not e.get('is_synthetic', False)]
+                    
+                    # Save only real evaluations
+                    from utils.storage import EVALUATIONS_FILE, ensure_storage_dir
+                    ensure_storage_dir()
+                    with open(EVALUATIONS_FILE, 'w', encoding='utf-8') as f:
+                        json.dump(real_evaluations, f, indent=2, ensure_ascii=False)
+                    
+                    st.success(f"✅ Deleted {len(test_evaluations)} test evaluations")
+                    st.session_state.confirm_delete = False
+                    st.rerun()
+        
+        with col2:
+            if st.button("🔄 Regenerate Test Data"):
+                # Clear existing and generate new
+                real_evaluations = [e for e in evaluations if not e.get('is_synthetic', False)]
+                
+                # Generate new synthetic data with same settings as last generation
+                new_synthetic_data = generate_synthetic_evaluations(
+                    count=10,
+                    rubric_type="both",
+                    score_distribution="mixed"
+                )
+                
+                # Save combined data
+                all_evaluations = real_evaluations + new_synthetic_data
+                from utils.storage import EVALUATIONS_FILE, ensure_storage_dir
+                ensure_storage_dir()
+                with open(EVALUATIONS_FILE, 'w', encoding='utf-8') as f:
+                    json.dump(all_evaluations, f, indent=2, ensure_ascii=False)
+                
+                st.success(f"✅ Regenerated {len(new_synthetic_data)} test evaluations")
+                st.rerun()
+    
+    else:
+        st.info("No test data found. Generate some synthetic data to get started!")
+        
+        # Quick generate button
+        if st.button("🚀 Quick Generate (10 Mixed Evaluations)", type="primary"):
+            # Clear any pending confirmations
+            if 'confirm_delete' in st.session_state:
+                del st.session_state.confirm_delete
+            with st.spinner("Generating quick test data..."):
+                synthetic_data = generate_synthetic_evaluations(
+                    count=10,
+                    rubric_type="both",
+                    score_distribution="mixed"
+                )
+                
+                # Save to storage
+                for evaluation in synthetic_data:
+                    save_evaluation(evaluation)
+                
+                st.success(f"✅ Generated {len(synthetic_data)} test evaluations!")
+                st.rerun()
 
 def show_settings():
     """Settings and configuration"""

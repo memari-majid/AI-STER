@@ -48,6 +48,227 @@ SUBJECT_AREAS = [
     "Music", "Physical Education", "Special Education", "ESL", "Technology"
 ]
 
+# Student names for lesson plan rosters (different from student teacher names)
+CLASSROOM_STUDENT_NAMES = [
+    "Aiden Smith", "Bella Garcia", "Carter Johnson", "Destiny Rodriguez", "Ethan Williams",
+    "Faith Martinez", "Gabriel Thompson", "Hannah Davis", "Isaac Brown", "Jasmine Wilson",
+    "Kayden Anderson", "Luna Taylor", "Mason Clark", "Nora Lewis", "Oliver Walker",
+    "Penelope Hall", "Quinn Allen", "Ruby Young", "Sebastian King", "Tiana Wright",
+    "Uriah Lopez", "Violet Hill", "Wesley Green", "Ximena Adams", "Yusuf Baker",
+    "Zoe Carter", "Adrian Mitchell", "Brooke Perez", "Caleb Roberts", "Delilah Turner",
+    "Evan Phillips", "Fiona Campbell", "Grayson Parker", "Hazel Evans", "Ivan Edwards",
+    "Jade Collins", "Kai Stewart", "Lily Sanchez", "Miles Morris", "Nova Rogers"
+]
+
+def generate_lesson_plan(student_name: str, subject_area: str, grade_levels: str, 
+                        school_name: str, lesson_date: datetime) -> str:
+    """Generate a realistic lesson plan with extractable information"""
+    
+    # Generate class size but don't include student names for privacy
+    class_size = random.randint(18, 28)
+    
+    # Grade level specific topics
+    topics_by_subject = {
+        "Mathematics": {
+            "K-5": ["Addition and Subtraction", "Multiplication Tables", "Fractions", "Geometry Shapes", "Place Value"],
+            "6-8": ["Algebraic Expressions", "Ratios and Proportions", "Linear Equations", "Statistics", "Probability"],
+            "9-12": ["Quadratic Functions", "Trigonometry", "Calculus Introduction", "Statistics and Data Analysis", "Polynomial Functions"]
+        },
+        "English Language Arts": {
+            "K-5": ["Phonics and Reading", "Creative Writing", "Story Elements", "Grammar Basics", "Vocabulary Building"],
+            "6-8": ["Literary Analysis", "Persuasive Writing", "Research Skills", "Poetry Study", "Narrative Writing"],
+            "9-12": ["Shakespearean Literature", "Argumentative Essays", "Literary Criticism", "Creative Writing Workshop", "AP Literature"]
+        },
+        "Science": {
+            "K-5": ["Plant Life Cycles", "Weather Patterns", "Simple Machines", "Animal Habitats", "States of Matter"],
+            "6-8": ["Cell Structure", "Chemical Reactions", "Earth's Layers", "Energy and Motion", "Ecosystems"],
+            "9-12": ["Genetics and DNA", "Chemical Bonding", "Physics of Motion", "Environmental Science", "Organic Chemistry"]
+        },
+        "Social Studies": {
+            "K-5": ["Community Helpers", "American Symbols", "Map Skills", "Native American History", "Colonial America"],
+            "6-8": ["Ancient Civilizations", "World Geography", "American Revolution", "Civil War", "Constitution Study"],
+            "9-12": ["World War II", "Government Systems", "Economics Principles", "Modern World History", "Constitutional Law"]
+        }
+    }
+    
+    # Get appropriate topic based on subject and grade level
+    grade_key = "K-5" if any(g in grade_levels for g in ["K", "1", "2", "3", "4", "5"]) else \
+                "6-8" if any(g in grade_levels for g in ["6", "7", "8"]) else "9-12"
+    
+    topic = random.choice(topics_by_subject.get(subject_area, {}).get(grade_key, ["General Topic"]))
+    
+    # Select lesson plan format
+    formats = ["detailed", "simple", "template", "narrative"]
+    format_type = random.choice(formats)
+    
+    if format_type == "detailed":
+        return f"""LESSON PLAN
+        
+Teacher: {student_name}
+Date: {lesson_date.strftime('%B %d, %Y')}
+School: {school_name}
+Subject: {subject_area}
+Grade Level: {grade_levels}
+Class Period: {random.choice(['1st Period', '2nd Period', '3rd Period', '4th Period', 'Morning Block', 'Afternoon Block'])}
+Duration: {random.choice(['50 minutes', '45 minutes', '90 minutes', '60 minutes'])}
+Class Size: {class_size} students
+
+LESSON TOPIC: {topic}
+
+UTAH CORE STANDARDS:
+{subject_area}.{random.randint(1,5)}.{random.randint(1,8)} - Students will demonstrate understanding of {topic.lower()}
+
+LEARNING OBJECTIVES:
+1. Students will be able to identify key concepts related to {topic.lower()}
+2. Students will demonstrate comprehension through practical application
+3. Students will collaborate effectively in small group activities
+
+MATERIALS NEEDED:
+- Whiteboard and markers
+- Student worksheets
+- {random.choice(['Textbooks', 'Tablets', 'Manipulatives', 'Art supplies', 'Science equipment'])}
+- {random.choice(['Projector', 'Chart paper', 'Timer', 'Calculator', 'Reference materials'])}
+
+LESSON STRUCTURE:
+
+Opening (10 minutes):
+- Welcome and attendance
+- Review previous lesson on {random.choice(['related concepts', 'prerequisite skills', 'background knowledge'])}
+- Introduce today's topic: {topic}
+
+Direct Instruction (20 minutes):
+- Present key concepts using visual aids
+- Demonstrate problem-solving strategies
+- Check for understanding through questioning
+
+Guided Practice (15 minutes):
+- Students work in pairs on practice problems
+- Teacher circulates and provides support
+- Address common misconceptions
+
+Independent Practice (10 minutes):
+- Individual worksheet completion
+- Students apply learned concepts independently
+
+Closure (5 minutes):
+- Review key points from lesson
+- Preview next lesson
+- Assign homework if applicable
+
+ASSESSMENT:
+- Formative: Observation during guided practice
+- Summative: Exit ticket with 3 key questions
+- Accommodations: Extended time for students with IEPs
+
+DIFFERENTIATION:
+- Advanced learners: Extension activities
+- Struggling learners: Simplified problems with visual supports
+- ELL students: Vocabulary support and peer partnerships
+
+HOMEWORK:
+Practice worksheet pages {random.randint(1,50)}-{random.randint(51,100)}
+
+REFLECTION NOTES:
+[To be completed after lesson]
+"""
+
+    elif format_type == "simple":
+        return f"""Lesson Plan - {lesson_date.strftime('%m/%d/%Y')}
+
+Teacher: {student_name}
+Subject: {subject_area} 
+Topic: {topic}
+Grade: {grade_levels}
+School: {school_name}
+Class Size: {class_size} students
+
+Lesson Goals:
+- Understand {topic.lower()}
+- Practice key skills
+- Complete assessment activity
+
+Activities:
+1. Warm-up review (10 min)
+2. New material presentation (20 min)  
+3. Practice exercises (15 min)
+4. Wrap-up discussion (5 min)
+
+Materials: textbook, worksheets, {random.choice(['calculator', 'manipulatives', 'art supplies'])}
+
+Assessment: {random.choice(['Quiz', 'Worksheet', 'Oral questions', 'Group project'])}
+"""
+
+    elif format_type == "template":
+        return f"""DAILY LESSON PLAN TEMPLATE
+
+BASIC INFORMATION:
+Teacher Name: {student_name}
+Date: {lesson_date.strftime('%A, %B %d, %Y')}
+Subject Area: {subject_area}
+Grade Level(s): {grade_levels}
+School: {school_name}
+Class Size: {class_size} students
+
+LESSON DETAILS:
+Unit: {random.choice(['Unit 1', 'Unit 2', 'Unit 3', 'Chapter 5', 'Module 2'])}
+Lesson Topic: {topic}
+Time Allocation: {random.choice(['50 minutes', '45 minutes', '60 minutes'])}
+
+STANDARDS ALIGNMENT:
+Utah Core Standard: {subject_area}.{random.randint(1,6)}.{random.randint(1,10)}
+
+LEARNING TARGETS:
+□ I can explain {topic.lower()}
+□ I can apply concepts to solve problems  
+□ I can work collaboratively with peers
+
+LESSON SEQUENCE:
+Hook/Engagement (5 min): _______________
+Direct Instruction (20 min): _______________
+Guided Practice (15 min): _______________
+Independent Work (10 min): _______________
+
+MATERIALS & RESOURCES:
+□ {random.choice(['Textbook', 'Workbook', 'Digital resources'])}
+□ {random.choice(['Manipulatives', 'Art supplies', 'Science kit'])}
+□ {random.choice(['Projector', 'Whiteboard', 'Chart paper'])}
+
+POST-LESSON REFLECTION:
+What worked well: _______________
+What needs improvement: _______________
+Next steps: _______________
+"""
+
+    else:  # narrative format
+        return f"""Teaching Plan for {lesson_date.strftime('%B %d, %Y')}
+
+Hello! I'm {student_name} and I'll be teaching {subject_area} today at {school_name}. 
+My class has {class_size} wonderful students in grade {grade_levels}.
+
+Today's lesson focuses on {topic}. I'm really excited to share this with my students!
+
+We'll start with a fun warm-up activity to get everyone engaged. Then I'll introduce 
+the main concepts through interactive demonstration. Students will work in small groups 
+to practice what they've learned before completing individual exercises.
+
+I've prepared {random.choice(['worksheets', 'digital activities', 'hands-on experiments'])} 
+to help reinforce the learning objectives. The lesson should take about 
+{random.choice(['45-50 minutes', '50-60 minutes', '90 minutes'])} to complete.
+
+For assessment, I plan to use {random.choice(['exit tickets', 'peer evaluation', 'quick quiz', 'observation checklist'])} 
+to check student understanding.
+
+Materials needed:
+- {random.choice(['Textbooks and notebooks', 'Tablets and digital resources', 'Art supplies and paper'])}
+- {random.choice(['Calculator', 'Science equipment', 'Maps and globes', 'Musical instruments'])}
+- {random.choice(['Projector screen', 'Whiteboard markers', 'Chart paper'])}
+
+I'm looking forward to seeing how the students respond to this lesson on {topic}!
+
+Reflection space (to be completed after teaching):
+_______________________________________________
+"""
+
 def generate_synthetic_evaluations(
     count: int = 10,
     rubric_type: str = "both",
@@ -114,6 +335,10 @@ def generate_synthetic_evaluations(
         # Determine semester context
         semester = random.choice(["Fall 2024", "Spring 2024", "Summer 2024", "Fall 2023"])
         
+        # Generate lesson plan for this evaluation
+        lesson_date = created_date - timedelta(days=random.randint(0, 7))  # Lesson a few days before evaluation
+        lesson_plan = generate_lesson_plan(student_name, subject_area, school['grade_levels'], school['name'], lesson_date)
+        
         evaluation = {
             'id': str(uuid.uuid4()),
             'student_name': student_name,
@@ -132,6 +357,8 @@ def generate_synthetic_evaluations(
             'status': status,
             'created_at': created_date.isoformat(),
             'completed_at': completed_date.isoformat() if completed_date else None,
+            'lesson_plan': lesson_plan,  # NEW: Add lesson plan to synthetic data
+            'lesson_plan_analysis': None,  # Will be populated by AI extraction
             'is_synthetic': True,  # Flag to identify synthetic data
             'evaluation_context': f"{school['setting'].title()} school setting",
             'notes': f"Student teaching placement in {subject_area} at {school['name']}"
