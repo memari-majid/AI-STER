@@ -748,92 +748,194 @@ def show_evaluation_form():
         st.session_state.justifications = {}
     if 'disposition_scores' not in st.session_state:
         st.session_state.disposition_scores = {}
+    if 'observation_notes' not in st.session_state:
+        st.session_state.observation_notes = ""
     
-    # Assessment items
-    st.subheader("Assessment Items")
+    # STEP 3: Classroom Observation Notes
+    st.subheader("📝 Step 3: Classroom Observation Notes")
+    st.caption("Record your detailed observations of the student teacher's performance during the lesson")
+    
+    observation_notes = st.text_area(
+        "Detailed Observation Notes",
+        value=st.session_state.observation_notes,
+        height=200,
+        placeholder="""Record specific observations about the student teacher's performance:
+
+• How did they introduce the lesson and engage students?
+• What teaching strategies and methods were used?
+• How did they manage the classroom and respond to student needs?
+• What evidence did you see of lesson planning and preparation?
+• How did they assess student learning and provide feedback?
+• What professional behaviors and dispositions were demonstrated?
+• Any specific examples of strengths or areas for improvement?
+
+Be as detailed as possible - these notes will be used to generate evidence-based justifications for each competency area.""",
+        help="Detailed observations will help generate more accurate AI justifications",
+        key="observation_text_area"
+    )
+    
+    # Store observation notes in session state
+    st.session_state.observation_notes = observation_notes
+    
+    # STEP 4: Assessment Scoring
+    st.subheader("🎯 Step 4: Assessment Scoring")
+    st.caption("Score each competency based on your observations")
+    
+    st.markdown("**Score Each Competency (Level 0-3)**")
     
     total_score = 0
-    min_required = len(items) * 2
+    all_items_scored = True
     
-    for i, item in enumerate(items):
-        with st.container():
-            st.markdown(f"### {item['code']}: {item['title']}")
+    # Group items by competency area for better organization
+    competency_groups = {}
+    for item in items:
+        area = item['competency_area']
+        if area not in competency_groups:
+            competency_groups[area] = []
+        competency_groups[area].append(item)
+    
+    for area, area_items in competency_groups.items():
+        st.markdown(f"**{area}**")
+        
+        for item in area_items:
+            item_id = item['id']
+            current_score = st.session_state.scores.get(item_id)
             
-            # Context and type badges
-            col1, col2, col3 = st.columns([2, 1, 1])
+            # Create scoring interface for each item
+            col1, col2 = st.columns([3, 1])
+            
             with col1:
-                st.caption(f"**Context:** {item['context']}")
+                st.markdown(f"*{item['code']}: {item['title']}*")
+                st.caption(f"{item['context']}")
+            
             with col2:
-                st.caption(f"**Type:** {item['type']}")
-            with col3:
-                st.caption(f"**Area:** {item['competency_area']}")
+                score = st.selectbox(
+                    f"Score",
+                    options=[None, 0, 1, 2, 3],
+                    index=0 if current_score is None else current_score + 1,
+                    format_func=lambda x: "Select..." if x is None else f"Level {x} - {get_level_name(x)}",
+                    key=f"score_select_{item_id}",
+                    help=f"Select score level for {item['code']}"
+                )
+                
+                if score is not None:
+                    st.session_state.scores[item_id] = score
+                    total_score += score
+                else:
+                    all_items_scored = False
             
-            # Scoring buttons
-            col1, col2, col3, col4 = st.columns(4)
-            
-            score_key = f"score_{item['id']}"
-            current_score = st.session_state.scores.get(item['id'])
-            
-            for level in range(4):
-                with [col1, col2, col3, col4][level]:
-                    if st.button(
-                        f"Level {level}\n{get_level_name(level)}",
-                        key=f"{score_key}_{level}",
-                        type="primary" if current_score == level else "secondary"
-                    ):
-                        st.session_state.scores[item['id']] = level
-                        st.rerun()
-            
-            # Show selected score and description
-            if current_score is not None:
-                st.info(f"**Selected: Level {current_score}** - {item['levels'][str(current_score)]}")
-                total_score += current_score
-            
-            # Justification
-            justification_key = f"justification_{item['id']}"
-            justification = st.text_area(
-                f"Justification {('(Required)' if current_score is not None and current_score >= 2 else '')}",
-                key=justification_key,
-                height=100,
-                placeholder="Provide specific examples and evidence to support your score..."
-            )
-            
-            if justification:
-                st.session_state.justifications[item['id']] = justification
-            
-            # AI Assistant
-            if openai_service.is_enabled() and current_score is not None:
-                if st.button(f"🤖 Generate AI Justification", key=f"ai_{item['id']}"):
-                    with st.spinner("Generating AI justification..."):
-                        try:
-                            ai_justification = openai_service.generate_justification(
-                                item, current_score, student_name
-                            )
-                            st.session_state.justifications[item['id']] = ai_justification
-                            st.success("AI justification generated!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"AI generation failed: {str(e)}")
-            
-            # Example justification
-            if 'example_justification' in item:
-                with st.expander("View Example Justification (Level 2)"):
-                    st.write(item['example_justification'])
-            
-            st.divider()
+            # Show selected score description (use actual selected score, not session state)
+            display_score = score if score is not None else current_score
+            if display_score is not None:
+                score_desc = item['levels'].get(str(display_score), 'No description available')
+                st.info(f"**Level {display_score}:** {score_desc}")
+        
+        st.divider()
     
-    # Score summary
-    st.subheader("Score Summary")
-    col1, col2, col3 = st.columns(3)
+    # Score Summary
+    min_required = len(items) * 2
+    scored_items = len([s for s in st.session_state.scores.values() if s is not None])
+    
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Current Total", total_score)
+        st.metric("Items Scored", f"{scored_items}/{len(items)}")
     with col2:
-        st.metric("Maximum Possible", len(items) * 3)
+        st.metric("Current Total", total_score)
     with col3:
-        meets_req = total_score >= min_required
+        st.metric("Maximum Possible", len(items) * 3)
+    with col4:
+        meets_req = total_score >= min_required and all_items_scored
         st.metric("Meets Requirements", "✅ Yes" if meets_req else "❌ No")
     
-    # Professional Dispositions
+    # STEP 5: Generate Justifications
+    st.subheader("🤖 Step 5: Generate Evidence-Based Justifications")
+    
+    if all_items_scored and observation_notes.strip():
+        st.caption("All competencies scored! Generate AI justifications using your observation notes.")
+        
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if openai_service.is_enabled():
+                if st.button("🤖 Generate Justifications for All Competencies", type="primary", key="bulk_ai_generation"):
+                    with st.spinner("Generating evidence-based justifications for all competencies..."):
+                        try:
+                            # Get items that are scored
+                            scored_items_list = [item for item in items if item['id'] in st.session_state.scores]
+                            
+                            bulk_justifications = openai_service.generate_bulk_justifications(
+                                scored_items_list,
+                                st.session_state.scores,
+                                observation_notes,
+                                student_name,
+                                rubric_type
+                            )
+                            
+                            # Update session state with generated justifications
+                            for item_id, justification in bulk_justifications.items():
+                                st.session_state.justifications[item_id] = justification
+                            
+                            st.success(f"✅ Generated justifications for {len(bulk_justifications)} competencies!")
+                            st.rerun()
+                            
+                        except Exception as e:
+                            st.error(f"Failed to generate justifications: {str(e)}")
+            else:
+                st.warning("🤖 AI features disabled. Add OpenAI API key in Settings to enable justification generation.")
+        
+        with col2:
+            if st.button("🔄 Clear All Justifications", key="clear_justifications"):
+                st.session_state.justifications = {}
+                st.success("Justifications cleared!")
+                st.rerun()
+    
+    elif not all_items_scored:
+        st.info("ℹ️ Please score all competencies to enable justification generation.")
+    elif not observation_notes.strip():
+        st.info("ℹ️ Please add observation notes to enable AI justification generation.")
+    
+    # STEP 6: Review and Edit Justifications
+    if st.session_state.justifications or any(st.session_state.scores.values()):
+        st.subheader("✏️ Step 6: Review and Edit Justifications")
+        st.caption("Review AI-generated justifications and edit as needed")
+        
+        for item in items:
+            item_id = item['id']
+            current_score = st.session_state.scores.get(item_id)
+            
+            if current_score is not None:
+                st.markdown(f"**{item['code']}: {item['title']}** (Level {current_score})")
+                
+                # Justification text area
+                justification = st.text_area(
+                    f"Justification for {item['code']}",
+                    value=st.session_state.justifications.get(item_id, ""),
+                    height=100,
+                    placeholder="Edit the justification as needed...",
+                    key=f"edit_justification_{item_id}",
+                    help="Edit the AI-generated justification or write your own"
+                )
+                
+                # Update session state
+                if justification.strip():
+                    st.session_state.justifications[item_id] = justification
+                
+                # Individual AI generation as fallback
+                if openai_service.is_enabled() and not st.session_state.justifications.get(item_id, "").strip():
+                    if st.button(f"🤖 Generate Individual Justification", key=f"individual_ai_{item_id}"):
+                        with st.spinner(f"Generating justification for {item['code']}..."):
+                            try:
+                                ai_justification = openai_service.generate_justification(
+                                    item, current_score, student_name, observation_notes
+                                )
+                                st.session_state.justifications[item_id] = ai_justification
+                                st.success("Individual justification generated!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Failed to generate justification: {str(e)}")
+                
+                st.divider()
+    
+    # STEP 7: Professional Dispositions
     st.subheader("Professional Dispositions")
     st.caption("All dispositions must score Level 3 to complete the evaluation.")
     

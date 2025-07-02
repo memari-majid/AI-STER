@@ -203,7 +203,12 @@ JSON Response:"""
             Generated justification text
         """
         if not self.is_enabled():
-            raise Exception("OpenAI service is not configured")
+            # Return generic justification if AI is not enabled
+            return self._create_generic_justification(item, score)
+        
+        # Check if context is empty or not relevant to this competency
+        if not context or not context.strip():
+            return self._create_generic_justification(item, score)
         
         prompt = self._build_justification_prompt(item, score, student_name, context)
         
@@ -213,7 +218,7 @@ JSON Response:"""
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert educational evaluator specializing in student teacher assessments. Provide clear, professional, evidence-based justifications."
+                        "content": "You are an expert educational evaluator specializing in student teacher assessments. Provide clear, professional, evidence-based justifications. If the provided context does not contain relevant information for the specific competency, return '[NO_CONTEXT]' as the first word of your response."
                     },
                     {
                         "role": "user",
@@ -224,10 +229,17 @@ JSON Response:"""
                 temperature=0.7
             )
             
-            return response.choices[0].message.content.strip()
+            ai_response = response.choices[0].message.content.strip()
+            
+            # Check if AI indicates no relevant context
+            if ai_response.startswith('[NO_CONTEXT]'):
+                return self._create_generic_justification(item, score)
+            
+            return ai_response
         
         except Exception as e:
-            raise Exception(f"Failed to generate AI justification: {str(e)}")
+            # Fallback to generic justification on error
+            return self._create_generic_justification(item, score)
     
     def analyze_evaluation(
         self,
@@ -363,5 +375,177 @@ Provide:
 5. Next steps for professional growth
 
 Keep response concise (4-5 sentences) and constructive."""
+        
+        return prompt
+    
+    def generate_bulk_justifications(
+        self,
+        items: List[Dict],
+        scores: Dict[str, int],
+        observation_notes: str,
+        student_name: str,
+        rubric_type: str
+    ) -> Dict[str, str]:
+        """
+        Generate justifications for all scored items using supervisor's observation notes
+        
+        Args:
+            items: List of assessment item dictionaries
+            scores: Dictionary mapping item IDs to scores
+            observation_notes: Supervisor's classroom observation notes
+            student_name: Name of the student being evaluated
+            rubric_type: Type of rubric ("field_evaluation" or "ster")
+        
+        Returns:
+            Dictionary mapping item IDs to generated justifications
+        """
+        if not self.is_enabled():
+            raise Exception("OpenAI service is not configured")
+        
+        prompt = self._build_bulk_justification_prompt(
+            items, scores, observation_notes, student_name, rubric_type
+        )
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert educational supervisor who writes professional, evidence-based justifications for student teacher evaluations. Use the provided observation notes to create specific, individualized justifications for each competency."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                max_tokens=2000,  # Increased for multiple justifications
+                temperature=0.6
+            )
+            
+            response_text = response.choices[0].message.content.strip()
+            
+            # Parse the JSON response
+            start_idx = response_text.find('{')
+            end_idx = response_text.rfind('}') + 1
+            
+            if start_idx != -1 and end_idx != -1:
+                json_text = response_text[start_idx:end_idx]
+                justifications = json.loads(json_text)
+                
+                # Validate that we have justifications for all scored items
+                validated_justifications = {}
+                for item in items:
+                    item_id = item['id']
+                    if item_id in scores and item_id in justifications:
+                        validated_justifications[item_id] = justifications[item_id]
+                    elif item_id in scores:
+                        # Generate generic justification if missing
+                        validated_justifications[item_id] = self._create_generic_justification(item, scores[item_id])
+                
+                return validated_justifications
+            else:
+                raise Exception("Could not parse JSON from AI response")
+        
+        except json.JSONDecodeError as e:
+            # Fallback: Generate generic justifications
+            fallback_justifications = {}
+            for item in items:
+                item_id = item['id']
+                if item_id in scores:
+                    fallback_justifications[item_id] = self._create_generic_justification(item, scores[item_id])
+            return fallback_justifications
+        except Exception as e:
+            raise Exception(f"Failed to generate bulk justifications: {str(e)}")
+    
+    def _create_generic_justification(self, item: Dict, score: int) -> str:
+        """
+        Create a generic justification when no specific observation notes are available
+        
+        Args:
+            item: Assessment item dictionary
+            score: Score level (0-3)
+            
+        Returns:
+            Generic justification with warning
+        """
+        score_labels = {
+            0: "does not demonstrate competency",
+            1: "is approaching competency at expected level",
+            2: "demonstrates competency at expected level", 
+            3: "exceeds expected level of competency"
+        }
+        
+        score_description = item['levels'].get(str(score), 'No description available')
+        score_label = score_labels.get(score, 'demonstrates competency')
+        
+        generic_justification = (
+            f"The student teacher {score_label} for {item['code']} - {item['title']}. "
+            f"{score_description} "
+            f"**NOTE: No specific observations were recorded for this competency area - "
+            f"supervisor may wish to add additional details based on classroom observation.**"
+        )
+        
+        return generic_justification
+    
+    def _build_bulk_justification_prompt(
+        self,
+        items: List[Dict],
+        scores: Dict[str, int],
+        observation_notes: str,
+        student_name: str,
+        rubric_type: str
+    ) -> str:
+        """Build prompt for bulk justification generation"""
+        
+        score_labels = {
+            0: "Does not demonstrate competency",
+            1: "Is approaching competency at expected level", 
+            2: "Demonstrates competency at expected level",
+            3: "Exceeds expected level of competency"
+        }
+        
+        # Build items list with scores
+        items_text = ""
+        for item in items:
+            item_id = item['id']
+            if item_id in scores:
+                score = scores[item_id]
+                items_text += f"\n{item['code']} - {item['title']}\n"
+                items_text += f"Competency Area: {item['competency_area']}\n"
+                items_text += f"Assigned Score: Level {score} ({score_labels.get(score, 'Unknown')})\n"
+                items_text += f"Score Description: {item['levels'].get(str(score), 'No description available')}\n"
+                items_text += "---\n"
+        
+        prompt = f"""You are writing professional justifications for a student teaching evaluation based on classroom observation notes.
+
+STUDENT: {student_name}
+EVALUATION TYPE: {rubric_type.replace('_', ' ').title()}
+
+SUPERVISOR'S OBSERVATION NOTES:
+{observation_notes}
+
+ASSESSMENT ITEMS TO JUSTIFY:
+{items_text}
+
+INSTRUCTIONS:
+1. Write a specific, evidence-based justification for EACH item listed above
+2. Use details from the observation notes to support each score
+3. Each justification should be 2-3 sentences and reference specific observed behaviors
+4. Maintain a professional, constructive tone
+5. Ensure justifications align with the assigned score level
+
+IMPORTANT: If the observation notes do not contain relevant information for a specific competency area, generate a generic justification using this format:
+"[GENERIC] The student teacher demonstrates competency for the assessed item. **NOTE: No specific observations were recorded for this competency area - supervisor may wish to add additional details.**"
+
+Return your response as a JSON object with item IDs as keys and justifications as values:
+
+{{
+    "item_id_1": "Professional justification based on observation notes...",
+    "item_id_2": "[GENERIC] The student teacher demonstrates for CC1 - Classroom Environment...",
+    ...
+}}
+
+JSON Response:"""
         
         return prompt 

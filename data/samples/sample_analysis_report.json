@@ -1,0 +1,584 @@
+{
+  "generated_at": "2025-07-02T12:08:08.591886",
+  "file_inventory": {
+    "lesson_plans": [
+      "lesson_plans/Math Lesson Grade K-Redacted.pdf",
+      "lesson_plans/Science Lesson Grade 2.1-Redacted.pdf",
+      "lesson_plans/Langauage Arts Grade 3-Redacted.pdf",
+      "lesson_plans/Math Lesson Grade 6-Redacted.pdf",
+      "lesson_plans/Math Lesson Grade 3-Redacted.pdf",
+      "lesson_plans/Math Lesson Grade 5.pdf",
+      "lesson_plans/History Lesson Plan .docx",
+      "lesson_plans/Writing Lesson Grade 2-Redacted.pdf",
+      "lesson_plans/SPED LESSON PLAN Life Skill.pdf",
+      "lesson_plans/demo_utah_lesson_plan.md",
+      "lesson_plans/Writing Lesson Grade 5-Redacted.pdf",
+      "lesson_plans/Math Lesson Grade 3.3-Redacted.pdf",
+      "lesson_plans/Math Lesson Grade 3.1-Redacted.pdf",
+      "lesson_plans/Science Lesson Grade 2-Redacted.pdf",
+      "lesson_plans/SPED LESSON PLAN 2nd ELA.docx",
+      "lesson_plans/Math Lesson Grade 3.2-Redacted.pdf",
+      "lesson_plans/Math Lesson Grade 1-Redacted.pdf",
+      "lesson_plans/Biology Lesson Plan 10th grade.docx",
+      "lesson_plans/Theater Lesson Plan .pdf",
+      "lesson_plans/Writing Lesson Grade 2.1-Redacted.pdf"
+    ],
+    "evaluations": [
+      "evaluations/AI-STER ELEM Evaluation 2_Redacted.pdf",
+      "evaluations/AI-STER ELEM Evaluation.pdf",
+      "evaluations/Sec Ed Eval_Redacted.pdf",
+      "evaluations/Secondary Ed Eval _Redacted.pdf",
+      "evaluations/AI-STER Observation Notes.pdf"
+    ],
+    "templates": [],
+    "standards_references": []
+  },
+  "lesson_plan_analysis": {
+    "total_files": 20,
+    "processed_files": 18,
+    "readable_files": 18,
+    "utah_standards_found": [
+      "1.NBT.4",
+      "2.W.2",
+      "5.MD.5",
+      "7.RP.1",
+      "3.NBT.1",
+      "3.NF.2",
+      "5.W.2",
+      "6.G.3",
+      "3.OA.8",
+      "3.NBT.2",
+      "3.MD.3",
+      "1.W.3",
+      "5.MD.4"
+    ],
+    "grade_levels_found": [
+      "6",
+      "s",
+      "Level",
+      "Subject",
+      "3",
+      "team",
+      "raised",
+      "where",
+      "7"
+    ],
+    "subject_areas_found": [
+      "art",
+      "math",
+      "mathematics",
+      "ela",
+      "language arts",
+      "english",
+      "music",
+      "science"
+    ],
+    "files_processed": [
+      {
+        "file": "lesson_plans/Math Lesson Grade K-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [],
+        "grade_levels": [
+          "Level"
+        ],
+        "subjects": [
+          "math"
+        ],
+        "word_count": 815,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Science Lesson Grade 2.1-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [],
+        "grade_levels": [
+          "Level"
+        ],
+        "subjects": [
+          "science",
+          "art"
+        ],
+        "word_count": 391,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Langauage Arts Grade 3-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "1.W.3"
+        ],
+        "grade_levels": [
+          "Level",
+          "Subject",
+          "3"
+        ],
+        "subjects": [
+          "language arts",
+          "ela",
+          "art"
+        ],
+        "word_count": 1636,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 6-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "6.G.3"
+        ],
+        "grade_levels": [
+          "Level",
+          "s"
+        ],
+        "subjects": [
+          "math",
+          "art"
+        ],
+        "word_count": 688,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 3-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "3.OA.8"
+        ],
+        "grade_levels": [
+          "Level",
+          "Subject",
+          "s",
+          "3"
+        ],
+        "subjects": [
+          "math",
+          "ela",
+          "art"
+        ],
+        "word_count": 1260,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 5.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "5.MD.4",
+          "5.MD.5"
+        ],
+        "grade_levels": [
+          "Level",
+          "where",
+          "6"
+        ],
+        "subjects": [
+          "math",
+          "ela",
+          "art"
+        ],
+        "word_count": 1105,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/History Lesson Plan .docx",
+        "format": ".docx",
+        "readable": false,
+        "reason": "Could not extract text or file too short"
+      },
+      {
+        "file": "lesson_plans/Writing Lesson Grade 2-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "2.W.2"
+        ],
+        "grade_levels": [
+          "Level"
+        ],
+        "subjects": [
+          "art"
+        ],
+        "word_count": 111,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/SPED LESSON PLAN Life Skill.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "7.RP.1"
+        ],
+        "grade_levels": [
+          "Level",
+          "7"
+        ],
+        "subjects": [
+          "math",
+          "ela",
+          "art"
+        ],
+        "word_count": 1131,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/demo_utah_lesson_plan.md",
+        "format": ".md",
+        "utah_standards": [
+          "3.NBT.1",
+          "3.NBT.2"
+        ],
+        "grade_levels": [
+          "3"
+        ],
+        "subjects": [
+          "mathematics",
+          "math",
+          "art"
+        ],
+        "word_count": 288,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Writing Lesson Grade 5-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "5.W.2"
+        ],
+        "grade_levels": [
+          "Level"
+        ],
+        "subjects": [
+          "english",
+          "ela",
+          "art"
+        ],
+        "word_count": 911,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 3.3-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "3.NF.2"
+        ],
+        "grade_levels": [
+          "Level",
+          "s",
+          "team",
+          "team",
+          "team"
+        ],
+        "subjects": [
+          "mathematics",
+          "math",
+          "ela",
+          "art"
+        ],
+        "word_count": 1365,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 3.1-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "3.MD.3"
+        ],
+        "grade_levels": [
+          "Level"
+        ],
+        "subjects": [
+          "math",
+          "art"
+        ],
+        "word_count": 1038,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Science Lesson Grade 2-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [],
+        "grade_levels": [
+          "Level"
+        ],
+        "subjects": [
+          "science",
+          "art"
+        ],
+        "word_count": 448,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/SPED LESSON PLAN 2nd ELA.docx",
+        "format": ".docx",
+        "readable": false,
+        "reason": "Could not extract text or file too short"
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 3.2-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [],
+        "grade_levels": [
+          "raised",
+          "raised"
+        ],
+        "subjects": [],
+        "word_count": 47,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 1-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "1.NBT.4"
+        ],
+        "grade_levels": [
+          "Level"
+        ],
+        "subjects": [
+          "math",
+          "ela",
+          "art"
+        ],
+        "word_count": 1572,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Biology Lesson Plan 10th grade.docx",
+        "format": ".docx",
+        "utah_standards": [],
+        "grade_levels": [],
+        "subjects": [],
+        "word_count": 5,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Theater Lesson Plan .pdf",
+        "format": ".pdf",
+        "utah_standards": [],
+        "grade_levels": [
+          "Level",
+          "s"
+        ],
+        "subjects": [
+          "math",
+          "ela",
+          "art",
+          "music"
+        ],
+        "word_count": 697,
+        "readable": true
+      },
+      {
+        "file": "lesson_plans/Writing Lesson Grade 2.1-Redacted.pdf",
+        "format": ".pdf",
+        "utah_standards": [
+          "2.W.2"
+        ],
+        "grade_levels": [
+          "Level"
+        ],
+        "subjects": [
+          "english"
+        ],
+        "word_count": 522,
+        "readable": true
+      }
+    ]
+  },
+  "ai_test_results": {
+    "tests_run": 17,
+    "successful": 17,
+    "failed": 0,
+    "results": [
+      {
+        "file": "lesson_plans/Math Lesson Grade K-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Math",
+        "extracted_grade": "K",
+        "extracted_standards": "Utah State Core Curriculum Standard K.CC.6.",
+        "word_count": 815
+      },
+      {
+        "file": "lesson_plans/Science Lesson Grade 2.1-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Science",
+        "extracted_grade": "2nd",
+        "extracted_standards": "Utah State Core Curriculum Standard 2.3.1",
+        "word_count": 391
+      },
+      {
+        "file": "lesson_plans/Langauage Arts Grade 3-Redacted.pdf",
+        "success": true,
+        "confidence": 0.95,
+        "extracted_teacher": "Brooklyn Hadley",
+        "extracted_subject": "Language Arts",
+        "extracted_grade": "3rd grade",
+        "extracted_standards": "Write informative/explanatory pieces to examine a topic that conveys ideas and information clearly, link ideas within categories of information using words and phrases, and provide a concluding statement.",
+        "word_count": 1636
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 6-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Math",
+        "extracted_grade": "6th",
+        "extracted_standards": "Utah State Core Curriculum 6.G.3",
+        "word_count": 688
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 3-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Math",
+        "extracted_grade": "3rd grade",
+        "extracted_standards": "Standard 3.OA.8",
+        "word_count": 1260
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 5.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Math",
+        "extracted_grade": "5th",
+        "extracted_standards": [
+          "Standard 5.MD.4",
+          "Standard 5.MD.5"
+        ],
+        "word_count": 1105
+      },
+      {
+        "file": "lesson_plans/Writing Lesson Grade 2-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Writing",
+        "extracted_grade": "2nd",
+        "extracted_standards": "Standard 2.W.2",
+        "word_count": 111
+      },
+      {
+        "file": "lesson_plans/SPED LESSON PLAN Life Skill.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Life Skills",
+        "extracted_grade": "7 - 9",
+        "extracted_standards": "IC1, IC2, IC3; M.EE.7.RP.1–3",
+        "word_count": 1131
+      },
+      {
+        "file": "lesson_plans/demo_utah_lesson_plan.md",
+        "success": true,
+        "confidence": 0.95,
+        "extracted_teacher": "Sarah Johnson",
+        "extracted_subject": "Mathematics",
+        "extracted_grade": "3rd Grade",
+        "extracted_standards": [
+          "3.NBT.1",
+          "3.NBT.2"
+        ],
+        "word_count": 288
+      },
+      {
+        "file": "lesson_plans/Writing Lesson Grade 5-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "English",
+        "extracted_grade": "5th",
+        "extracted_standards": "Utah State Core Writing (5.W)",
+        "word_count": 911
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 3.3-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Mathematics",
+        "extracted_grade": "3rd Grade",
+        "extracted_standards": "Numbers and Operations - Fractions, Standard 3.NF.2",
+        "word_count": 1365
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 3.1-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Math",
+        "extracted_grade": "3rd Grade",
+        "extracted_standards": "Utah State Core Curriculum Standard 3.MD.3",
+        "word_count": 1038
+      },
+      {
+        "file": "lesson_plans/Science Lesson Grade 2-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Science",
+        "extracted_grade": "2",
+        "extracted_standards": [
+          "IC1",
+          "IC2",
+          "IC4",
+          "Standard 2.3.1",
+          "Standard 2.3.2"
+        ],
+        "word_count": 448
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 3.2-Redacted.pdf",
+        "success": true,
+        "confidence": 0.5,
+        "extracted_teacher": null,
+        "extracted_subject": null,
+        "extracted_grade": "3rd Grade, 4th Grade",
+        "extracted_standards": null,
+        "word_count": 47
+      },
+      {
+        "file": "lesson_plans/Math Lesson Grade 1-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Math",
+        "extracted_grade": "1st",
+        "extracted_standards": "NUMBER AND OPERATIONS IN BASE TEN (1.NBT)",
+        "word_count": 1572
+      },
+      {
+        "file": "lesson_plans/Theater Lesson Plan .pdf",
+        "success": true,
+        "confidence": 0.95,
+        "extracted_teacher": null,
+        "extracted_subject": "Aesop Refabled MINI Rehearsals",
+        "extracted_grade": "7th-8th Grades",
+        "extracted_standards": [
+          "CREATE (L1.T.CR.1)",
+          "CREATE (L1.T.CR.5)",
+          "PERFORM (L1.T.P.3)",
+          "CCSS.ELA-LITERACY.RL.7.3"
+        ],
+        "word_count": 697
+      },
+      {
+        "file": "lesson_plans/Writing Lesson Grade 2.1-Redacted.pdf",
+        "success": true,
+        "confidence": 0.85,
+        "extracted_teacher": null,
+        "extracted_subject": "Writing",
+        "extracted_grade": "2",
+        "extracted_standards": "Standard 2.W.2",
+        "word_count": 522
+      }
+    ]
+  },
+  "recommendations": [
+    "Found 13 Utah Core Standards. Consider adding these to synthetic data generation.",
+    "Subjects found: art, math, mathematics, ela, language arts, english, music, science. Verify alignment with synthetic data subjects.",
+    "Grade levels: 6, s, Level, Subject, 3, team, raised, where, 7. Update grade categorization if needed.",
+    "Excellent AI success rate (100.0%). AI analysis is working well with your samples."
+  ]
+}

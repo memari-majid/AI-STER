@@ -62,32 +62,84 @@ CLASSROOM_STUDENT_NAMES = [
 
 def generate_lesson_plan(student_name: str, subject_area: str, grade_levels: str, 
                         school_name: str, lesson_date: datetime) -> str:
-    """Generate a realistic lesson plan with extractable information"""
+    """Generate a realistic lesson plan aligned with Utah DOE standards and USBE evaluation criteria"""
     
     # Generate class size but don't include student names for privacy
     class_size = random.randint(18, 28)
     
-    # Grade level specific topics
+    # Utah Core Standards-aligned topics with proper standard citations
     topics_by_subject = {
         "Mathematics": {
-            "K-5": ["Addition and Subtraction", "Multiplication Tables", "Fractions", "Geometry Shapes", "Place Value"],
-            "6-8": ["Algebraic Expressions", "Ratios and Proportions", "Linear Equations", "Statistics", "Probability"],
-            "9-12": ["Quadratic Functions", "Trigonometry", "Calculus Introduction", "Statistics and Data Analysis", "Polynomial Functions"]
+            "K-5": [
+                {"topic": "Place Value and Number Sense", "standards": ["3.NBT.1", "3.NBT.2"], "description": "Use place value understanding to round whole numbers and fluently add and subtract within 1,000"},
+                {"topic": "Multiplication and Division", "standards": ["3.OA.1", "3.OA.7"], "description": "Interpret products of whole numbers and fluently multiply and divide within 100"},
+                {"topic": "Fractions", "standards": ["3.NF.1", "3.NF.2"], "description": "Understand fractions as numbers and represent fractions on number lines"},
+                {"topic": "Measurement and Data", "standards": ["3.MD.3", "3.MD.8"], "description": "Draw scaled picture graphs and solve problems involving area and perimeter"}
+            ],
+            "6-8": [
+                {"topic": "Ratios and Proportional Relationships", "standards": ["6.RP.1", "6.RP.3"], "description": "Understand concepts of ratios and use ratio reasoning to solve problems"},
+                {"topic": "Expressions and Equations", "standards": ["7.EE.1", "7.EE.4"], "description": "Apply properties of operations to generate equivalent expressions"},
+                {"topic": "Linear Functions", "standards": ["8.F.1", "8.F.3"], "description": "Understand functions and interpret functions that arise in applications"},
+                {"topic": "Geometry and Measurement", "standards": ["7.G.1", "7.G.6"], "description": "Draw, construct, and describe geometrical figures and solve real-world problems"}
+            ],
+            "9-12": [
+                {"topic": "Quadratic Functions", "standards": ["A.CED.1", "F.IF.7"], "description": "Create equations and graph functions to model relationships"},
+                {"topic": "Statistics and Probability", "standards": ["S.ID.6", "S.CP.1"], "description": "Represent data and understand independence and conditional probability"},
+                {"topic": "Trigonometry", "standards": ["G.SRT.6", "G.SRT.8"], "description": "Understand trigonometric ratios and solve problems involving right triangles"}
+            ]
         },
         "English Language Arts": {
-            "K-5": ["Phonics and Reading", "Creative Writing", "Story Elements", "Grammar Basics", "Vocabulary Building"],
-            "6-8": ["Literary Analysis", "Persuasive Writing", "Research Skills", "Poetry Study", "Narrative Writing"],
-            "9-12": ["Shakespearean Literature", "Argumentative Essays", "Literary Criticism", "Creative Writing Workshop", "AP Literature"]
+            "K-5": [
+                {"topic": "Reading Comprehension and Theme", "standards": ["RL.3.2", "RL.3.1"], "description": "Determine central message and cite textual evidence to support analysis"},
+                {"topic": "Narrative Writing", "standards": ["W.3.3", "W.3.4"], "description": "Write narratives to develop real or imagined experiences with clear sequence"},
+                {"topic": "Language and Vocabulary", "standards": ["L.3.4", "L.3.5"], "description": "Determine meaning of unknown words and demonstrate understanding of word relationships"},
+                {"topic": "Speaking and Listening", "standards": ["SL.3.1", "SL.3.4"], "description": "Engage in collaborative discussions and report on topics with appropriate facts"}
+            ],
+            "6-8": [
+                {"topic": "Literary Analysis and Theme", "standards": ["RL.6.2", "RL.6.1"], "description": "Determine theme and cite textual evidence to support analysis"},
+                {"topic": "Argumentative Writing", "standards": ["W.7.1", "W.7.4"], "description": "Write arguments to support claims with clear reasons and relevant evidence"},
+                {"topic": "Research and Inquiry", "standards": ["W.7.7", "W.7.8"], "description": "Conduct research projects and gather relevant information from multiple sources"},
+                {"topic": "Language Conventions", "standards": ["L.7.1", "L.7.2"], "description": "Demonstrate command of conventions and use knowledge of language"}
+            ],
+            "9-12": [
+                {"topic": "Literary Criticism and Analysis", "standards": ["RL.11-12.4", "RL.11-12.6"], "description": "Analyze author's choices and determine point of view in complex texts"},
+                {"topic": "Research and Argumentation", "standards": ["W.11-12.1", "W.11-12.7"], "description": "Write arguments and conduct sustained research projects"},
+                {"topic": "Language and Style", "standards": ["L.11-12.3", "L.11-12.5"], "description": "Apply knowledge of language and demonstrate understanding of figurative language"}
+            ]
         },
         "Science": {
-            "K-5": ["Plant Life Cycles", "Weather Patterns", "Simple Machines", "Animal Habitats", "States of Matter"],
-            "6-8": ["Cell Structure", "Chemical Reactions", "Earth's Layers", "Energy and Motion", "Ecosystems"],
-            "9-12": ["Genetics and DNA", "Chemical Bonding", "Physics of Motion", "Environmental Science", "Organic Chemistry"]
+            "K-5": [
+                {"topic": "Forces and Motion", "standards": ["5.PS.2.1", "K.PS.2.1"], "description": "Support arguments about gravitational force and analyze data from pushes and pulls"},
+                {"topic": "Life Science Systems", "standards": ["4.LS.1.1", "3.LS.3.1"], "description": "Construct arguments about plant/animal structures and analyze life cycles"},
+                {"topic": "Earth and Space", "standards": ["5.ESS.1.2", "K.ESS.2.1"], "description": "Represent data to reveal patterns in daily changes and weather patterns"}
+            ],
+            "6-8": [
+                {"topic": "Cell Structure and Function", "standards": ["MS.LS.1.1", "MS.LS.1.2"], "description": "Conduct investigations about cells and develop models of cell parts"},
+                {"topic": "Energy and Matter", "standards": ["MS.PS.3.3", "MS.PS.1.2"], "description": "Apply scientific principles and analyze data on properties of substances"},
+                {"topic": "Earth Systems", "standards": ["MS.ESS.2.1", "MS.ESS.3.3"], "description": "Develop models of Earth's systems and analyze human impact on environment"}
+            ],
+            "9-12": [
+                {"topic": "Genetics and Evolution", "standards": ["HS.LS.3.2", "HS.LS.4.1"], "description": "Make claims about inheritance and communicate about common ancestry"},
+                {"topic": "Chemical Reactions", "standards": ["HS.PS.1.2", "HS.PS.1.7"], "description": "Construct explanations and use mathematical representations for reactions"},
+                {"topic": "Earth and Climate", "standards": ["HS.ESS.3.5", "HS.ESS.2.2"], "description": "Analyze climate models and analyze geoscience data"}
+            ]
         },
         "Social Studies": {
-            "K-5": ["Community Helpers", "American Symbols", "Map Skills", "Native American History", "Colonial America"],
-            "6-8": ["Ancient Civilizations", "World Geography", "American Revolution", "Civil War", "Constitution Study"],
-            "9-12": ["World War II", "Government Systems", "Economics Principles", "Modern World History", "Constitutional Law"]
+            "K-5": [
+                {"topic": "Community and Citizenship", "standards": ["2.C.1", "3.C.2"], "description": "Explain how people make rules and describe civic ideals and practices"},
+                {"topic": "Geography and Culture", "standards": ["3.G.2", "2.G.1"], "description": "Use geographic tools and explain how culture influences communities"},
+                {"topic": "Historical Thinking", "standards": ["4.H.2", "1.H.1"], "description": "Analyze chronology of events and create historical narratives"}
+            ],
+            "6-8": [
+                {"topic": "Ancient Civilizations", "standards": ["6.H.1", "6.G.1"], "description": "Analyze how geography influenced civilizations and compare ancient societies"},
+                {"topic": "Constitutional Principles", "standards": ["8.C.1", "8.C.2"], "description": "Analyze how Constitution protects rights and evaluate democratic institutions"},
+                {"topic": "Economic Systems", "standards": ["7.E.1", "6.E.1"], "description": "Analyze economic decisions and explain how trade connects societies"}
+            ],
+            "9-12": [
+                {"topic": "Global Conflicts and Cooperation", "standards": ["HS.H.3", "HS.G.2"], "description": "Evaluate historical events and analyze spatial patterns of human-environment interactions"},
+                {"topic": "Political Systems", "standards": ["HS.C.2", "HS.C.3"], "description": "Evaluate effectiveness of institutions and analyze impact of constitutions"},
+                {"topic": "Economic Policy", "standards": ["HS.E.2", "HS.E.1"], "description": "Analyze economic policies and generate explanations for economic outcomes"}
+            ]
         }
     }
     
@@ -95,179 +147,96 @@ def generate_lesson_plan(student_name: str, subject_area: str, grade_levels: str
     grade_key = "K-5" if any(g in grade_levels for g in ["K", "1", "2", "3", "4", "5"]) else \
                 "6-8" if any(g in grade_levels for g in ["6", "7", "8"]) else "9-12"
     
-    topic = random.choice(topics_by_subject.get(subject_area, {}).get(grade_key, ["General Topic"]))
+    topic_info = random.choice(topics_by_subject.get(subject_area, {}).get(grade_key, [{"topic": "General Topic", "standards": ["N/A"], "description": "General learning objective"}]))
     
-    # Select lesson plan format
-    formats = ["detailed", "simple", "template", "narrative"]
-    format_type = random.choice(formats)
-    
-    if format_type == "detailed":
-        return f"""LESSON PLAN
-        
-Teacher: {student_name}
-Date: {lesson_date.strftime('%B %d, %Y')}
-School: {school_name}
-Subject: {subject_area}
+    # Generate USBE-aligned lesson plan following the provided example format
+    return f"""Lesson Plan: {topic_info['topic']}
+
 Grade Level: {grade_levels}
-Class Period: {random.choice(['1st Period', '2nd Period', '3rd Period', '4th Period', 'Morning Block', 'Afternoon Block'])}
-Duration: {random.choice(['50 minutes', '45 minutes', '90 minutes', '60 minutes'])}
-Class Size: {class_size} students
-
-LESSON TOPIC: {topic}
-
-UTAH CORE STANDARDS:
-{subject_area}.{random.randint(1,5)}.{random.randint(1,8)} - Students will demonstrate understanding of {topic.lower()}
-
-LEARNING OBJECTIVES:
-1. Students will be able to identify key concepts related to {topic.lower()}
-2. Students will demonstrate comprehension through practical application
-3. Students will collaborate effectively in small group activities
-
-MATERIALS NEEDED:
-- Whiteboard and markers
-- Student worksheets
-- {random.choice(['Textbooks', 'Tablets', 'Manipulatives', 'Art supplies', 'Science equipment'])}
-- {random.choice(['Projector', 'Chart paper', 'Timer', 'Calculator', 'Reference materials'])}
-
-LESSON STRUCTURE:
-
-Opening (10 minutes):
-- Welcome and attendance
-- Review previous lesson on {random.choice(['related concepts', 'prerequisite skills', 'background knowledge'])}
-- Introduce today's topic: {topic}
-
-Direct Instruction (20 minutes):
-- Present key concepts using visual aids
-- Demonstrate problem-solving strategies
-- Check for understanding through questioning
-
-Guided Practice (15 minutes):
-- Students work in pairs on practice problems
-- Teacher circulates and provides support
-- Address common misconceptions
-
-Independent Practice (10 minutes):
-- Individual worksheet completion
-- Students apply learned concepts independently
-
-Closure (5 minutes):
-- Review key points from lesson
-- Preview next lesson
-- Assign homework if applicable
-
-ASSESSMENT:
-- Formative: Observation during guided practice
-- Summative: Exit ticket with 3 key questions
-- Accommodations: Extended time for students with IEPs
-
-DIFFERENTIATION:
-- Advanced learners: Extension activities
-- Struggling learners: Simplified problems with visual supports
-- ELL students: Vocabulary support and peer partnerships
-
-HOMEWORK:
-Practice worksheet pages {random.randint(1,50)}-{random.randint(51,100)}
-
-REFLECTION NOTES:
-[To be completed after lesson]
-"""
-
-    elif format_type == "simple":
-        return f"""Lesson Plan - {lesson_date.strftime('%m/%d/%Y')}
-
+Content Area: {subject_area}
+Duration: {random.choice(['45 minutes', '50 minutes', '60 minutes', '90 minutes'])}
 Teacher: {student_name}
-Subject: {subject_area} 
-Topic: {topic}
-Grade: {grade_levels}
 School: {school_name}
+Date: {lesson_date.strftime('%B %d, %Y')}
 Class Size: {class_size} students
 
-Lesson Goals:
-- Understand {topic.lower()}
-- Practice key skills
-- Complete assessment activity
+Utah {subject_area} Core Standards Addressed:
+{chr(10).join([f"- {standard}: {topic_info['description']}" for standard in topic_info['standards']])}
 
-Activities:
-1. Warm-up review (10 min)
-2. New material presentation (20 min)  
-3. Practice exercises (15 min)
-4. Wrap-up discussion (5 min)
+Learning Intentions (IC2):
+Students will be able to {topic_info['description'].lower()}.
 
-Materials: textbook, worksheets, {random.choice(['calculator', 'manipulatives', 'art supplies'])}
+Success Criteria (IC2):
+- I can {random.choice(['identify and explain', 'analyze and interpret', 'create and demonstrate', 'compare and evaluate'])} {random.choice(['key concepts', 'main ideas', 'important relationships', 'essential elements'])} related to {topic_info['topic'].lower()}.
+- I can {random.choice(['use appropriate vocabulary', 'apply learned concepts', 'make connections', 'provide evidence'])} to {random.choice(['support my understanding', 'explain my thinking', 'demonstrate learning', 'solve problems'])}.
 
-Assessment: {random.choice(['Quiz', 'Worksheet', 'Oral questions', 'Group project'])}
-"""
+Lesson Sequence:
 
-    elif format_type == "template":
-        return f"""DAILY LESSON PLAN TEMPLATE
+1. Anticipatory Set ({random.choice(['5', '8', '10'])} minutes)
+- {random.choice(['Display an engaging question or image', 'Share a real-world connection', 'Review prior learning', 'Present an intriguing scenario'])} related to {topic_info['topic']}.
+- {random.choice(['Quick-write', 'Think-pair-share', 'Gallery walk', 'Class discussion'])}: Students activate prior knowledge.
+- Connect to previous learning and preview today's objectives (LL2, IC4).
 
-BASIC INFORMATION:
-Teacher Name: {student_name}
-Date: {lesson_date.strftime('%A, %B %d, %Y')}
-Subject Area: {subject_area}
-Grade Level(s): {grade_levels}
-School: {school_name}
-Class Size: {class_size} students
+2. Direct Instruction ({random.choice(['10', '15', '20'])} minutes)
+- {random.choice(['Review key concepts using visual aids', 'Model problem-solving strategies', 'Demonstrate procedures step-by-step', 'Present information using multimedia'])} (IC1).
+- Use {random.choice(['anchor charts', 'graphic organizers', 'interactive demonstrations', 'digital presentations'])} to support understanding.
+- Check for understanding through {random.choice(['questioning', 'thumbs up/down', 'exit tickets', 'partner discussions'])} (LL7).
 
-LESSON DETAILS:
-Unit: {random.choice(['Unit 1', 'Unit 2', 'Unit 3', 'Chapter 5', 'Module 2'])}
-Lesson Topic: {topic}
-Time Allocation: {random.choice(['50 minutes', '45 minutes', '60 minutes'])}
+3. Guided Practice ({random.choice(['15', '20', '25'])} minutes)
+- {random.choice(['Students work in pairs', 'Small group investigation', 'Collaborative problem-solving', 'Structured practice activities'])} (CC2, CC3).
+- Teacher {random.choice(['circulates and provides feedback', 'facilitates discussions', 'addresses misconceptions', 'differentiates support'])} (LL2, LL4).
+- Students {random.choice(['complete practice problems', 'analyze examples', 'create models', 'discuss findings'])} with scaffolded support.
 
-STANDARDS ALIGNMENT:
-Utah Core Standard: {subject_area}.{random.randint(1,6)}.{random.randint(1,10)}
+4. Independent Practice ({random.choice(['10', '15', '20'])} minutes)
+- Students {random.choice(['complete individual tasks', 'apply concepts independently', 'create original work', 'solve challenge problems'])} to demonstrate understanding.
+- {random.choice(['Worksheet completion', 'Digital activity', 'Creative project', 'Problem-solving task'])} aligned to learning objectives.
 
-LEARNING TARGETS:
-□ I can explain {topic.lower()}
-□ I can apply concepts to solve problems  
-□ I can work collaboratively with peers
+5. Closure ({random.choice(['5', '8', '10'])} minutes)
+- Students {random.choice(['summarize key learnings', 'share insights with class', 'complete exit ticket', 'reflect on progress'])} (LL7).
+- Preview connections to future learning and homework expectations.
 
-LESSON SEQUENCE:
-Hook/Engagement (5 min): _______________
-Direct Instruction (20 min): _______________
-Guided Practice (15 min): _______________
-Independent Work (10 min): _______________
+Differentiation Strategies (LL4, IP1):
+- {random.choice(['Provide sentence frames for struggling writers', 'Offer visual supports and manipulatives', 'Use tiered assignments', 'Provide choice in demonstration methods'])}.
+- {random.choice(['Extended time for processing', 'Alternative assessment formats', 'Peer partnerships', 'Technology assistance'])} for students with IEPs/504 plans.
+- {random.choice(['Enrichment activities for advanced learners', 'Challenge problems', 'Independent research opportunities', 'Peer tutoring roles'])}.
 
-MATERIALS & RESOURCES:
-□ {random.choice(['Textbook', 'Workbook', 'Digital resources'])}
-□ {random.choice(['Manipulatives', 'Art supplies', 'Science kit'])}
-□ {random.choice(['Projector', 'Whiteboard', 'Chart paper'])}
+Formative Assessment (A1, A2):
+- {random.choice(['Exit tickets', 'Observation checklists', 'Quick polls', 'Self-assessment rubrics'])}
+- {random.choice(['Informal checks during group work', 'Digital response systems', 'Student conferences', 'Portfolio artifacts'])}
+- {random.choice(['Peer feedback sessions', 'Learning logs', 'Gallery walks', 'Thumbs up/down checks'])}
 
-POST-LESSON REFLECTION:
-What worked well: _______________
-What needs improvement: _______________
-Next steps: _______________
-"""
+Real-World Connections (LL6):
+- {random.choice(['Connect to students everyday experiences', 'Explore community applications', 'Discuss current events', 'Examine career connections'])} related to {topic_info['topic']}.
+- Students explore how {random.choice(['these concepts apply to their lives', 'this learning connects to their interests', 'they can use this knowledge', 'this relates to their goals'])}.
 
-    else:  # narrative format
-        return f"""Teaching Plan for {lesson_date.strftime('%B %d, %Y')}
+Classroom Climate (CC2, CC3, CC8):
+- Students work in {random.choice(['collaborative pairs', 'diverse groups', 'flexible partnerships'])} with {random.choice(['rotating roles', 'clear expectations', 'established norms'])}.
+- {random.choice(['Review and reinforce', 'Establish and practice', 'Model and demonstrate'])} norms for {random.choice(['respectful listening', 'academic discussion', 'collaborative work', 'inclusive participation'])}.
+- Create safe environment for {random.choice(['risk-taking', 'question-asking', 'idea-sharing', 'mistake-making'])} and learning.
 
-Hello! I'm {student_name} and I'll be teaching {subject_area} today at {school_name}. 
-My class has {class_size} wonderful students in grade {grade_levels}.
+Technology Integration (IP8):
+- Use {random.choice(['Google Slides for presentations', 'Digital tools for creation', 'Online simulations', 'Interactive whiteboard'])} to enhance learning.
+- {random.choice(['Student devices for research', 'Collaborative documents', 'Educational apps', 'Virtual manipulatives'])} support lesson objectives.
+- {random.choice(['Digital portfolios', 'Online discussions', 'Multimedia projects', 'Assessment platforms'])} for student engagement.
 
-Today's lesson focuses on {topic}. I'm really excited to share this with my students!
+Materials and Resources:
+- {random.choice(['Utah Core Standards-aligned textbooks', 'Digital resources and websites', 'Hands-on manipulatives', 'Primary source documents'])}
+- {random.choice(['Graphic organizers', 'Assessment rubrics', 'Reference materials', 'Interactive tools'])}
+- {random.choice(['Projector and screen', 'Student tablets/laptops', 'Chart paper and markers', 'Laboratory equipment'])}
 
-We'll start with a fun warm-up activity to get everyone engaged. Then I'll introduce 
-the main concepts through interactive demonstration. Students will work in small groups 
-to practice what they've learned before completing individual exercises.
+Homework/Extension (LL6):
+- {random.choice(['Practice problems aligned to objectives', 'Reading assignment with reflection', 'Family interview or survey', 'Real-world application task'])}
+- Students {random.choice(['prepare for next lesson', 'extend their learning', 'make home connections', 'practice key skills'])}
 
-I've prepared {random.choice(['worksheets', 'digital activities', 'hands-on experiments'])} 
-to help reinforce the learning objectives. The lesson should take about 
-{random.choice(['45-50 minutes', '50-60 minutes', '90 minutes'])} to complete.
+Professional Learning Connections:
+This lesson aligns with Utah Core Standards and USBE evaluation criteria, supporting student achievement and demonstrating effective teaching practices across multiple rubric areas including IC1, IC2, LL2, LL4, LL6, LL7, CC2, CC3, CC8, A1, A2, and IP1, IP8.
 
-For assessment, I plan to use {random.choice(['exit tickets', 'peer evaluation', 'quick quiz', 'observation checklist'])} 
-to check student understanding.
-
-Materials needed:
-- {random.choice(['Textbooks and notebooks', 'Tablets and digital resources', 'Art supplies and paper'])}
-- {random.choice(['Calculator', 'Science equipment', 'Maps and globes', 'Musical instruments'])}
-- {random.choice(['Projector screen', 'Whiteboard markers', 'Chart paper'])}
-
-I'm looking forward to seeing how the students respond to this lesson on {topic}!
-
-Reflection space (to be completed after teaching):
-_______________________________________________
-"""
+Reflection Notes:
+[To be completed after lesson implementation]
+- What evidence shows students met learning objectives?
+- How effectively did differentiation strategies support all learners?
+- What adjustments would improve future instruction?
+- How did classroom climate support learning?"""
 
 def generate_synthetic_evaluations(
     count: int = 10,
@@ -335,7 +304,7 @@ def generate_synthetic_evaluations(
         # Determine semester context
         semester = random.choice(["Fall 2024", "Spring 2024", "Summer 2024", "Fall 2023"])
         
-        # Generate lesson plan for this evaluation
+        # Generate lesson plan for this evaluation (using Utah DOE-aligned format)
         lesson_date = created_date - timedelta(days=random.randint(0, 7))  # Lesson a few days before evaluation
         lesson_plan = generate_lesson_plan(student_name, subject_area, school['grade_levels'], school['name'], lesson_date)
         

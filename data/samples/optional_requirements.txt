@@ -1,0 +1,14 @@
+# Optional dependencies for processing additional file formats
+# Install with: pip install -r optional_requirements.txt
+
+# PDF file support
+PyPDF2>=3.0.0
+
+# Word document support  
+python-docx>=0.8.11
+
+# Enhanced text extraction (optional)
+pdfplumber>=0.7.0
+
+# Excel file support (if needed for evaluation data)
+openpyxl>=3.0.9 
