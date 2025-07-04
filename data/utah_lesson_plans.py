@@ -18,11 +18,16 @@ def generate_utah_aligned_lesson_plan(student_name: str, subject_area: str, grad
     topics_by_subject = {
         "Mathematics": {
             "K-5": [
+                {"topic": "Place Value and Base Ten", "standard": "1.NBT.4", "description": "Add within 100 using place value understanding"},
                 {"topic": "Place Value Understanding", "standard": "3.NBT.1", "description": "Use place value understanding to round whole numbers"},
                 {"topic": "Addition and Subtraction Strategies", "standard": "3.NBT.2", "description": "Fluently add and subtract within 1,000 using strategies and algorithms"},
                 {"topic": "Multiplication Concepts", "standard": "3.OA.1", "description": "Interpret products of whole numbers"},
+                {"topic": "Two-Step Word Problems", "standard": "3.OA.8", "description": "Solve two-step word problems using four operations"},
                 {"topic": "Fractions on Number Lines", "standard": "3.NF.2", "description": "Understand fractions as numbers on the number line"},
-                {"topic": "Area and Perimeter", "standard": "3.MD.8", "description": "Solve real world problems involving perimeters and areas"}
+                {"topic": "Measurement and Data", "standard": "3.MD.3", "description": "Draw scaled picture graphs and solve problems using the information"},
+                {"topic": "Area and Perimeter", "standard": "3.MD.8", "description": "Solve real world problems involving perimeters and areas"},
+                {"topic": "Volume and Measurement", "standard": "5.MD.4", "description": "Measure volumes by counting unit cubes"},
+                {"topic": "Volume Word Problems", "standard": "5.MD.5", "description": "Relate volume to multiplication and addition"}
             ],
             "6-8": [
                 {"topic": "Ratios and Proportional Relationships", "standard": "6.RP.1", "description": "Understand concepts of ratios and rates"},
@@ -41,8 +46,11 @@ def generate_utah_aligned_lesson_plan(student_name: str, subject_area: str, grad
         },
         "English Language Arts": {
             "K-5": [
+                {"topic": "Personal Narrative Writing", "standard": "1.W.3", "description": "Write narratives in which they recount events and provide reactions"},
+                {"topic": "Informative Writing", "standard": "2.W.2", "description": "Write informative/explanatory texts to examine a topic"},
                 {"topic": "Reading Comprehension Strategies", "standard": "3.RL.2", "description": "Recount stories and determine central message or lesson"},
                 {"topic": "Narrative Writing", "standard": "3.W.3", "description": "Write narratives to develop real or imagined experiences"},
+                {"topic": "Informative Writing Advanced", "standard": "5.W.2", "description": "Write informative/explanatory texts to examine a topic and convey ideas clearly"},
                 {"topic": "Vocabulary Acquisition", "standard": "3.L.4", "description": "Determine meaning of unknown words and phrases"},
                 {"topic": "Text Features and Organization", "standard": "3.RI.5", "description": "Use text features to locate information efficiently"},
                 {"topic": "Speaking and Listening Skills", "standard": "3.SL.1", "description": "Engage effectively in collaborative discussions"}
@@ -309,7 +317,7 @@ Students should have prior understanding of:
 MATERIALS:
 - {random.choice(['Interactive whiteboard or projector', 'Student devices (tablets/laptops)', 'Manipulatives or hands-on materials', 'Laboratory equipment'])}
 - {random.choice(['Printed handouts and graphic organizers', 'Digital resources and simulations', 'Reference materials and texts', 'Assessment tools and rubrics'])}
-- UEN digital resources: {random.choice(['eMedia content library', 'Utah's Online School Library', 'Interactive learning modules', 'Virtual field trip resources'])}
+- UEN digital resources: {random.choice(['eMedia content library', "Utah's Online School Library", 'Interactive learning modules', 'Virtual field trip resources'])}
 
 INSTRUCTIONAL PROCEDURES:
 
@@ -442,7 +450,7 @@ Technology Integration:
 - Tools: {random.choice(['Interactive simulations', 'Collaborative documents', 'Digital creation tools', 'Assessment platforms'])}
 
 Utah Resources:
-- {random.choice(['UEN digital content library', 'Utah's Online School Library', 'State museum virtual tours', 'Local community partnerships'])}
+- {random.choice(['UEN digital content library', "Utah's Online School Library", 'State museum virtual tours', 'Local community partnerships'])}
 
 SAFETY CONSIDERATIONS:
 - {random.choice(['Laboratory safety procedures reviewed', 'Physical movement space established', 'Technology use guidelines followed', 'Emergency procedures accessible'])}
