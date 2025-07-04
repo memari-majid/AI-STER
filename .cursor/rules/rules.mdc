@@ -1,0 +1,71 @@
+---
+alwaysApply: true
+---
+
+
+#### 🔹 Keep It Lightweight
+
+1. **Stay minimal** — only build what’s needed to validate the idea.
+2. **Avoid complex setups** — prefer simple scripts or modules over frameworks unless justified.
+
+#### 🔹 Code Cleanliness
+
+3. **Keep code readable and organized** — use clear naming and structure.
+4. **Don’t overengineer** — no need for heavy abstractions or boilerplate.
+5. **Reuse when possible** — don’t duplicate logic across files.
+
+#### 🔹 Work Incrementally
+
+6. **Take small steps** — implement one idea at a time.
+7. **Test often, break nothing** — make sure the prototype still runs after each change.
+8. **Keep history clear** — meaningful, atomic commits.
+
+#### 🔹 Documentation & Communication
+
+9. **Update inline comments and README** — briefly document key files, setup steps, and usage.
+10. **Explain decisions** — if something is hacky or experimental, note it clearly in comments.
+
+#### 🔹 Prototype Mindset
+
+11. **Speed over polish, but not chaos** — balance fast iteration with maintainability.
+12. **Prepare for handoff or scale-up** — make it understandable for someone else (or future you).
+
+#### 🔹 Project Roadmap
+
+13. **Follow the Development Plan** — All work should align with the roadmap and phases outlined in `docs/PROJECT.md`. We will implement features incrementally, following software development best practices.
+
+11. **Speed over polish, but not chaos** — balance fast iteration with maintainability.
+12. **Prepare for handoff or scale-up** — make it understandable for someone else (or future you).
+#### 🔹 Keep It Lightweight
+
+1. **Stay minimal** — only build what’s needed to validate the idea.
+2. **Avoid complex setups** — prefer simple scripts or modules over frameworks unless justified.
+
+#### 🔹 Code Cleanliness
+
+3. **Keep code readable and organized** — use clear naming and structure.
+4. **Don’t overengineer** — no need for heavy abstractions or boilerplate.
+5. **Reuse when possible** — don’t duplicate logic across files.
+
+#### 🔹 Work Incrementally
+
+6. **Take small steps** — implement one idea at a time.
+7. **Test often, break nothing** — make sure the prototype still runs after each change.
+8. **Keep history clear** — meaningful, atomic commits.
+
+#### 🔹 Documentation & Communication
+
+9. **Update inline comments and README** — briefly document key files, setup steps, and usage.
+10. **Explain decisions** — if something is hacky or experimental, note it clearly in comments.
+
+#### 🔹 Prototype Mindset
+
+11. **Speed over polish, but not chaos** — balance fast iteration with maintainability.
+12. **Prepare for handoff or scale-up** — make it understandable for someone else (or future you).
+
+#### 🔹 Project Roadmap
+
+13. **Follow the Development Plan** — All work should align with the roadmap and phases outlined in `docs/PROJECT.md`. We will implement features incrementally, following software development best practices.
+
+11. **Speed over polish, but not chaos** — balance fast iteration with maintainability.
+12. **Prepare for handoff or scale-up** — make it understandable for someone else (or future you).

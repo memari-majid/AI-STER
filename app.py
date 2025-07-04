@@ -928,7 +928,15 @@ Be as detailed as possible - these notes will be used to generate evidence-based
     total_score = 0
     all_items_scored = True
     
-    # Re-use the same competency groups from above
+    # Group items by competency area for scoring
+    competency_groups = {}
+    for item in items:
+        area = item['competency_area']
+        if area not in competency_groups:
+            competency_groups[area] = []
+        competency_groups[area].append(item)
+    
+    # Score each competency area
     for area, area_items in competency_groups.items():
         st.markdown(f"**{area}**")
         
@@ -1335,7 +1343,7 @@ def show_settings():
     
     model = st.selectbox(
         "OpenAI Model",
-        ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
+        ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
         help="Choose the AI model for evaluation assistance"
     )
     

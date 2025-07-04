@@ -20,7 +20,7 @@ class OpenAIService:
     def __init__(self):
         """Initialize OpenAI service"""
         self.client = None
-        self.model = "gpt-4o-mini"
+        self.model = "gpt-4o"
         self._initialize_client()
     
     def _initialize_client(self):
