@@ -53,6 +53,17 @@ def main():
         st.metric("Total Evaluations", len(evaluations))
         st.metric("Completed", len([e for e in evaluations if e.get('status') == 'completed']))
         st.metric("Drafts", len([e for e in evaluations if e.get('status') == 'draft']))
+        
+        # STIR Rubric Access
+        st.divider()
+        st.markdown("### 📖 Resources")
+        
+        # Rubric button
+        if st.button("📋 View STIR Rubric", type="primary", use_container_width=True):
+            show_rubric_modal()
+        
+        # Help text
+        st.caption("Access the complete STIR evaluation rubric for reference while completing evaluations.")
     
     # Route to different pages
     if page == "📊 Dashboard":
@@ -482,15 +493,27 @@ def show_evaluation_form():
         st.session_state.extracted_info = {}
     
     # STEP 1: Lesson Plan Upload
-    st.subheader("📄 Step 1: Upload Lesson Plan")
-    st.caption("Upload the student teacher's lesson plan to automatically extract evaluation information")
+    st.subheader("📄 Step 1: Upload Lesson Plan (Optional)")
+    st.caption("While a lesson plan helps generate better evaluations, you can proceed without one.")
     
-    # Option to use synthetic data or upload real file
-    input_method = st.radio(
-        "Choose input method:",
-        ["📤 Upload File", "🧪 Use Synthetic Data", "✏️ Paste Text"],
-        horizontal=True
-    )
+    # Add skip option prominently
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.info("💡 Providing a lesson plan improves AI-generated justifications and helps extract evaluation context automatically.")
+    with col2:
+        if st.button("⏭️ Skip Lesson Plan", type="secondary"):
+            st.session_state.skip_lesson_plan = True
+            st.session_state.lesson_plan_analysis = None
+            st.rerun()
+    
+    # Only show upload options if not skipped
+    if not st.session_state.get('skip_lesson_plan', False):
+        # Option to use synthetic data or upload real file
+        input_method = st.radio(
+            "Choose input method:",
+            ["📤 Upload File", "🧪 Use Synthetic Data", "✏️ Paste Text"],
+            horizontal=True
+        )
     
     lesson_plan_text = None
     
@@ -612,7 +635,16 @@ def show_evaluation_form():
         else:
             st.warning("🤖 AI features disabled. Add OpenAI API key in Settings to enable automatic extraction.")
     
-    # Display Extracted Information
+    # If user skipped lesson plan
+    elif st.session_state.get('skip_lesson_plan', False):
+        st.warning("⚠️ Proceeding without lesson plan. Some AI features may be limited.")
+        lesson_plan_text = None
+        # Reset button
+        if st.button("📄 Add Lesson Plan", type="primary"):
+            st.session_state.skip_lesson_plan = False
+            st.rerun()
+    
+    # Display Extracted Information or Basic Form
     if st.session_state.lesson_plan_analysis:
         st.subheader("📋 Step 2: Review Extracted Information")
         st.caption("Review and modify the information extracted from the lesson plan. Supervisor notes override lesson plan data.")
@@ -694,9 +726,11 @@ def show_evaluation_form():
             'ai_analysis': analysis
         }
     
-    # Basic Information (Traditional Form - fallback if no lesson plan)
+    # Basic Information (Traditional Form - when no lesson plan or skipped)
     else:
-        st.subheader("📋 Basic Information")
+        # Adjust step number based on whether lesson plan was skipped
+        step_num = "2" if not st.session_state.get('skip_lesson_plan', False) else "1b"
+        st.subheader(f"📋 Step {step_num}: Basic Information")
         st.caption("Enter evaluation information manually")
         
         col1, col2, col3 = st.columns(3)
@@ -728,8 +762,9 @@ def show_evaluation_form():
             'ai_analysis': None
         }
     
-    # Evaluator Information
-    st.subheader("👨‍🏫 Evaluator Information")
+    # Evaluator Information - Step 2 or 3 depending on path
+    step_num = "3" if st.session_state.lesson_plan_analysis else "2"
+    st.subheader(f"👨‍🏫 Step {step_num}: Evaluator Information")
     col1, col2 = st.columns(2)
     with col1:
         evaluator_name = st.text_input("Evaluator Name *", key="evaluator_name")
@@ -777,45 +812,151 @@ Be as detailed as possible - these notes will be used to generate evidence-based
     # Store observation notes in session state
     st.session_state.observation_notes = observation_notes
     
-    # STEP 4: Assessment Scoring
-    st.subheader("🎯 Step 4: Assessment Scoring")
-    st.caption("Score each competency based on your observations")
+    # STEP 4: Generate AI Justifications (NEW - moved before scoring)
+    st.subheader("🤖 Step 4: Generate AI Justifications")
+    st.caption("Generate evidence-based justifications from your observation notes before scoring")
+    
+    # Initialize justifications in session state if not already present
+    if 'justifications' not in st.session_state:
+        st.session_state.justifications = {}
+    
+    # Show AI generation options if observation notes are provided
+    if observation_notes.strip():
+        col1, col2, col3 = st.columns([2, 2, 1])
+        
+        with col1:
+            if openai_service.is_enabled():
+                if st.button("🤖 Generate All Justifications", type="primary", key="generate_all_justifications"):
+                    with st.spinner("Analyzing observation notes and generating justifications..."):
+                        try:
+                            # Create scores dict with Level 2 as default for justification generation
+                            temp_scores = {item['id']: 2 for item in items}  # Default to "meets expectations"
+                            
+                            bulk_justifications = openai_service.generate_bulk_justifications(
+                                items,
+                                temp_scores,
+                                observation_notes,
+                                student_name,
+                                rubric_type
+                            )
+                            
+                            # Update session state with generated justifications
+                            st.session_state.justifications = bulk_justifications
+                            st.success(f"✅ Generated justifications for {len(bulk_justifications)} competencies!")
+                            st.rerun()
+                            
+                        except Exception as e:
+                            st.error(f"Failed to generate justifications: {str(e)}")
+            else:
+                st.warning("🤖 AI features disabled. Add OpenAI API key in Settings to enable.")
+        
+        with col2:
+            if st.session_state.justifications:
+                if st.button("🔄 Regenerate All", key="regenerate_justifications"):
+                    st.session_state.justifications = {}
+                    st.rerun()
+        
+        with col3:
+            if st.session_state.justifications:
+                st.success(f"✅ {len(st.session_state.justifications)} generated")
+    else:
+        st.info("📝 Please add observation notes in Step 3 to enable AI justification generation.")
+    
+    # Display and allow editing of justifications
+    if st.session_state.justifications:
+        st.subheader("✏️ Review and Edit Justifications")
+        st.caption("Review AI-generated justifications and edit as needed. These will guide your scoring decisions.")
+        
+        # Group items by competency area
+        competency_groups = {}
+        for item in items:
+            area = item['competency_area']
+            if area not in competency_groups:
+                competency_groups[area] = []
+            competency_groups[area].append(item)
+        
+        for area, area_items in competency_groups.items():
+            st.markdown(f"### {area}")
+            
+            for item in area_items:
+                item_id = item['id']
+                
+                with st.expander(f"{item['code']}: {item['title']}", expanded=True):
+                    # Show competency context
+                    st.caption(f"*{item['context']}*")
+                    
+                    # Justification text area
+                    current_justification = st.session_state.justifications.get(item_id, "")
+                    
+                    justification = st.text_area(
+                        "Justification",
+                        value=current_justification,
+                        height=120,
+                        key=f"justification_edit_{item_id}",
+                        help="Edit the AI-generated justification based on your observations"
+                    )
+                    
+                    # Update justification in session state
+                    if justification != current_justification:
+                        st.session_state.justifications[item_id] = justification
+                    
+                    # Option to regenerate individual justification
+                    if openai_service.is_enabled():
+                        if st.button(f"🔄 Regenerate", key=f"regen_{item_id}"):
+                            with st.spinner("Regenerating..."):
+                                try:
+                                    new_justification = openai_service.generate_justification(
+                                        item, 2, student_name, observation_notes
+                                    )
+                                    st.session_state.justifications[item_id] = new_justification
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Failed: {str(e)}")
+            
+            st.divider()
+    
+    # STEP 5: Assessment Scoring (now based on justifications)
+    st.subheader("🎯 Step 5: Score Based on Justifications")
+    st.caption("Assign scores that align with your justifications for each competency")
+    
+    # Initialize scores in session state
+    if 'scores' not in st.session_state:
+        st.session_state.scores = {}
     
     st.markdown("**Score Each Competency (Level 0-3)**")
     
     total_score = 0
     all_items_scored = True
     
-    # Group items by competency area for better organization
-    competency_groups = {}
-    for item in items:
-        area = item['competency_area']
-        if area not in competency_groups:
-            competency_groups[area] = []
-        competency_groups[area].append(item)
-    
+    # Re-use the same competency groups from above
     for area, area_items in competency_groups.items():
         st.markdown(f"**{area}**")
         
         for item in area_items:
             item_id = item['id']
             current_score = st.session_state.scores.get(item_id)
+            current_justification = st.session_state.justifications.get(item_id, "")
             
             # Create scoring interface for each item
             col1, col2 = st.columns([3, 1])
             
             with col1:
                 st.markdown(f"*{item['code']}: {item['title']}*")
-                st.caption(f"{item['context']}")
+                
+                # Show justification if available
+                if current_justification:
+                    st.info(f"**Justification:** {current_justification}")
+                else:
+                    st.warning("No justification provided - consider generating one first")
             
             with col2:
                 score = st.selectbox(
                     f"Score",
                     options=[None, 0, 1, 2, 3],
                     index=0 if current_score is None else current_score + 1,
-                    format_func=lambda x: "Select..." if x is None else f"Level {x} - {get_level_name(x)}",
+                    format_func=lambda x: "Select..." if x is None else f"Level {x}",
                     key=f"score_select_{item_id}",
-                    help=f"Select score level for {item['code']}"
+                    help=f"Select score level based on the justification"
                 )
                 
                 if score is not None:
@@ -824,11 +965,30 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 else:
                     all_items_scored = False
             
-            # Show selected score description (use actual selected score, not session state)
+            # Show score level description
             display_score = score if score is not None else current_score
             if display_score is not None:
                 score_desc = item['levels'].get(str(display_score), 'No description available')
-                st.info(f"**Level {display_score}:** {score_desc}")
+                level_name = get_level_name(display_score)
+                
+                # Color code based on score
+                if display_score >= 3:
+                    st.success(f"**Level {display_score} - {level_name}:** {score_desc}")
+                elif display_score >= 2:
+                    st.info(f"**Level {display_score} - {level_name}:** {score_desc}")
+                elif display_score >= 1:
+                    st.warning(f"**Level {display_score} - {level_name}:** {score_desc}")
+                else:
+                    st.error(f"**Level {display_score} - {level_name}:** {score_desc}")
+                
+                # Check alignment between score and justification
+                if current_justification and openai_service.is_enabled():
+                    # Simple keyword check for alignment
+                    justification_lower = current_justification.lower()
+                    if display_score == 3 and ("exceeds" not in justification_lower and "exceptional" not in justification_lower):
+                        st.warning("⚠️ Score may not align with justification - consider reviewing")
+                    elif display_score == 0 and ("does not" not in justification_lower and "lacking" not in justification_lower):
+                        st.warning("⚠️ Score may not align with justification - consider reviewing")
         
         st.divider()
     
@@ -847,138 +1007,75 @@ Be as detailed as possible - these notes will be used to generate evidence-based
         meets_req = total_score >= min_required and all_items_scored
         st.metric("Meets Requirements", "✅ Yes" if meets_req else "❌ No")
     
-    # STEP 5: Generate Justifications
-    st.subheader("🤖 Step 5: Generate Evidence-Based Justifications")
-    
-    if all_items_scored and observation_notes.strip():
-        st.caption("All competencies scored! Generate AI justifications using your observation notes.")
-        
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if openai_service.is_enabled():
-                if st.button("🤖 Generate Justifications for All Competencies", type="primary", key="bulk_ai_generation"):
-                    with st.spinner("Generating evidence-based justifications for all competencies..."):
-                        try:
-                            # Get items that are scored
-                            scored_items_list = [item for item in items if item['id'] in st.session_state.scores]
-                            
-                            bulk_justifications = openai_service.generate_bulk_justifications(
-                                scored_items_list,
-                                st.session_state.scores,
-                                observation_notes,
-                                student_name,
-                                rubric_type
-                            )
-                            
-                            # Update session state with generated justifications
-                            for item_id, justification in bulk_justifications.items():
-                                st.session_state.justifications[item_id] = justification
-                            
-                            st.success(f"✅ Generated justifications for {len(bulk_justifications)} competencies!")
-                            st.rerun()
-                            
-                        except Exception as e:
-                            st.error(f"Failed to generate justifications: {str(e)}")
-            else:
-                st.warning("🤖 AI features disabled. Add OpenAI API key in Settings to enable justification generation.")
-        
-        with col2:
-            if st.button("🔄 Clear All Justifications", key="clear_justifications"):
-                st.session_state.justifications = {}
-                st.success("Justifications cleared!")
-                st.rerun()
-    
-    elif not all_items_scored:
-        st.info("ℹ️ Please score all competencies to enable justification generation.")
-    elif not observation_notes.strip():
-        st.info("ℹ️ Please add observation notes to enable AI justification generation.")
-    
-    # STEP 6: Review and Edit Justifications
-    if st.session_state.justifications or any(st.session_state.scores.values()):
-        st.subheader("✏️ Step 6: Review and Edit Justifications")
-        st.caption("Review AI-generated justifications and edit as needed")
-        
-        for item in items:
-            item_id = item['id']
-            current_score = st.session_state.scores.get(item_id)
-            
-            if current_score is not None:
-                st.markdown(f"**{item['code']}: {item['title']}** (Level {current_score})")
-                
-                # Justification text area
-                justification = st.text_area(
-                    f"Justification for {item['code']}",
-                    value=st.session_state.justifications.get(item_id, ""),
-                    height=100,
-                    placeholder="Edit the justification as needed...",
-                    key=f"edit_justification_{item_id}",
-                    help="Edit the AI-generated justification or write your own"
-                )
-                
-                # Update session state
-                if justification.strip():
-                    st.session_state.justifications[item_id] = justification
-                
-                # Individual AI generation as fallback
-                if openai_service.is_enabled() and not st.session_state.justifications.get(item_id, "").strip():
-                    if st.button(f"🤖 Generate Individual Justification", key=f"individual_ai_{item_id}"):
-                        with st.spinner(f"Generating justification for {item['code']}..."):
-                            try:
-                                ai_justification = openai_service.generate_justification(
-                                    item, current_score, student_name, observation_notes
-                                )
-                                st.session_state.justifications[item_id] = ai_justification
-                                st.success("Individual justification generated!")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Failed to generate justification: {str(e)}")
-                
-                st.divider()
-    
-    # STEP 7: Professional Dispositions
-    st.subheader("🌟 Step 7: Professional Dispositions")
-    st.caption("All dispositions must score Level 3 to complete the evaluation.")
+    # STEP 6: Professional Dispositions
+    st.subheader("🌟 Step 6: Professional Dispositions")
+    st.caption("All dispositions must score Level 3 to complete the evaluation. Provide specific feedback for each disposition.")
     
     st.markdown("**Score Each Disposition (Level 1-4)**")
     
+    # Initialize disposition comments in session state
+    if 'disposition_comments' not in st.session_state:
+        st.session_state.disposition_comments = {}
+    
     all_dispositions_scored = True
     
-    for disposition in dispositions:
+    for idx, disposition in enumerate(dispositions, 1):
         disp_id = disposition['id']
         current_score = st.session_state.disposition_scores.get(disp_id)
+        current_comment = st.session_state.disposition_comments.get(disp_id, '')
         
-        # Create scoring interface for each disposition
-        col1, col2 = st.columns([3, 1])
+        # Section header
+        st.markdown(f"### {idx}. {disposition['name']}")
+        st.caption(disposition['description'])
+        
+        # Create scoring and comment interface
+        col1, col2 = st.columns([1, 2])
         
         with col1:
-            st.markdown(f"**{disposition['name']}**")
-            st.caption(disposition['description'])
-        
-        with col2:
             score = st.selectbox(
                 f"Score",
                 options=[None, 1, 2, 3, 4],
                 index=0 if current_score is None else current_score,
-                format_func=lambda x: "Select..." if x is None else f"Level {x} - {get_disposition_level_name(x)}",
+                format_func=lambda x: "Select..." if x is None else f"Level {x}",
                 key=f"disposition_select_{disp_id}",
                 help=f"Select score level for {disposition['name']}"
             )
             
             if score is not None:
                 st.session_state.disposition_scores[disp_id] = score
+                
+                # Show score description with color coding
+                score_desc = get_disposition_level_name(score)
+                if score >= 3:
+                    st.success(f"**{score_desc}**")
+                elif score == 2:
+                    st.warning(f"**{score_desc}**")
+                    st.caption("⚠️ Level 3+ required")
+                else:
+                    st.error(f"**{score_desc}**")
+                    st.caption("⚠️ Level 3+ required")
             else:
                 all_dispositions_scored = False
         
-        # Show selected score description and color coding
-        display_score = score if score is not None else current_score
-        if display_score is not None:
-            score_desc = get_disposition_level_name(display_score)
-            if display_score >= 3:
-                st.success(f"**Level {display_score}:** {score_desc}")
-            elif display_score == 2:
-                st.warning(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
-            else:
-                st.error(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
+        with col2:
+            # Comment text area
+            comment = st.text_area(
+                "Feedback & Suggestions",
+                value=current_comment,
+                placeholder="Provide specific feedback for improvement...",
+                height=100,
+                max_chars=500,
+                key=f"disposition_comment_{disp_id}",
+                help="Provide constructive feedback and specific suggestions for this disposition"
+            )
+            
+            # Update comment in session state
+            if comment != current_comment:
+                st.session_state.disposition_comments[disp_id] = comment
+            
+            # Character count
+            if comment:
+                st.caption(f"{len(comment)}/500 characters")
         
         st.divider()
     
@@ -1004,6 +1101,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
     
     with col1:
         if st.button("💾 Save as Draft"):
+            # Get additional context from session state
+            extracted_info = st.session_state.get('extracted_info', {})
+            
             evaluation = {
                 'id': str(uuid.uuid4()),
                 'student_name': student_name,
@@ -1013,9 +1113,17 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'scores': st.session_state.scores,
                 'justifications': st.session_state.justifications,
                 'disposition_scores': st.session_state.disposition_scores,
+                'disposition_comments': st.session_state.get('disposition_comments', {}),
+                'observation_notes': st.session_state.get('observation_notes', ''),
                 'total_score': total_score,
                 'status': 'draft',
-                'created_at': datetime.now().isoformat()
+                'created_at': datetime.now().isoformat(),
+                # Additional context from extracted info
+                'subject_area': extracted_info.get('subject_area', ''),
+                'grade_levels': extracted_info.get('grade_levels', ''),
+                'school_name': extracted_info.get('school_name', ''),
+                'lesson_topic': extracted_info.get('lesson_topic', ''),
+                'lesson_plan_text': extracted_info.get('lesson_plan_text', None)
             }
             save_evaluation(evaluation)
             st.success("Evaluation saved as draft!")
@@ -1035,6 +1143,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 for error in errors:
                     st.error(error)
             else:
+                # Get additional context from session state
+                extracted_info = st.session_state.get('extracted_info', {})
+                
                 evaluation = {
                     'id': str(uuid.uuid4()),
                     'student_name': student_name,
@@ -1044,16 +1155,24 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     'scores': st.session_state.scores,
                     'justifications': st.session_state.justifications,
                     'disposition_scores': st.session_state.disposition_scores,
+                    'disposition_comments': st.session_state.get('disposition_comments', {}),
+                    'observation_notes': st.session_state.get('observation_notes', ''),
                     'total_score': total_score,
                     'status': 'completed',
                     'created_at': datetime.now().isoformat(),
-                    'completed_at': datetime.now().isoformat()
+                    'completed_at': datetime.now().isoformat(),
+                    # Additional context from extracted info
+                    'subject_area': extracted_info.get('subject_area', ''),
+                    'grade_levels': extracted_info.get('grade_levels', ''),
+                    'school_name': extracted_info.get('school_name', ''),
+                    'lesson_topic': extracted_info.get('lesson_topic', ''),
+                    'lesson_plan_text': extracted_info.get('lesson_plan_text', None)
                 }
                 save_evaluation(evaluation)
                 st.success("🎉 Evaluation completed successfully!")
                 
                 # Clear session state
-                for key in ['scores', 'justifications', 'disposition_scores']:
+                for key in ['scores', 'justifications', 'disposition_scores', 'disposition_comments', 'observation_notes']:
                     if key in st.session_state:
                         del st.session_state[key]
 
@@ -1263,6 +1382,156 @@ def get_disposition_level_name(level: int) -> str:
         4: "Exceeds expectations"
     }
     return names.get(level, "Unknown")
+
+@st.dialog("📋 STIR Evaluation Rubric", width="large")
+def show_rubric_modal():
+    """Display STIR rubric in a modal dialog"""
+    
+    # Tabs for different sections
+    tab1, tab2, tab3, tab4 = st.tabs(["📚 Competencies", "🌟 Dispositions", "📊 Scoring Guide", "📥 Download"])
+    
+    with tab1:
+        st.markdown("## Teaching Competencies")
+        st.caption("All competencies are scored on a 0-3 scale")
+        
+        # Get competency items to display
+        from data.rubrics import get_field_evaluation_items
+        items = get_field_evaluation_items()
+        
+        # Group by competency area
+        competency_groups = {}
+        for item in items:
+            area = item['competency_area']
+            if area not in competency_groups:
+                competency_groups[area] = []
+            competency_groups[area].append(item)
+        
+        for area, area_items in competency_groups.items():
+            st.markdown(f"### {area}")
+            
+            for item in area_items[:3]:  # Show first 3 items as examples
+                with st.expander(f"{item['code']}: {item['title']}", expanded=False):
+                    st.caption(item['context'])
+                    st.markdown("**Scoring Levels:**")
+                    for level in range(4):
+                        level_desc = item['levels'].get(str(level), 'No description')
+                        if level == 0:
+                            st.error(f"**Level {level}:** {level_desc}")
+                        elif level == 1:
+                            st.warning(f"**Level {level}:** {level_desc}")
+                        elif level == 2:
+                            st.info(f"**Level {level}:** {level_desc}")
+                        else:
+                            st.success(f"**Level {level}:** {level_desc}")
+    
+    with tab2:
+        st.markdown("## Professional Dispositions")
+        st.caption("All dispositions must score Level 3 or higher")
+        
+        from data.rubrics import get_professional_dispositions
+        dispositions = get_professional_dispositions()
+        
+        for idx, disposition in enumerate(dispositions, 1):
+            st.markdown(f"### {idx}. {disposition['name']}")
+            st.caption(disposition['description'])
+            
+            st.markdown("**Scoring Levels:**")
+            for level in range(1, 5):
+                level_desc = get_disposition_level_name(level)
+                if level < 3:
+                    st.error(f"**Level {level}:** {level_desc} ❌")
+                elif level == 3:
+                    st.info(f"**Level {level}:** {level_desc} ✅")
+                else:
+                    st.success(f"**Level {level}:** {level_desc} ⭐")
+            
+            st.divider()
+    
+    with tab3:
+        st.markdown("## Scoring Guidelines")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### Competency Scoring")
+            st.markdown("""
+            - **Level 0**: Does not demonstrate competency
+            - **Level 1**: Is approaching competency at expected level
+            - **Level 2**: Demonstrates competency at expected level
+            - **Level 3**: Exceeds expected level of competency
+            
+            **Minimum Requirements:**
+            - Average score of 2.0 or higher
+            - No more than 2 scores at Level 0
+            """)
+        
+        with col2:
+            st.markdown("### Disposition Scoring")
+            st.markdown("""
+            - **Level 1**: Does not demonstrate disposition
+            - **Level 2**: Is approaching disposition at expected level
+            - **Level 3**: Demonstrates disposition at expected level
+            - **Level 4**: Exceeds expectations
+            
+            **Minimum Requirements:**
+            - All dispositions must score Level 3 or higher
+            - No exceptions allowed
+            """)
+        
+        st.divider()
+        
+        st.markdown("### Evaluation Types")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.info("""
+            **Field Evaluation (3-week)**
+            - Formative assessment
+            - Focus on growth and development
+            - Provides feedback for improvement
+            """)
+        
+        with col2:
+            st.success("""
+            **STER (Final Assessment)**
+            - Summative evaluation
+            - Comprehensive assessment
+            - Determines readiness for teaching
+            """)
+    
+    with tab4:
+        st.markdown("## Download Resources")
+        
+        # Create a sample rubric PDF content (in real implementation, this would be an actual PDF)
+        rubric_content = """
+STIR Evaluation Rubric - Utah State Board of Education
+Version: July 2024
+
+This rubric is designed to evaluate student teachers based on Utah teaching standards.
+
+For the complete rubric document, please visit:
+https://www.schools.utah.gov/file/stir-rubric-2024.pdf
+        """
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.download_button(
+                label="📥 Download Rubric (PDF)",
+                data=rubric_content,
+                file_name="STIR_Rubric_2024.pdf",
+                mime="application/pdf",
+                help="Download the complete STIR rubric as a PDF"
+            )
+        
+        with col2:
+            st.link_button(
+                "🌐 View Online",
+                "https://www.schools.utah.gov/certification/educators",
+                help="View the latest rubric on the USBE website"
+            )
+        
+        st.info("💡 **Tip:** Keep the rubric open in another tab while completing evaluations for easy reference.")
 
 if __name__ == "__main__":
     main() 
