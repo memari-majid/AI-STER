@@ -936,24 +936,51 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 st.divider()
     
     # STEP 7: Professional Dispositions
-    st.subheader("Professional Dispositions")
+    st.subheader("🌟 Step 7: Professional Dispositions")
     st.caption("All dispositions must score Level 3 to complete the evaluation.")
     
+    st.markdown("**Score Each Disposition (Level 1-4)**")
+    
+    all_dispositions_scored = True
+    
     for disposition in dispositions:
-        st.markdown(f"**{disposition['name']}**")
-        st.caption(disposition['description'])
+        disp_id = disposition['id']
+        current_score = st.session_state.disposition_scores.get(disp_id)
         
-        disp_score = st.select_slider(
-            f"Score for {disposition['name']}",
-            options=[1, 2, 3, 4],
-            format_func=lambda x: f"Level {x}",
-            key=f"disp_{disposition['id']}"
-        )
+        # Create scoring interface for each disposition
+        col1, col2 = st.columns([3, 1])
         
-        st.session_state.disposition_scores[disposition['id']] = disp_score
+        with col1:
+            st.markdown(f"**{disposition['name']}**")
+            st.caption(disposition['description'])
         
-        if disp_score < 3:
-            st.warning("Level 3 required for completion")
+        with col2:
+            score = st.selectbox(
+                f"Score",
+                options=[None, 1, 2, 3, 4],
+                index=0 if current_score is None else current_score,
+                format_func=lambda x: "Select..." if x is None else f"Level {x} - {get_disposition_level_name(x)}",
+                key=f"disposition_select_{disp_id}",
+                help=f"Select score level for {disposition['name']}"
+            )
+            
+            if score is not None:
+                st.session_state.disposition_scores[disp_id] = score
+            else:
+                all_dispositions_scored = False
+        
+        # Show selected score description and color coding
+        display_score = score if score is not None else current_score
+        if display_score is not None:
+            score_desc = get_disposition_level_name(display_score)
+            if display_score >= 3:
+                st.success(f"**Level {display_score}:** {score_desc}")
+            elif display_score == 2:
+                st.warning(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
+            else:
+                st.error(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
+        
+        st.divider()
     
     # AI Analysis
     if openai_service.is_enabled() and st.session_state.scores:
@@ -1224,6 +1251,16 @@ def get_level_name(level: int) -> str:
         1: "Approaching", 
         2: "Demonstrates",
         3: "Exceeds"
+    }
+    return names.get(level, "Unknown")
+
+def get_disposition_level_name(level: int) -> str:
+    """Get the name for a disposition scoring level"""
+    names = {
+        1: "Does not demonstrate disposition",
+        2: "Is approaching disposition at expected level", 
+        3: "Demonstrates disposition at expected level",
+        4: "Exceeds expectations"
     }
     return names.get(level, "Unknown")
 

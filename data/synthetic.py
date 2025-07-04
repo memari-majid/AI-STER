@@ -306,7 +306,8 @@ def generate_synthetic_evaluations(
         
         # Generate lesson plan for this evaluation (using Utah DOE-aligned format)
         lesson_date = created_date - timedelta(days=random.randint(0, 7))  # Lesson a few days before evaluation
-        lesson_plan = generate_lesson_plan(student_name, subject_area, school['grade_levels'], school['name'], lesson_date)
+        from .utah_lesson_plans import generate_utah_aligned_lesson_plan
+        lesson_plan = generate_utah_aligned_lesson_plan(student_name, subject_area, school['grade_levels'], school['name'], lesson_date)
         
         evaluation = {
             'id': str(uuid.uuid4()),
