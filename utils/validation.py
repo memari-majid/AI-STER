@@ -27,10 +27,19 @@ def validate_evaluation(
     if missing_scores:
         errors.append(f"Missing scores for items: {', '.join(sorted(missing_scores))}")
     
+    # Check score range validity (must be 0-3)
+    invalid_scores = []
+    for item_id, score in scores.items():
+        if not isinstance(score, int) or score < 0 or score > 3:
+            invalid_scores.append(f"{item_id}={score}")
+    
+    if invalid_scores:
+        errors.append(f"Invalid scores (must be 0-3): {', '.join(invalid_scores)}")
+    
     # Check minimum score requirements (all items must score >= 2)
     failing_items = []
     for item_id, score in scores.items():
-        if score < 2:
+        if isinstance(score, int) and 0 <= score <= 3 and score < 2:
             failing_items.append(item_id)
     
     if failing_items:
@@ -53,10 +62,19 @@ def validate_evaluation(
     if missing_dispositions:
         errors.append(f"Missing disposition scores: {', '.join(sorted(missing_dispositions))}")
     
+    # Check disposition score range validity (must be 1-4)
+    invalid_disposition_scores = []
+    for disp_id, score in disposition_scores.items():
+        if not isinstance(score, int) or score < 1 or score > 4:
+            invalid_disposition_scores.append(f"{disp_id}={score}")
+    
+    if invalid_disposition_scores:
+        errors.append(f"Invalid disposition scores (must be 1-4): {', '.join(invalid_disposition_scores)}")
+    
     # Check that all dispositions score >= 3
     failing_dispositions = []
     for disp_id, score in disposition_scores.items():
-        if score < 3:
+        if isinstance(score, int) and 1 <= score <= 4 and score < 3:
             failing_dispositions.append(disp_id)
     
     if failing_dispositions:

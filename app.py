@@ -106,6 +106,7 @@ def show_dashboard():
             avg_score = df[df['status'] == 'completed']['total_score'].mean()
             st.metric("Average Score", f"{avg_score:.1f}")
         else:
+            avg_score = 0.0  # Initialize avg_score to prevent undefined variable error
             st.metric("Average Score", "N/A")
     with col4:
         if len(df) > 0 and 'status' in df.columns:

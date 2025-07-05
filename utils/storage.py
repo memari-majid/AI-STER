@@ -116,4 +116,4 @@ def get_evaluation_by_id(evaluation_id: str) -> Dict[str, Any]:
         if evaluation.get('id') == evaluation_id:
             return evaluation
     
-    return None 
+    return {}  # Return empty dict instead of None for consistency 
