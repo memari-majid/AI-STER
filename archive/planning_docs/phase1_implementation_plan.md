@@ -3,31 +3,42 @@ Immediate Actions for Core Functionality Enhancement
 
 ## Week 1: AI Justification Generation
 
+### Workflow Overview
+The AI justification workflow follows this sequence:
+1. **AI Analysis**: AI analyzes lesson plans and observation notes to extract relevant information
+2. **Justification Generation**: AI generates evidence-based justifications for each competency
+3. **Supervisor Review**: Supervisor reviews AI-generated justifications alongside their observations
+4. **Informed Scoring**: Supervisor assigns scores based on both their observations and AI analysis
+
+This approach leverages AI to provide comprehensive analysis while maintaining supervisor expertise in final scoring decisions.
+
 ### Day 1-2: Enhance Prompt Engineering
 
 #### Update `analyze_observation_notes()` in `app.py`
 ```python
 def analyze_observation_notes_with_justification(notes, lesson_plan, competency):
-    """Generate AI justification for specific competency"""
+    """Generate AI analysis and justification for specific competency"""
     
     prompt = f"""
-    As an expert education evaluator, analyze the following observation notes 
-    and lesson plan to generate a detailed justification for the {competency} competency.
-    
-    Observation Notes:
-    {notes}
+    As an expert education evaluator, analyze the following lesson plan and observation notes 
+    to extract relevant information and generate a detailed analysis for the {competency} competency.
     
     Lesson Plan:
     {lesson_plan}
     
-    Generate a professional justification that:
-    1. Cites specific evidence from the observation
-    2. Connects observed behaviors to the competency criteria
-    3. Provides concrete examples
-    4. Explains why the performance level is appropriate
-    5. Suggests areas for improvement if applicable
+    Observation Notes:
+    {notes}
     
-    Justification (150-200 words):
+    Extract and analyze:
+    1. Relevant evidence from the lesson plan (objectives, activities, assessments)
+    2. Specific behaviors and actions noted in observations
+    3. Alignment between planned activities and observed execution
+    4. Concrete examples demonstrating the competency
+    5. Areas of strength and potential improvement
+    
+    Provide a comprehensive analysis that will help the supervisor make an informed scoring decision.
+    
+    Analysis and Justification (150-200 words):
     """
     
     client = anthropic.Client(api_key=st.secrets["ANTHROPIC_API_KEY"])
@@ -50,9 +61,9 @@ def render_competency_with_justification(competency_name, competency_id):
     
     st.subheader(f"📋 {competency_name}")
     
-    # Generate AI justification
-    if st.button(f"Generate AI Justification", key=f"gen_{competency_id}"):
-        with st.spinner("AI is analyzing..."):
+    # Generate AI justification first
+    if st.button(f"Generate AI Analysis", key=f"gen_{competency_id}"):
+        with st.spinner("AI is analyzing lesson plan and observations..."):
             justification = analyze_observation_notes_with_justification(
                 st.session_state.get('observation_notes', ''),
                 st.session_state.get('lesson_plan_text', ''),
@@ -60,33 +71,34 @@ def render_competency_with_justification(competency_name, competency_id):
             )
             st.session_state[f'justification_{competency_id}'] = justification
     
-    # Display and allow editing
-    col1, col2 = st.columns([3, 1])
-    
-    with col1:
+    # Display AI analysis and justification
+    if st.session_state.get(f'justification_{competency_id}'):
+        st.info("**AI Analysis:**")
         justification_text = st.text_area(
-            "Evaluation Justification",
+            "AI-Generated Justification",
             value=st.session_state.get(f'justification_{competency_id}', ''),
             height=150,
             key=f"just_text_{competency_id}",
             help="Review and edit the AI-generated justification as needed"
         )
-    
-    with col2:
+        
+        # Now supervisor assigns score based on observations and AI analysis
+        st.markdown("**Based on your observations and the AI analysis above, assign a score:**")
         score = st.select_slider(
-            "Score",
+            "Supervisor Score",
             options=[0, 1, 2, 3],
             format_func=lambda x: f"Level {x}",
-            key=f"score_{competency_id}"
+            key=f"score_{competency_id}",
+            help="Consider both your direct observations and the AI's analysis when scoring"
         )
         
-        # Visual indicator for score-justification alignment
-        if justification_text and score:
-            sentiment = analyze_justification_sentiment(justification_text)
-            expected_score = map_sentiment_to_score(sentiment)
-            
-            if abs(score - expected_score) > 1:
-                st.warning("⚠️ Score may not align with justification")
+        # Save both justification and score
+        st.session_state[f'justification_{competency_id}'] = justification_text
+        st.session_state[f'score_{competency_id}'] = score
+    else:
+        st.info("👆 Click 'Generate AI Analysis' to see AI-extracted evidence before scoring")
+        score = None
+        justification_text = ""
     
     return score, justification_text
 ```
@@ -291,10 +303,11 @@ def handle_lesson_plan_upload():
 # tests/test_phase1_features.py
 
 def test_ai_justification_generation():
-    """Test AI justification generation"""
+    """Test AI analysis and justification generation"""
     test_notes = "Student demonstrated excellent classroom management..."
     test_lesson = "Objective: Students will learn addition..."
     
+    # Test that AI generates analysis before scoring
     justification = analyze_observation_notes_with_justification(
         test_notes, 
         test_lesson, 
@@ -303,6 +316,8 @@ def test_ai_justification_generation():
     
     assert len(justification) > 100
     assert "classroom management" in justification.lower()
+    assert "lesson plan" in justification.lower() or "objective" in justification.lower()
+    assert "observation" in justification.lower()
 
 def test_disposition_comments_storage():
     """Test disposition comment storage"""
@@ -341,11 +356,12 @@ def test_optional_lesson_plan():
 ```markdown
 # New Features Guide
 
-## AI-Powered Justifications
-1. Click "Generate AI Justification" for each competency
-2. Review the generated text
-3. Edit as needed to match your observations
-4. Assign score based on justification
+## AI-Powered Analysis and Scoring
+1. Click "Generate AI Analysis" for each competency
+2. AI extracts relevant information from lesson plans and observation notes
+3. Review the AI-generated analysis and justification
+4. Edit the justification as needed
+5. Assign score based on your observations and the AI's analysis
 
 ## Professional Feedback
 - Each disposition now has a comment box

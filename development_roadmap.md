@@ -8,16 +8,18 @@ This roadmap outlines the development plan for AI-STER enhancements based on com
 
 ### 1.1 AI Justification Generation
 **Priority: Critical**
-- **Implementation**: Modify evaluation workflow where AI generates detailed justifications for each competency
+- **Implementation**: AI generates justifications from lesson plans and observation notes, then supervisors review and assign scores
 - **Features**:
-  - AI analyzes lesson plans, observation notes, and context
-  - Generates evidence-based justifications for each scoring area
-  - Supervisors review AI justifications and assign final scores
+  - AI analyzes lesson plans and observation notes to extract relevant information
+  - Generates evidence-based justifications for each competency
+  - Supervisors review AI-generated justifications alongside their observations
+  - Supervisors assign scores based on their observations and the AI's analysis
   - Editable justification fields for supervisor modifications
 - **Technical Requirements**:
-  - Enhanced prompt engineering for justification generation
-  - UI components for justification display and editing
+  - Enhanced prompt engineering for comprehensive justification generation
+  - UI components for justification display followed by score input
   - Validation logic for score-justification alignment
+  - Workflow that presents justifications as analysis tools for informed scoring
 
 ### 1.2 Disposition Comment Boxes
 **Priority: High**

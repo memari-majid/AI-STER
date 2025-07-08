@@ -16,7 +16,7 @@ This document describes the new streamlined evaluation workflow implemented in A
 
 ### 3. **Improved Workflow Logic**
 - **Before:** Score → Individual Generate → Edit (fragmented)
-- **After:** Observe → Score All → Generate All → Edit (logical sequence)
+- **After:** Observe → AI Analysis → Informed Scoring → Edit (evidence-based sequence)
 
 ## New Workflow Structure
 
@@ -39,36 +39,38 @@ This document describes the new streamlined evaluation workflow implemented in A
 - Saves to session state for persistence
 - Required for AI justification generation
 
-### Step 4: Assessment Scoring (IMPROVED)
+### Step 4: AI Analysis and Justification Generation (NEW)
 ```
-🎯 Assessment Scoring with Sidebar Reference
-Left Column: Competency Scoring          Right Column: Rubric Reference
-- Grouped by competency area            - Scoring level definitions
-- Dropdown selectors for each item      - Example competency details  
-- Real-time score descriptions         - Quick reference expandables
+🤖 Generate AI Analysis for Competencies
+Conditions: Observation notes present + Lesson plan (optional)
+Action: "Generate AI Analysis" button for each competency or bulk generation
+Result: AI extracts evidence and creates comprehensive justifications
 ```
 
 **Key Features:**
-- Competencies grouped by area for better organization
-- Dropdown scoring instead of button interface
+- AI analyzes lesson plans and observation notes to extract relevant information
+- Generates evidence-based justifications before scoring
+- Provides comprehensive analysis to inform supervisor decisions
+- Bulk or individual generation options
+- Works with or without lesson plans (better with)
+
+### Step 5: Assessment Scoring with AI Insights (IMPROVED)
+```
+🎯 Informed Scoring Process
+Left Column: AI Analysis & Justification    Right Column: Scoring Controls
+- Display AI-generated analysis            - Dropdown score selectors
+- Editable justification text             - Score based on observations + AI
+- Evidence from lesson & observations     - Real-time validation
+```
+
+**Key Features:**
+- Supervisors review AI analysis before scoring
+- Score assignment based on observations AND AI insights
+- Competencies grouped by area for organization
 - Live score summaries and requirement tracking
-- Sidebar rubric reference for easy lookup
+- Integrated workflow: analysis → review → score
 
-### Step 5: Bulk Justification Generation (NEW)
-```
-🤖 Generate Evidence-Based Justifications
-Conditions: All items scored + Observation notes present
-Action: Single "Generate Justifications for All Competencies" button
-Result: AI creates evidence-based justifications for all competencies
-```
-
-**Key Features:**
-- Only appears when all competencies are scored
-- Uses observation notes as context for all justifications
-- Bulk API call for efficiency and consistency
-- Comprehensive error handling with fallback to individual generation
-
-### Step 6: Review and Edit Justifications (IMPROVED)
+### Step 6: Review and Finalize (IMPROVED)
 ```
 ✏️ Individual Justification Editing
 - Each competency shows: Code, Title, Score Level

@@ -850,17 +850,25 @@ Be as detailed as possible - these notes will be used to generate evidence-based
     # STEP 5: Generate Justifications
     st.subheader("🤖 Step 5: Generate Evidence-Based Justifications")
     
-    if all_items_scored and observation_notes.strip():
-        st.caption("All competencies scored! Generate AI justifications using your observation notes.")
+    # Check if any items are scored
+    scored_items_count = len([s for s in st.session_state.scores.values() if s is not None])
+    has_scored_items = scored_items_count > 0
+    
+    if has_scored_items and observation_notes.strip():
+        if all_items_scored:
+            st.caption("✅ All competencies scored! Generate AI justifications using your observation notes.")
+        else:
+            st.caption(f"📊 {scored_items_count}/{len(items)} competencies scored. You can generate justifications for scored items.")
         
         col1, col2 = st.columns([1, 1])
         with col1:
             if openai_service.is_enabled():
-                if st.button("🤖 Generate Justifications for All Competencies", type="primary", key="bulk_ai_generation"):
-                    with st.spinner("Generating evidence-based justifications for all competencies..."):
+                button_text = "🤖 Generate Justifications for All Competencies" if all_items_scored else f"🤖 Generate Justifications for {scored_items_count} Scored Items"
+                if st.button(button_text, type="primary", key="bulk_ai_generation"):
+                    with st.spinner(f"Generating evidence-based justifications for {scored_items_count} scored competencies..."):
                         try:
-                            # Get items that are scored
-                            scored_items_list = [item for item in items if item['id'] in st.session_state.scores]
+                            # Get items that are scored (only those with non-None scores)
+                            scored_items_list = [item for item in items if item['id'] in st.session_state.scores and st.session_state.scores[item['id']] is not None]
                             
                             bulk_justifications = openai_service.generate_bulk_justifications(
                                 scored_items_list,
@@ -888,8 +896,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 st.success("Justifications cleared!")
                 st.rerun()
     
-    elif not all_items_scored:
-        st.info("ℹ️ Please score all competencies to enable justification generation.")
+    elif not has_scored_items:
+        st.info("ℹ️ Please score at least one competency to enable justification generation.")
     elif not observation_notes.strip():
         st.info("ℹ️ Please add observation notes to enable AI justification generation.")
     
