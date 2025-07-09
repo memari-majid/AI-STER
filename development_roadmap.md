@@ -34,7 +34,7 @@ This roadmap outlines the development plan for AI-STER enhancements based on com
   - UI component integration in dispositions section
   - Session state management for drafts
 
-### 1.3 STIR Rubric Link Integration
+### 1.3 STER Rubric Link Integration
 **Priority: Medium**
 - **Implementation**: Embed accessible rubric reference within interface
 - **Features**:

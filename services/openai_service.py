@@ -549,3 +549,167 @@ Return your response as a JSON object with item IDs as keys and justifications a
 JSON Response:"""
         
         return prompt 
+
+    def generate_analysis_for_competencies(
+        self,
+        items: List[Dict],
+        observation_notes: str,
+        student_name: str,
+        rubric_type: str,
+        lesson_plan_context: Optional[str] = None
+    ) -> Dict[str, str]:
+        """
+        Generate AI analysis for competencies based on observation notes and lesson plan
+        This method generates evidence-based analysis BEFORE scoring to inform supervisor decisions
+        
+        Args:
+            items: List of assessment item dictionaries
+            observation_notes: Supervisor's classroom observation notes
+            student_name: Name of the student being evaluated
+            rubric_type: Type of rubric ("field_evaluation" or "ster")
+            lesson_plan_context: Optional lesson plan context
+        
+        Returns:
+            Dictionary mapping item IDs to generated analysis text
+        """
+        if not self.is_enabled():
+            raise Exception("OpenAI service is not configured")
+        
+        prompt = self._build_analysis_prompt_for_competencies(
+            items, observation_notes, student_name, rubric_type, lesson_plan_context
+        )
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert educational supervisor who analyzes classroom observations to extract evidence for each competency area. Provide objective, evidence-based analysis that will help supervisors make informed scoring decisions. Focus on what was observed without assigning scores."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                max_tokens=2500,  # Increased for comprehensive analysis
+                temperature=0.6
+            )
+            
+            response_text = response.choices[0].message.content.strip()
+            
+            # Parse the JSON response
+            start_idx = response_text.find('{')
+            end_idx = response_text.rfind('}') + 1
+            
+            if start_idx != -1 and end_idx != -1:
+                json_text = response_text[start_idx:end_idx]
+                analyses = json.loads(json_text)
+                
+                # Validate that we have analyses for all items
+                validated_analyses = {}
+                for item in items:
+                    item_id = item['id']
+                    if item_id in analyses:
+                        validated_analyses[item_id] = analyses[item_id]
+                    else:
+                        # Generate generic analysis if missing - ALWAYS include every competency
+                        validated_analyses[item_id] = f"[LIMITED_EVIDENCE] Based on the available observation notes, limited specific evidence was recorded for {item['code']} - {item['title']} in the {item['competency_area']} area. The supervisor may need to recall additional details from the observation or note this for future observations."
+                
+                return validated_analyses
+            else:
+                raise Exception("Could not parse JSON from AI response")
+        
+        except json.JSONDecodeError as e:
+            # Fallback: Generate generic analyses for ALL items
+            fallback_analyses = {}
+            for item in items:
+                item_id = item['id']
+                fallback_analyses[item_id] = f"[LIMITED_EVIDENCE] Based on the available observation notes, limited specific evidence was recorded for {item['code']} - {item['title']} in the {item['competency_area']} area. The supervisor may need to recall additional details from the observation or note this for future observations."
+            return fallback_analyses
+        except Exception as e:
+            # Fallback: Generate generic analyses for ALL items
+            fallback_analyses = {}
+            for item in items:
+                item_id = item['id']
+                fallback_analyses[item_id] = f"[LIMITED_EVIDENCE] Analysis could not be generated for {item['code']} - {item['title']}. Please add observations manually."
+            return fallback_analyses
+    
+    def _create_generic_analysis(self, item: Dict) -> str:
+        """
+        Create a generic analysis when no specific observation notes are available
+        
+        Args:
+            item: Assessment item dictionary
+            
+        Returns:
+            Generic analysis text
+        """
+        generic_analysis = (
+            f"Analysis needed for {item['code']} - {item['title']} in the {item['competency_area']} area. "
+            f"This competency focuses on: {item['context']} "
+            f"**NOTE: No specific observations were available for detailed analysis - "
+            f"supervisor should add specific examples and evidence based on classroom observation.**"
+        )
+        
+        return generic_analysis
+    
+    def _build_analysis_prompt_for_competencies(
+        self,
+        items: List[Dict],
+        observation_notes: str,
+        student_name: str,
+        rubric_type: str,
+        lesson_plan_context: Optional[str] = None
+    ) -> str:
+        """Build prompt for competency analysis generation"""
+        
+        # Build items list with competency details
+        items_text = ""
+        for item in items:
+            items_text += f"\n{item['code']} - {item['title']}\n"
+            items_text += f"Competency Area: {item['competency_area']}\n"
+            items_text += f"Context: {item['context']}\n"
+            items_text += f"Level Descriptions:\n"
+            for level, desc in item['levels'].items():
+                items_text += f"  Level {level}: {desc}\n"
+            items_text += "---\n"
+        
+        lesson_plan_section = ""
+        if lesson_plan_context:
+            lesson_plan_section = f"\nLESSON PLAN CONTEXT:\n{lesson_plan_context}\n"
+        
+        prompt = f"""You are analyzing classroom observation notes to extract evidence for each competency area in a student teaching evaluation. Your role is to provide objective, evidence-based analysis that will help the supervisor make informed scoring decisions.
+
+STUDENT: {student_name}
+EVALUATION TYPE: {rubric_type.replace('_', ' ').title()}
+{lesson_plan_section}
+SUPERVISOR'S OBSERVATION NOTES:
+{observation_notes}
+
+COMPETENCY AREAS TO ANALYZE:
+{items_text}
+
+INSTRUCTIONS:
+1. For EACH competency listed above, extract relevant evidence from the observation notes
+2. Provide objective analysis of what was observed without assigning scores
+3. Reference specific behaviors, examples, and incidents from the observation notes
+4. If lesson plan context is provided, note alignment between planned and observed activities
+5. Focus on evidence that could support different score levels
+6. Each analysis should be 2-4 sentences and include specific examples
+7. Maintain a professional, objective tone
+
+IMPORTANT: If the observation notes do not contain relevant information for a specific competency area, use this format:
+"[LIMITED_EVIDENCE] Based on the available observation notes, limited specific evidence was recorded for this competency area. The supervisor may need to recall additional details from the observation or note this for future observations."
+
+Return your response as a JSON object with item IDs as keys and evidence-based analyses as values:
+
+{{
+    "item_id_1": "Evidence-based analysis extracted from observation notes with specific examples...",
+    "item_id_2": "[LIMITED_EVIDENCE] Based on the available observation notes, limited specific evidence...",
+    ...
+}}
+
+JSON Response:"""
+        
+        return prompt 

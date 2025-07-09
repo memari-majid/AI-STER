@@ -6,7 +6,7 @@ Evaluation Type Selection: Ensure the system can track the number of formative a
 Dispositions Feedback: Include a comment box under each disposition for supervisors to manually input feedback and suggestions. 
 Summative Evaluation Generation: Add an option to generate summative evaluations based on the cumulative scores from formative evaluations. 
 Evaluation Report Distribution: Implement a feature to send the completed evaluation report to the student, supervisor, and cooperative teacher via email. 
-Rubric Access: Add a link to the actual stir rubric within the interface for supervisors to refer to during evaluations. 
+Rubric Access: Add a link to the actual STER rubric within the interface for supervisors to refer to during evaluations. 
 Lesson Plan Requirement: Ensure the system allows supervisors to proceed with evaluations even if a lesson plan is not uploaded, while still encouraging its submission. 
 
 Data Storage - Implement a system to store all evaluations and lesson plans for each student teacher, including both formative and summative evaluations. 
