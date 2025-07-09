@@ -60,7 +60,13 @@ Historical and superseded documents have been moved to `/archive/` to reduce con
 
 ### **Evaluation System**
 - **Field Evaluations**: 8 assessment items for 3-week experiences
-- **STER Evaluations**: 9 comprehensive summative items
+- **STER Evaluations**: Comprehensive formative and summative tracking system (35 total items)
+  - **Supervisor Items**: 19 competencies (LL2-LL7, IC1/IC2, IC3, IC4, IC5/IC6, IC7, IP1-IP8)
+  - **Cooperating Teacher Items**: 16 competencies (LL1, CC1-CC8, PR1-PR7)
+  - **Combined Competencies**: IC1/IC2 and IC5/IC6 evaluated as single items
+  - **Role-Based Access**: Cream rows (cooperating teachers) vs white rows (supervisors)
+  - **Progress Tracking**: Automatic monitoring of student evaluation completion
+  - **Smart Selection**: Completed evaluations grayed out to prevent errors
 - **Professional Dispositions**: 6 USBE-required dispositions
 - **AI Integration**: Evidence extraction and analysis
 

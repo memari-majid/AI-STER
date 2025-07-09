@@ -24,9 +24,19 @@ The AI-STER evaluation workflow leverages AI to analyze lesson plans and observa
 - Can proceed without lesson plan (reduced AI accuracy)
 
 #### Step 2: Student Information
-- Enter student teacher details
-- Select evaluation type (formative/summative)
+- Enter student teacher details (triggers evaluation tracking)
+- System displays student's evaluation progress
 - Choose appropriate rubric (STER/Field)
+
+#### Step 2.5: STER Evaluation Type Selection (STER Only)
+- **Intelligent Type Selection**: System analyzes student's completion history
+- **Available Options**: Only shows available formative types (1-4) or summative
+- **Visual Indicators**: 
+  - Completed formative evaluations grayed out/disabled
+  - Clear indication of next required evaluation type
+  - Progress bar showing formative completion status
+- **Automatic Summative Eligibility**: Summative option appears after sufficient formatives
+- **Error Prevention**: Cannot select already-completed formative types
 
 ### Phase 2: Observation
 

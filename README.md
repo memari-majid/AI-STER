@@ -24,7 +24,17 @@
 
 ### 📋 **Complete Evaluation System**
 - **Field Evaluations**: 8 assessment items for 3-week field experiences
-- **STER Evaluations**: 9 comprehensive summative assessment items
+- **STER Evaluations**: Comprehensive formative and summative assessment system (35 total items)
+  - **Supervisor Items**: 19 competencies evaluated by university supervisors
+    - Learners and Learning (LL2-LL7): 6 items
+    - Instructional Clarity (IC1/IC2, IC3, IC4, IC5/IC6, IC7): 5 items  
+    - Instructional Practice (IP1-IP8): 8 items
+  - **Cooperating Teacher Items**: 16 competencies evaluated by mentor teachers
+    - Learners and Learning (LL1): 1 item
+    - Classroom Climate (CC1-CC8): 8 items
+    - Professional Responsibility (PR1-PR7): 7 items
+  - **Combined Items**: IC1/IC2 and IC5/IC6 evaluated as single competencies
+  - **Smart Type Selection**: Completed evaluations grayed out to prevent errors
 - **Professional Dispositions**: All 6 USBE-required dispositions
 - **Real-time Validation**: Ensures compliance with scoring requirements
 
@@ -228,11 +238,18 @@ AI-STER is fully compliant with Utah State Board of Education standards (July 20
 
 ## 🛣 **Roadmap**
 
-### **v1.1 (Next Release)**
-- [ ] **Bulk Operations**: Process multiple evaluations simultaneously
-- [ ] **Advanced Analytics**: Longitudinal progress tracking
-- [ ] **Email Integration**: Automatic evaluation reminders
+### **v1.1 (Next Release) - STER Evaluation System**
+- [ ] **STER Progress Tracking**: Formative 1-4 and summative evaluation management
+- [ ] **Student Progress Dashboard**: Visual tracking of evaluation completion
+- [ ] **Smart Type Selection**: Grayed-out completed evaluations
+- [ ] **Evaluation History**: Complete storage of all evaluations per student
 - [ ] **PDF Export**: Professional evaluation reports
+
+### **v1.2 (Following Release)**
+- [ ] **Email Integration**: Automatic evaluation reminders and reports
+- [ ] **Bulk Operations**: Process multiple evaluations simultaneously
+- [ ] **Advanced Analytics**: Longitudinal STER progress tracking
+- [ ] **Disposition Comments**: Enhanced feedback system
 
 ### **v2.0 (Future)**
 - [ ] **Multi-Institution**: Support for multiple organizations

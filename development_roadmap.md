@@ -62,31 +62,55 @@ This roadmap outlines the development plan for AI-STER enhancements based on com
 
 ## Phase 2: Evaluation Management System (Weeks 5-8)
 
-### 2.1 Formative vs Summative Evaluations
+### 2.1 STER Evaluation Type System
 **Priority: Critical**
-- **Implementation**: Dual evaluation type system
+- **Implementation**: Comprehensive STER evaluation type system with role-based competency assignment
 - **Features**:
-  - Evaluation type selector (Formative/Summative)
-  - Different workflows for each type
-  - Visual differentiation in UI
-  - Completed formative evaluations grayed out
+  - **Complete STER Rubric**: 35 total competencies aligned with USBE standards
+  - **Role-Based Evaluation**: 
+    - **Supervisor Items (19)**: LL2-LL7, IC1/IC2, IC3, IC4, IC5/IC6, IC7, IP1-IP8 - observation and lesson planning focused
+    - **Cooperating Teacher Items (16)**: LL1, CC1-CC8, PR1-PR7 - classroom collaboration and professional development focused
+    - **Combined Competencies**: IC1/IC2 and IC5/IC6 evaluated as single comprehensive items
+  - **Visual Role Indicators**: 
+    - 🟡 Cream row items for cooperating teachers (Conference w/MT based)
+    - ⚪ White row items for supervisors (Observation based)
+  - **Intelligent Type Selection**: 
+    - Available formative options based on student's current progress
+    - Completed formative evaluations grayed out or removed from selection
+    - Automatic summative availability trigger after required formatives
+  - **Progress Indicators**: Visual display of student's formative completion status
+  - **Workflow Differentiation**: Different evaluation workflows for formative vs summative types
 - **Technical Requirements**:
-  - Database schema for evaluation types
-  - State management for evaluation status
-  - UI components for type selection
+  - Database schema for STER evaluation types and sequences with 35 competencies
+  - Role-based item filtering (19 supervisor + 16 cooperating teacher)
+  - Student-evaluation relationship tracking with role assignments
+  - Business logic for role-appropriate competency display
+  - UI components for role-specific evaluation interfaces
 
-### 2.2 Evaluation Tracking System
+### 2.2 Student Progress Tracking System
 **Priority: Critical**
-- **Implementation**: Track formative evaluations per student
+- **Implementation**: Comprehensive tracking of STER evaluation progress per student teacher with complete evaluation history
 - **Features**:
-  - Counter for completed formative evaluations
-  - Automatic summative requirement triggers
-  - Progress indicators
-  - Dashboard view for supervisors
+  - **Student Name-Based Tracking**: Track all evaluations and lesson plans for each student teacher by name
+  - **Complete Evaluation History**: Store and maintain comprehensive records of both formative and summative evaluations per student
+  - **Formative Sequence Monitoring**: Accurately monitor progress through Formative 1 → 2 → 3 → 4 → Summative sequence
+  - **Automatic Summative Recognition**: System determines when student has completed sufficient formatives for summative evaluation requirement
+  - **Comprehensive Progress Dashboard**: 
+    - Supervisor view of all students' complete evaluation completion status
+    - Visual indicators for each formative stage completion with grayed-out completed items
+    - Alerts for students ready for summative evaluation
+    - Historical view of all evaluations and lesson plans per student
+  - **Selection Error Prevention**: 
+    - Block selection of already-completed formative evaluation types
+    - Visual graying out of unavailable options to prevent supervisor errors
+    - Clear indication of next required evaluation type
 - **Technical Requirements**:
-  - Student-evaluation relationship tracking
-  - Business logic for summative triggers
-  - Analytics dashboard components
+  - Student-evaluation relationship database with complete STER type completion matrix
+  - Comprehensive storage system for all student evaluations and associated lesson plans
+  - Business logic for STER progression rules and summative eligibility determination
+  - Real-time status update system with graying out functionality
+  - Dashboard analytics with complete student progress visualization
+  - API endpoints for student progress queries and evaluation history
 
 ### 2.3 Summative Evaluation Generation
 **Priority: High**
@@ -118,20 +142,34 @@ This roadmap outlines the development plan for AI-STER enhancements based on com
 
 ### 3.1 Database Schema Design
 **Priority: Critical**
-- **Implementation**: Comprehensive data model
+- **Implementation**: Comprehensive data model with STER evaluation tracking and complete student history storage
 - **Schema Components**:
   ```sql
-  - Students (id, name, email, program, cohort)
-  - Evaluations (id, student_id, type, date, status)
+  - Students (id, name, email, program, cohort, created_at)
+    -- Primary student identification by name for supervisor input
+  - Evaluations (id, student_id, ster_type, rubric_type, date, status, created_at, completed_at)
+    -- ster_type: 'formative_1', 'formative_2', 'formative_3', 'formative_4', 'summative'
+    -- rubric_type: 'field_evaluation', 'ster'
+    -- Comprehensive storage of all evaluations per student
+  - SterProgress (id, student_id, formative_1_completed_date, formative_2_completed_date, 
+                   formative_3_completed_date, formative_4_completed_date, 
+                   summative_eligible_date, summative_completed_date, last_updated)
+    -- Track completion dates for accurate progress monitoring
   - Scores (id, evaluation_id, competency, score, justification)
   - Dispositions (id, evaluation_id, disposition, score, comment)
-  - LessonPlans (id, evaluation_id, content, metadata)
+  - LessonPlans (id, evaluation_id, student_id, content, metadata, upload_date)
+    -- Store all lesson plans per student for comprehensive history
+  - EvaluationHistory (id, student_id, evaluation_count, last_evaluation_type, next_required_type)
+    -- Quick lookup for determining available evaluation types
   - Users (id, role, email, permissions)
   ```
 - **Technical Requirements**:
   - PostgreSQL or similar relational database
-  - Data migration scripts
-  - Backup procedures
+  - STER progress tracking triggers and constraints with date tracking
+  - Student name validation and duplicate prevention
+  - Comprehensive storage indexing for quick student lookup
+  - Data migration scripts with STER type mapping and history preservation
+  - Backup procedures with evaluation type validation and complete student records
 
 ### 3.2 Seven-Year Data Retention
 **Priority: Critical**
@@ -202,16 +240,26 @@ This roadmap outlines the development plan for AI-STER enhancements based on com
 
 ### 4.3 API Development
 **Priority: Medium**
-- **Implementation**: RESTful API for integrations
+- **Implementation**: RESTful API for integrations with comprehensive STER evaluation and student tracking support
 - **Endpoints**:
-  - `/evaluations` (CRUD operations)
-  - `/students` (Management)
-  - `/reports` (Generation)
-  - `/analytics` (Insights)
+  - `/students/search` (Student name lookup and validation for evaluation start)
+  - `/students/{id}/complete-history` (All evaluations and lesson plans for student)
+  - `/evaluations` (CRUD operations with STER type filtering and graying logic)
+  - `/students` (Management with comprehensive STER progress tracking)
+  - `/students/{id}/ster-progress` (Complete STER evaluation progress status with dates)
+  - `/students/{id}/available-evaluations` (Available STER evaluation types with graying status)
+  - `/students/{id}/lesson-plans` (All lesson plans associated with student)
+  - `/evaluations/validate-type` (Validate STER evaluation type selection before creation)
+  - `/reports` (Generation with STER type aggregation and comprehensive student data)
+  - `/analytics` (Insights including STER completion rates and student progress trends)
 - **Technical Requirements**:
   - FastAPI implementation
-  - Authentication system
+  - Student name search and validation functionality
+  - Authentication system with STER evaluation permissions
   - Rate limiting
+  - STER evaluation type validation middleware with graying logic
+  - Comprehensive data retrieval optimization for student history
+  - API response caching for frequently accessed student progress data
 
 ### 4.4 Security & Compliance
 **Priority: Critical**

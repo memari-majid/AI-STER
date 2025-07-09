@@ -336,45 +336,44 @@ Justification:"""
     ) -> str:
         """Build prompt for evaluation analysis"""
         
-        total_score = sum(scores.values())
-        item_count = len(scores)
-        avg_score = total_score / item_count if item_count > 0 else 0
+        # Identify areas needing improvement (scores of 1)
+        low_scoring_areas = []
+        for item_id, score in scores.items():
+            if score == 1:
+                justification = justifications.get(item_id, "No justification provided")
+                low_scoring_areas.append(f"- {item_id}: Level 1 (Justification: {justification})")
         
-        score_counts = {
-            0: len([s for s in scores.values() if s == 0]),
-            1: len([s for s in scores.values() if s == 1]),
-            2: len([s for s in scores.values() if s == 2]),
-            3: len([s for s in scores.values() if s == 3])
-        }
+        # Identify disposition concerns
+        disposition_concerns = []
+        for disp_id, score in disposition_scores.items():
+            if score < 3:
+                disposition_concerns.append(f"- {disp_id}: Level {score} (Needs Level 3+)")
         
-        missing_justifications = len([j for j in justifications.values() if not j.strip()])
-        
-        avg_disposition = sum(disposition_scores.values()) / len(disposition_scores) if disposition_scores else 0
-        
-        prompt = f"""Analyze this student teaching evaluation and provide constructive feedback:
+        prompt = f"""
+Analyze this {rubric_type.replace('_', ' ')} evaluation focusing on specific areas needing improvement.
 
-Evaluation Type: {rubric_type.replace('_', ' ').title()}
-Total Items: {item_count}
-Total Score: {total_score}
-Average Score: {avg_score:.2f}
+CRITICAL FOCUS: Students must achieve Level 2+ in ALL competency areas to pass. Average scores are misleading - identify specific areas scoring Level 1 and provide targeted improvement guidance.
 
-Score Distribution:
-- Level 0 (Does not demonstrate): {score_counts[0]} items
-- Level 1 (Approaching): {score_counts[1]} items  
-- Level 2 (Demonstrates): {score_counts[2]} items
-- Level 3 (Exceeds): {score_counts[3]} items
+COMPETENCY SCORES NEEDING ATTENTION (Level 1):
+{chr(10).join(low_scoring_areas) if low_scoring_areas else "✅ No Level 1 scores - all competencies at Level 2+"}
 
-Missing Justifications: {missing_justifications}
-Professional Dispositions Average: {avg_disposition:.2f}
+DISPOSITION CONCERNS (Below Level 3):
+{chr(10).join(disposition_concerns) if disposition_concerns else "✅ All dispositions at Level 3+"}
 
-Provide:
-1. Overall assessment of performance
-2. Strengths identified
-3. Areas for improvement
-4. Specific recommendations
-5. Next steps for professional growth
+ANALYSIS REQUIREMENTS:
+1. **Critical Areas**: For each Level 1 competency, explain WHY the score was given based on the justification
+2. **Improvement Path**: Provide specific, actionable steps to move from Level 1 to Level 2
+3. **Priority Focus**: Identify which Level 1 areas are most critical to address first
+4. **Strengths**: Briefly note areas of strength (Level 2-3) that can support growth
+5. **Conference Guidance**: Suggest specific discussion points for supervisor-student conferences
 
-Keep response concise (4-5 sentences) and constructive."""
+DO NOT:
+- Calculate or emphasize average scores
+- Provide generic feedback
+- Focus primarily on strengths when Level 1 scores exist
+
+FORMAT: Provide clear, actionable analysis that helps supervisors guide students toward meeting minimum competency requirements.
+"""
         
         return prompt
     
@@ -467,7 +466,7 @@ Keep response concise (4-5 sentences) and constructive."""
             score: Score level (0-3)
             
         Returns:
-            Generic justification with warning
+            Generic justification with helpful guidance
         """
         score_labels = {
             0: "does not demonstrate competency",
@@ -479,11 +478,11 @@ Keep response concise (4-5 sentences) and constructive."""
         score_description = item['levels'].get(str(score), 'No description available')
         score_label = score_labels.get(score, 'demonstrates competency')
         
+        # Create a more helpful and less alarming generic justification
         generic_justification = (
             f"The student teacher {score_label} for {item['code']} - {item['title']}. "
             f"{score_description} "
-            f"**NOTE: No specific observations were recorded for this competency area - "
-            f"supervisor may wish to add additional details based on classroom observation.**"
+            f"Additional specific examples from the classroom observation would strengthen this justification."
         )
         
         return generic_justification
@@ -585,7 +584,7 @@ JSON Response:"""
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert educational supervisor who analyzes classroom observations to extract evidence for each competency area. Provide objective, evidence-based analysis that will help supervisors make informed scoring decisions. Focus on what was observed without assigning scores."
+                        "content": "You are an expert educational supervisor who analyzes classroom observations to extract evidence for each competency area. Provide objective, evidence-based analysis that will help supervisors make informed scoring decisions. Focus on what was observed without assigning scores. Return valid JSON only."
                     },
                     {
                         "role": "user",
@@ -604,36 +603,85 @@ JSON Response:"""
             
             if start_idx != -1 and end_idx != -1:
                 json_text = response_text[start_idx:end_idx]
-                analyses = json.loads(json_text)
-                
-                # Validate that we have analyses for all items
-                validated_analyses = {}
-                for item in items:
-                    item_id = item['id']
-                    if item_id in analyses:
-                        validated_analyses[item_id] = analyses[item_id]
-                    else:
-                        # Generate generic analysis if missing - ALWAYS include every competency
-                        validated_analyses[item_id] = f"[LIMITED_EVIDENCE] Based on the available observation notes, limited specific evidence was recorded for {item['code']} - {item['title']} in the {item['competency_area']} area. The supervisor may need to recall additional details from the observation or note this for future observations."
-                
-                return validated_analyses
+                try:
+                    analyses = json.loads(json_text)
+                    
+                    # Validate that we have analyses for all items
+                    validated_analyses = {}
+                    for item in items:
+                        item_id = item['id']
+                        if item_id in analyses and analyses[item_id].strip():
+                            # Use AI-generated analysis if available and not empty
+                            validated_analyses[item_id] = analyses[item_id]
+                        else:
+                            # Only add limited evidence warning for items that are actually missing
+                            validated_analyses[item_id] = f"Based on the provided observation notes, specific evidence for {item['code']} - {item['title']} was not clearly documented. Consider adding specific observations related to {item['competency_area'].lower()} during the evaluation process."
+                    
+                    return validated_analyses
+                    
+                except json.JSONDecodeError:
+                    # JSON parsing failed - try to extract individual analyses from text
+                    return self._extract_analyses_from_text(response_text, items)
             else:
-                raise Exception("Could not parse JSON from AI response")
+                # No JSON found - try to extract analyses from text
+                return self._extract_analyses_from_text(response_text, items)
         
-        except json.JSONDecodeError as e:
-            # Fallback: Generate generic analyses for ALL items
-            fallback_analyses = {}
-            for item in items:
-                item_id = item['id']
-                fallback_analyses[item_id] = f"[LIMITED_EVIDENCE] Based on the available observation notes, limited specific evidence was recorded for {item['code']} - {item['title']} in the {item['competency_area']} area. The supervisor may need to recall additional details from the observation or note this for future observations."
-            return fallback_analyses
         except Exception as e:
-            # Fallback: Generate generic analyses for ALL items
+            # Only in case of complete failure, provide informative fallback
             fallback_analyses = {}
             for item in items:
                 item_id = item['id']
-                fallback_analyses[item_id] = f"[LIMITED_EVIDENCE] Analysis could not be generated for {item['code']} - {item['title']}. Please add observations manually."
+                fallback_analyses[item_id] = f"AI analysis temporarily unavailable for {item['code']} - {item['title']}. Please refer to your observation notes and professional judgment to evaluate this competency in {item['competency_area']}."
             return fallback_analyses
+    
+    def _extract_analyses_from_text(self, response_text: str, items: List[Dict]) -> Dict[str, str]:
+        """
+        Extract analyses from non-JSON AI response text as fallback
+        
+        Args:
+            response_text: The AI response text
+            items: List of assessment items
+            
+        Returns:
+            Dictionary mapping item IDs to extracted analysis text
+        """
+        analyses = {}
+        
+        # Try to find analyses by looking for item codes in the response
+        for item in items:
+            item_id = item['id']
+            item_code = item['code']
+            
+            # Look for the item code in the response
+            lines = response_text.split('\n')
+            analysis_lines = []
+            collecting = False
+            
+            for line in lines:
+                if item_code in line:
+                    collecting = True
+                    analysis_lines = [line]
+                elif collecting:
+                    if any(other_item['code'] in line for other_item in items if other_item['id'] != item_id):
+                        # Found another item code, stop collecting
+                        break
+                    elif line.strip():
+                        analysis_lines.append(line)
+                    elif len(analysis_lines) > 1:
+                        # Empty line after content, probably end of this analysis
+                        break
+            
+            if analysis_lines:
+                # Clean up the extracted analysis
+                analysis = ' '.join(analysis_lines).strip()
+                # Remove item code from beginning if present
+                analysis = analysis.replace(f"{item_code} -", "").replace(f"{item_code}:", "").strip()
+                analyses[item_id] = analysis
+            else:
+                # No analysis found for this item
+                analyses[item_id] = f"Specific observations for {item_code} - {item['title']} were not detailed in the analysis. Consider adding targeted observations for {item['competency_area'].lower()} competencies."
+        
+        return analyses
     
     def _create_generic_analysis(self, item: Dict) -> str:
         """
@@ -667,19 +715,16 @@ JSON Response:"""
         # Build items list with competency details
         items_text = ""
         for item in items:
-            items_text += f"\n{item['code']} - {item['title']}\n"
+            items_text += f"\n{item['id']}: {item['code']} - {item['title']}\n"
             items_text += f"Competency Area: {item['competency_area']}\n"
             items_text += f"Context: {item['context']}\n"
-            items_text += f"Level Descriptions:\n"
-            for level, desc in item['levels'].items():
-                items_text += f"  Level {level}: {desc}\n"
             items_text += "---\n"
         
         lesson_plan_section = ""
         if lesson_plan_context:
             lesson_plan_section = f"\nLESSON PLAN CONTEXT:\n{lesson_plan_context}\n"
         
-        prompt = f"""You are analyzing classroom observation notes to extract evidence for each competency area in a student teaching evaluation. Your role is to provide objective, evidence-based analysis that will help the supervisor make informed scoring decisions.
+        prompt = f"""Analyze classroom observation notes to extract evidence for each competency area in a student teaching evaluation.
 
 STUDENT: {student_name}
 EVALUATION TYPE: {rubric_type.replace('_', ' ').title()}
@@ -694,22 +739,20 @@ INSTRUCTIONS:
 1. For EACH competency listed above, extract relevant evidence from the observation notes
 2. Provide objective analysis of what was observed without assigning scores
 3. Reference specific behaviors, examples, and incidents from the observation notes
-4. If lesson plan context is provided, note alignment between planned and observed activities
-5. Focus on evidence that could support different score levels
-6. Each analysis should be 2-4 sentences and include specific examples
+4. Each analysis should be 2-4 sentences and include specific examples when available
+5. If no specific evidence is available for a competency, write a brief note indicating this
+6. Focus on observable evidence that could support scoring decisions
 7. Maintain a professional, objective tone
 
-IMPORTANT: If the observation notes do not contain relevant information for a specific competency area, use this format:
-"[LIMITED_EVIDENCE] Based on the available observation notes, limited specific evidence was recorded for this competency area. The supervisor may need to recall additional details from the observation or note this for future observations."
+CRITICAL: You MUST return a valid JSON object with the exact item IDs as keys and analyses as values.
 
-Return your response as a JSON object with item IDs as keys and evidence-based analyses as values:
-
+Example format:
 {{
-    "item_id_1": "Evidence-based analysis extracted from observation notes with specific examples...",
-    "item_id_2": "[LIMITED_EVIDENCE] Based on the available observation notes, limited specific evidence...",
-    ...
+    "LL1": "The student teacher demonstrated strong parent communication skills by...",
+    "LL2": "Observation notes indicate limited specific evidence for this competency...",
+    "IC1": "Clear alignment with Utah Core Standards was evident when the teacher..."
 }}
 
-JSON Response:"""
+Return ONLY the JSON object, no additional text:"""
         
         return prompt 

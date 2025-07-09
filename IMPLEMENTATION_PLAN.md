@@ -52,14 +52,29 @@ Status: **In Progress**
 - [ ] Add visual indicators for missing plans
 - [ ] Track submission rates
 
-### Phase 2: Evaluation Management System (Weeks 5-8)
+### Phase 2: STER Evaluation Management System (Weeks 5-8)
 Status: **Planned**
 
-#### Key Features:
-- Formative vs Summative evaluation types
-- Evaluation tracking per student
-- Automated summative generation
-- Visual status management
+#### 2.1 STER Evaluation Type System [CRITICAL]
+- **Student Name Input**: Supervisor enters student name to trigger tracking
+- **STER Type Selection**: Formative 1, 2, 3, 4, and Summative options
+- **Progress Tracking**: Complete evaluation history per student
+- **Visual Graying**: Completed formative evaluations grayed out
+- **Sequential Validation**: Ensure proper formative progression
+
+#### 2.2 Student Progress Tracking [CRITICAL]
+- **Database Schema**: Implement STER progress tracking tables
+- **Progress Dashboard**: Visual indicators for completion status
+- **Available Types Logic**: Dynamic evaluation type availability
+- **History Storage**: All evaluations and lesson plans per student
+
+#### 2.3 Implementation Tasks:
+- [ ] Create STER progress tracking database tables
+- [ ] Implement student name lookup system
+- [ ] Build dynamic evaluation type selection
+- [ ] Add visual graying for completed types
+- [ ] Create progress dashboard
+- [ ] Implement validation logic for type selection
 
 ### Phase 3: Data Infrastructure (Weeks 9-12)
 Status: **Planned**

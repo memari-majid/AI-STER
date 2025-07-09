@@ -5,7 +5,26 @@ All notable changes to AI-STER will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased - v1.1.0] - STER Evaluation System Enhancement
+
+### Planned
+- **STER Evaluation Type System**: Comprehensive formative and summative evaluation tracking
+  - Formative 1, 2, 3, and 4 evaluation types with sequential progression
+  - Summative evaluation available after formative completion
+  - Student name input triggering evaluation tracking
+  - Visual graying of completed evaluation types to prevent selection errors
+- **Student Progress Tracking**: Complete evaluation history and progress monitoring per student
+- **Database Schema Enhancement**: STER progress tracking tables and automated triggers
+- **Smart Type Selection**: Dynamic evaluation type availability based on completion status
+- **Comprehensive Documentation**: Updated roadmap, technical architecture, and workflow documentation
+
+### Documentation Updates
+- Enhanced development roadmap with detailed STER system specifications
+- Updated technical architecture with STER tracking implementation details
+- Revised evaluation workflow to include STER type selection process
+- Updated README with comprehensive STER evaluation system features
+
+## [Unreleased - v1.2.0] - Advanced Features
 
 ### Planned
 - Bulk evaluation operations

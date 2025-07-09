@@ -90,58 +90,123 @@ CREATE TABLE justification_history (
 );
 ```
 
-### 2. Formative/Summative Evaluation System
+### 2. STER Evaluation Type System
 
 #### State Management
 ```python
-class EvaluationType(Enum):
-    FORMATIVE = "formative"
+class STEREvaluationType(Enum):
+    FORMATIVE_1 = "formative_1"
+    FORMATIVE_2 = "formative_2"
+    FORMATIVE_3 = "formative_3"
+    FORMATIVE_4 = "formative_4"
     SUMMATIVE = "summative"
 
-class EvaluationStatus(Enum):
-    DRAFT = "draft"
-    COMPLETED = "completed"
-    SUBMITTED = "submitted"
-    ARCHIVED = "archived"
+class EvaluatorRole(Enum):
+    SUPERVISOR = "supervisor"           # 19 competencies: LL2-LL7, IC1/IC2, IC3, IC4, IC5/IC6, IC7, IP1-IP8
+    COOPERATING_TEACHER = "cooperating_teacher"  # 16 competencies: LL1, CC1-CC8, PR1-PR7
 
-class EvaluationTracker:
+class STERCompetencyArea(Enum):
+    LEARNERS_LEARNING = "Learners and Learning"        # 7 items total (LL1=CT, LL2-LL7=Supervisor)
+    INSTRUCTIONAL_CLARITY = "Instructional Clarity"    # 5 items (all supervisor, IC1/IC2 and IC5/IC6 combined)
+    INSTRUCTIONAL_PRACTICE = "Instructional Practice"  # 8 items (all supervisor)
+    CLASSROOM_CLIMATE = "Classroom Climate"            # 8 items (all cooperating teacher)
+    PROFESSIONAL_RESPONSIBILITY = "Professional Responsibility"  # 7 items (all cooperating teacher)
+
+class STERTracker:
     def __init__(self, db_session):
         self.db = db_session
     
-    def get_formative_count(self, student_id):
-        """Count completed formative evaluations"""
+    def get_items_for_role(self, evaluator_role: EvaluatorRole) -> List[Dict]:
+        """Get competency items appropriate for evaluator role"""
+        return filter_items_by_evaluator_role(get_ster_items(), evaluator_role.value)
+    
+    def get_formative_count(self, student_id, ster_type):
+        """Count completed formative evaluations by type"""
         
     def is_summative_required(self, student_id):
-        """Check if summative evaluation is due"""
+        """Check if summative evaluation is due based on formative completion"""
         
-    def create_summative_from_formatives(self, student_id):
-        """Generate summative evaluation from formative data"""
+    def get_role_specific_progress(self, student_id, evaluator_role):
+        """Track progress for role-specific competencies"""
 ```
 
 #### Database Schema
 ```sql
--- Enhanced evaluations table
+-- Enhanced evaluations table with role-based STER support
 CREATE TABLE evaluations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     student_id UUID REFERENCES students(id),
-    supervisor_id UUID REFERENCES users(id),
-    type VARCHAR(20) CHECK (type IN ('formative', 'summative')),
+    evaluator_id UUID REFERENCES users(id),
+    evaluator_role VARCHAR(20) CHECK (evaluator_role IN ('supervisor', 'cooperating_teacher')),
+    evaluation_type VARCHAR(20) CHECK (evaluation_type IN ('field_evaluation', 'ster')),
+    ster_type VARCHAR(20) CHECK (ster_type IN ('formative_1', 'formative_2', 'formative_3', 'formative_4', 'summative')),
     status VARCHAR(20) CHECK (status IN ('draft', 'completed', 'submitted', 'archived')),
     evaluation_date DATE,
     observation_notes TEXT,
+    total_items_evaluated INTEGER, -- 19 for supervisor, 16 for cooperating_teacher
+    total_score INTEGER,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     submitted_at TIMESTAMP,
-    UNIQUE(student_id, evaluation_date, type)
+    UNIQUE(student_id, evaluation_date, ster_type, evaluator_role)
 );
 
--- Evaluation relationships for summative generation
-CREATE TABLE formative_summative_links (
+-- STER competency scores with role tracking
+CREATE TABLE ster_competency_scores (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    summative_id UUID REFERENCES evaluations(id),
-    formative_id UUID REFERENCES evaluations(id),
-    weight DECIMAL(3,2) DEFAULT 1.0
+    evaluation_id UUID REFERENCES evaluations(id),
+    competency_code VARCHAR(10), -- LL1, LL2, IC1, IP1, CC1, PR1, etc.
+    competency_area VARCHAR(50), -- Learners and Learning, Instructional Clarity, etc.
+    evaluator_role VARCHAR(20), -- supervisor or cooperating_teacher
+    score INTEGER CHECK (score >= 0 AND score <= 3),
+    justification TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- STER progress tracking per student
+CREATE TABLE ster_progress (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id UUID REFERENCES students(id),
+    
+    -- Formative evaluation completion tracking
+    formative_1_completed BOOLEAN DEFAULT FALSE,
+    formative_1_date DATE,
+    formative_2_completed BOOLEAN DEFAULT FALSE,
+    formative_2_date DATE,
+    formative_3_completed BOOLEAN DEFAULT FALSE,
+    formative_3_date DATE,
+    formative_4_completed BOOLEAN DEFAULT FALSE,
+    formative_4_date DATE,
+    
+    -- Summative eligibility and completion
+    summative_eligible BOOLEAN DEFAULT FALSE,
+    summative_completed BOOLEAN DEFAULT FALSE,
+    summative_date DATE,
+    
+    -- Role-based completion tracking
+    supervisor_evaluations_count INTEGER DEFAULT 0,    -- Track supervisor evaluations
+    cooperating_teacher_evaluations_count INTEGER DEFAULT 0, -- Track CT evaluations
+    
+    last_updated TIMESTAMP DEFAULT NOW()
+);
+
+-- Role-based competency mapping
+CREATE TABLE ster_competency_roles (
+    competency_code VARCHAR(10) PRIMARY KEY,
+    competency_title TEXT NOT NULL,
+    competency_area VARCHAR(50) NOT NULL,
+    evaluator_role VARCHAR(20) NOT NULL CHECK (evaluator_role IN ('supervisor', 'cooperating_teacher')),
+    context TEXT, -- Observation, Conference w/MT, etc.
+    sort_order INTEGER
+);
+
+-- Insert role mappings (19 supervisor + 16 cooperating teacher = 35 total)
+INSERT INTO ster_competency_roles VALUES
+-- Supervisor Items (19)
+('LL2', 'Design learning that builds on learner background knowledge', 'Learners and Learning', 'supervisor', 'Observation', 2),
+('LL3', 'Strengthen classroom norms for positive relationships', 'Learners and Learning', 'supervisor', 'Observation', 3),
+-- ... (continue with all 35 competencies)
+;
 ```
 
 ### 3. Disposition Comments System
@@ -389,101 +454,5 @@ def invalidate_student_cache(student_id):
 ```
 
 ### Database Indexing
-```sql
--- Performance indexes
-CREATE INDEX idx_evaluations_student_date ON evaluations(student_id, evaluation_date);
-CREATE INDEX idx_evaluations_type_status ON evaluations(type, status);
-CREATE INDEX idx_scores_evaluation ON scores(evaluation_id);
-CREATE INDEX idx_justifications_evaluation ON justifications(evaluation_id);
 ```
-
-## Monitoring & Analytics
-
-### Application Metrics
-```python
-# Prometheus metrics
-evaluation_counter = Counter('evaluations_total', 'Total evaluations created')
-ai_generation_histogram = Histogram('ai_generation_duration', 'AI justification generation time')
-email_send_counter = Counter('emails_sent', 'Total evaluation emails sent')
-
-# Usage tracking
-@track_metrics
-def create_evaluation(data):
-    evaluation_counter.inc()
-    # Implementation
 ```
-
-### Error Handling
-```python
-class AISTERException(Exception):
-    """Base exception for AI-STER application"""
-    pass
-
-class EvaluationNotFoundError(AISTERException):
-    """Raised when evaluation doesn't exist"""
-    pass
-
-class InsufficientPermissionsError(AISTERException):
-    """Raised when user lacks required permissions"""
-    pass
-
-# Global error handler
-@app.exception_handler(AISTERException)
-async def handle_app_exception(request, exc):
-    logger.error(f"Application error: {exc}")
-    return JSONResponse(
-        status_code=400,
-        content={"error": str(exc)}
-    )
-```
-
-## Deployment Strategy
-
-### Docker Configuration
-```dockerfile
-# Dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-EXPOSE 8000
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-### Kubernetes Deployment
-```yaml
-# deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ai-ster-api
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: ai-ster-api
-  template:
-    metadata:
-      labels:
-        app: ai-ster-api
-    spec:
-      containers:
-      - name: api
-        image: ai-ster:latest
-        ports:
-        - containerPort: 8000
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: ai-ster-secrets
-              key: database-url
-```
-
-This architecture provides a robust foundation for implementing all client-requested features while maintaining scalability, security, and compliance requirements. 
