@@ -337,6 +337,7 @@ def show_dashboard():
             except Exception as e:
                 st.error(f"Import failed: {str(e)}")
 
+@st.cache_data
 def analyze_competency_performance(evaluations):
     """Analyze performance by competency area"""
     from data.rubrics import get_field_evaluation_items, get_ster_items
@@ -371,6 +372,7 @@ def analyze_competency_performance(evaluations):
     
     return competency_averages
 
+@st.cache_data
 def analyze_disposition_performance(evaluations):
     """Analyze professional disposition performance"""
     from data.rubrics import get_professional_dispositions
@@ -721,7 +723,7 @@ def show_evaluation_form():
             'school_name': school_name or analysis.get('school_name', ''),
             'class_size': class_size,
             'lesson_topic': lesson_topic or analysis.get('lesson_topic', ''),
-            'evaluation_date': evaluation_date.isoformat(),
+            'evaluation_date': evaluation_date.isoformat() if hasattr(evaluation_date, 'isoformat') and evaluation_date is not None else str(evaluation_date) if evaluation_date else '',
             'lesson_plan_text': lesson_plan_text,
             'ai_analysis': analysis
         }
@@ -757,7 +759,7 @@ def show_evaluation_form():
             'grade_levels': grade_levels,
             'school_name': school_name,
             'class_size': class_size,
-            'evaluation_date': evaluation_date.isoformat(),
+            'evaluation_date': evaluation_date.isoformat() if hasattr(evaluation_date, 'isoformat') and evaluation_date is not None else str(evaluation_date) if evaluation_date else '',
             'lesson_plan_text': lesson_plan_text if lesson_plan_text else None,
             'ai_analysis': None
         }
@@ -1542,4 +1544,4 @@ https://www.schools.utah.gov/file/stir-rubric-2024.pdf
         st.info("💡 **Tip:** Keep the rubric open in another tab while completing evaluations for easy reference.")
 
 if __name__ == "__main__":
-    main() 
+    main()      

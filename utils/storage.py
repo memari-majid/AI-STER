@@ -5,7 +5,8 @@ Uses JSON files for simple local storage
 
 import json
 import os
-from typing import List, Dict, Any
+import streamlit as st
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 STORAGE_DIR = "data_storage"
@@ -20,6 +21,7 @@ def save_evaluation(evaluation: Dict[str, Any]) -> None:
     """Save an evaluation to storage"""
     ensure_storage_dir()
     
+    load_evaluations.clear()
     evaluations = load_evaluations()
     
     # Update existing or add new
@@ -38,6 +40,7 @@ def save_evaluation(evaluation: Dict[str, Any]) -> None:
     with open(EVALUATIONS_FILE, 'w', encoding='utf-8') as f:
         json.dump(evaluations, f, indent=2, ensure_ascii=False)
 
+@st.cache_data
 def load_evaluations() -> List[Dict[str, Any]]:
     """Load all evaluations from storage"""
     if not os.path.exists(EVALUATIONS_FILE):
@@ -51,6 +54,7 @@ def load_evaluations() -> List[Dict[str, Any]]:
 
 def delete_evaluation(evaluation_id: str) -> bool:
     """Delete an evaluation by ID"""
+    load_evaluations.clear()
     evaluations = load_evaluations()
     
     original_length = len(evaluations)
@@ -82,6 +86,7 @@ def import_data(data: Dict[str, Any]) -> int:
     if not isinstance(imported_evaluations, list):
         raise ValueError("Invalid data format: 'evaluations' must be a list")
     
+    load_evaluations.clear()
     current_evaluations = load_evaluations()
     
     # Merge evaluations, avoiding duplicates
@@ -107,8 +112,9 @@ def clear_all_data() -> None:
     """Clear all stored data"""
     if os.path.exists(EVALUATIONS_FILE):
         os.remove(EVALUATIONS_FILE)
+    load_evaluations.clear()
 
-def get_evaluation_by_id(evaluation_id: str) -> Dict[str, Any]:
+def get_evaluation_by_id(evaluation_id: str) -> Optional[Dict[str, Any]]:
     """Get a specific evaluation by ID"""
     evaluations = load_evaluations()
     
@@ -116,4 +122,4 @@ def get_evaluation_by_id(evaluation_id: str) -> Dict[str, Any]:
         if evaluation.get('id') == evaluation_id:
             return evaluation
     
-    return None 
+    return None   
