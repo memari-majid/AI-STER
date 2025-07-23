@@ -1,458 +1,422 @@
 # AI-STER Technical Architecture
-Implementation Guide for Client Feedback Features
+**Updated for June 25, 2025 Client Action Items**
 
 ## System Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Frontend Layer                            │
-│  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐         │
-│  │  Streamlit  │  │ React Admin  │  │  Email Client  │         │
-│  │     App     │  │  Dashboard   │  │   Interface    │         │
-│  └─────────────┘  └──────────────┘  └────────────────┘         │
+│                  Simplified Frontend Layer                       │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │              Streamlit Web Application                      │ │
+│  │  ┌────────────────┐  ┌────────────────┐  ┌───────────────┐ │ │
+│  │  │   Evaluation   │  │   Dashboard    │  │  Test Data    │ │ │
+│  │  │     Form       │  │   Analytics    │  │  Generator    │ │ │
+│  │  │                │  │                │  │               │ │ │
+│  │  │ Supervisor-Only│  │ Score Tracking │  │ Synthetic     │ │ │
+│  │  │   Interface    │  │ Progress View  │  │ Evaluations   │ │ │
+│  │  └────────────────┘  └────────────────┘  └───────────────┘ │ │
+│  └─────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
                                 │
 ┌─────────────────────────────────────────────────────────────────┐
-│                         API Gateway                              │
-│  ┌────────────────────────────────────────────────────┐         │
-│  │            FastAPI with Authentication             │         │
-│  └────────────────────────────────────────────────────┘         │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-┌─────────────────────────────────────────────────────────────────┐
-│                      Business Logic Layer                        │
+│                     Core Business Logic                          │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │  Evaluation  │  │   Scoring    │  │    Report    │         │
-│  │   Service    │  │   Engine     │  │  Generator   │         │
+│  │  Evaluation  │  │   Scoring    │  │  Simplified  │         │
+│  │   Service    │  │   Engine     │  │     Export   │         │
 │  └──────────────┘  └──────────────┘  └──────────────┘         │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │      AI      │  │    Email     │  │   Analytics  │         │
-│  │ Justification│  │ Distribution │  │   Service    │         │
+│  │      AI      │  │   Session    │  │  Validation  │         │
+│  │ Justification│  │  Management  │  │   Service    │         │
 │  └──────────────┘  └──────────────┘  └──────────────┘         │
 └─────────────────────────────────────────────────────────────────┘
                                 │
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Data Layer                                │
+│                      Simplified Data Layer                       │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │  PostgreSQL  │  │    Redis     │  │   Vector DB  │         │
-│  │   Database   │  │    Cache     │  │  (Pinecone)  │         │
+│  │  JSON Files  │  │    Session   │  │   PDF Export │         │
+│  │   Storage    │  │    State     │  │   Generator  │         │
 │  └──────────────┘  └──────────────┘  └──────────────┘         │
-│  ┌──────────────┐  ┌──────────────┐                            │
-│  │  S3 Storage  │  │   Message    │                            │
-│  │   (Files)    │  │    Queue     │                            │
-│  └──────────────┘  └──────────────┘                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Feature Implementation Details
+## Key Architecture Changes (June 2025)
 
-### 1. AI Justification System
-
-#### Components
+### 1. **Role Simplification**
 ```python
-class AIJustificationService:
-    def __init__(self, llm_client, vector_db):
-        self.llm = llm_client
-        self.vector_db = vector_db
-    
-    def generate_justification(self, context):
-        """Generate AI justification for evaluation scores"""
-        # Components:
-        # 1. Context extraction
-        # 2. Relevant examples retrieval
-        # 3. Prompt engineering
-        # 4. LLM generation
-        # 5. Post-processing
+# REMOVED: Cooperating Teacher Role Support
+# OLD: Dual-role system with role-based filtering
+# NEW: University Supervisor focused system
+
+class UserRole:
+    SUPERVISOR = "supervisor"
+    # REMOVED: COOPERATING_TEACHER = "cooperating_teacher"
+
+def get_evaluation_items(rubric_type):
+    """Simplified item retrieval - no role filtering needed"""
+    if rubric_type == "field_evaluation":
+        return get_field_evaluation_items()
+    else:
+        return get_ster_items()  # All STER items for supervisors
+    # REMOVED: filter_items_by_evaluator_role()
 ```
 
-#### Database Schema
-```sql
--- Justifications table
-CREATE TABLE justifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    evaluation_id UUID REFERENCES evaluations(id),
-    competency_id VARCHAR(50),
-    ai_generated_text TEXT,
-    supervisor_edited_text TEXT,
-    final_score INTEGER,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Justification history for audit
-CREATE TABLE justification_history (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    justification_id UUID REFERENCES justifications(id),
-    version INTEGER,
-    text TEXT,
-    edited_by UUID REFERENCES users(id),
-    edited_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-### 2. STER Evaluation Type System
-
-#### State Management
+### 2. **Enhanced Scoring System**
 ```python
-class STEREvaluationType(Enum):
-    FORMATIVE_1 = "formative_1"
-    FORMATIVE_2 = "formative_2"
-    FORMATIVE_3 = "formative_3"
-    FORMATIVE_4 = "formative_4"
-    SUMMATIVE = "summative"
+# NEW: Extended score options including "Not Observed"
+class ScoreOption:
+    NOT_SELECTED = None
+    NOT_OBSERVED = "not_observed"
+    LEVEL_0 = 0
+    LEVEL_1 = 1
+    LEVEL_2 = 2
+    LEVEL_3 = 3
 
-class EvaluatorRole(Enum):
-    SUPERVISOR = "supervisor"           # 19 competencies: LL2-LL7, IC1/IC2, IC3, IC4, IC5/IC6, IC7, IP1-IP8
-    COOPERATING_TEACHER = "cooperating_teacher"  # 16 competencies: LL1, CC1-CC8, PR1-PR7
-
-class STERCompetencyArea(Enum):
-    LEARNERS_LEARNING = "Learners and Learning"        # 7 items total (LL1=CT, LL2-LL7=Supervisor)
-    INSTRUCTIONAL_CLARITY = "Instructional Clarity"    # 5 items (all supervisor, IC1/IC2 and IC5/IC6 combined)
-    INSTRUCTIONAL_PRACTICE = "Instructional Practice"  # 8 items (all supervisor)
-    CLASSROOM_CLIMATE = "Classroom Climate"            # 8 items (all cooperating teacher)
-    PROFESSIONAL_RESPONSIBILITY = "Professional Responsibility"  # 7 items (all cooperating teacher)
-
-class STERTracker:
-    def __init__(self, db_session):
-        self.db = db_session
-    
-    def get_items_for_role(self, evaluator_role: EvaluatorRole) -> List[Dict]:
-        """Get competency items appropriate for evaluator role"""
-        return filter_items_by_evaluator_role(get_ster_items(), evaluator_role.value)
-    
-    def get_formative_count(self, student_id, ster_type):
-        """Count completed formative evaluations by type"""
-        
-    def is_summative_required(self, student_id):
-        """Check if summative evaluation is due based on formative completion"""
-        
-    def get_role_specific_progress(self, student_id, evaluator_role):
-        """Track progress for role-specific competencies"""
+def validate_evaluation_scores(scores):
+    """Updated validation - 'not_observed' is valid"""
+    missing = []
+    for item_id, score in scores.items():
+        if score is None:  # Only None is invalid
+            missing.append(item_id)
+    return missing
 ```
 
-#### Database Schema
-```sql
--- Enhanced evaluations table with role-based STER support
-CREATE TABLE evaluations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    student_id UUID REFERENCES students(id),
-    evaluator_id UUID REFERENCES users(id),
-    evaluator_role VARCHAR(20) CHECK (evaluator_role IN ('supervisor', 'cooperating_teacher')),
-    evaluation_type VARCHAR(20) CHECK (evaluation_type IN ('field_evaluation', 'ster')),
-    ster_type VARCHAR(20) CHECK (ster_type IN ('formative_1', 'formative_2', 'formative_3', 'formative_4', 'summative')),
-    status VARCHAR(20) CHECK (status IN ('draft', 'completed', 'submitted', 'archived')),
-    evaluation_date DATE,
-    observation_notes TEXT,
-    total_items_evaluated INTEGER, -- 19 for supervisor, 16 for cooperating_teacher
-    total_score INTEGER,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    submitted_at TIMESTAMP,
-    UNIQUE(student_id, evaluation_date, ster_type, evaluator_role)
-);
-
--- STER competency scores with role tracking
-CREATE TABLE ster_competency_scores (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    evaluation_id UUID REFERENCES evaluations(id),
-    competency_code VARCHAR(10), -- LL1, LL2, IC1, IP1, CC1, PR1, etc.
-    competency_area VARCHAR(50), -- Learners and Learning, Instructional Clarity, etc.
-    evaluator_role VARCHAR(20), -- supervisor or cooperating_teacher
-    score INTEGER CHECK (score >= 0 AND score <= 3),
-    justification TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- STER progress tracking per student
-CREATE TABLE ster_progress (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    student_id UUID REFERENCES students(id),
-    
-    -- Formative evaluation completion tracking
-    formative_1_completed BOOLEAN DEFAULT FALSE,
-    formative_1_date DATE,
-    formative_2_completed BOOLEAN DEFAULT FALSE,
-    formative_2_date DATE,
-    formative_3_completed BOOLEAN DEFAULT FALSE,
-    formative_3_date DATE,
-    formative_4_completed BOOLEAN DEFAULT FALSE,
-    formative_4_date DATE,
-    
-    -- Summative eligibility and completion
-    summative_eligible BOOLEAN DEFAULT FALSE,
-    summative_completed BOOLEAN DEFAULT FALSE,
-    summative_date DATE,
-    
-    -- Role-based completion tracking
-    supervisor_evaluations_count INTEGER DEFAULT 0,    -- Track supervisor evaluations
-    cooperating_teacher_evaluations_count INTEGER DEFAULT 0, -- Track CT evaluations
-    
-    last_updated TIMESTAMP DEFAULT NOW()
-);
-
--- Role-based competency mapping
-CREATE TABLE ster_competency_roles (
-    competency_code VARCHAR(10) PRIMARY KEY,
-    competency_title TEXT NOT NULL,
-    competency_area VARCHAR(50) NOT NULL,
-    evaluator_role VARCHAR(20) NOT NULL CHECK (evaluator_role IN ('supervisor', 'cooperating_teacher')),
-    context TEXT, -- Observation, Conference w/MT, etc.
-    sort_order INTEGER
-);
-
--- Insert role mappings (19 supervisor + 16 cooperating teacher = 35 total)
-INSERT INTO ster_competency_roles VALUES
--- Supervisor Items (19)
-('LL2', 'Design learning that builds on learner background knowledge', 'Learners and Learning', 'supervisor', 'Observation', 2),
-('LL3', 'Strengthen classroom norms for positive relationships', 'Learners and Learning', 'supervisor', 'Observation', 3),
--- ... (continue with all 35 competencies)
-;
-```
-
-### 3. Disposition Comments System
-
-#### UI Component
+### 3. **Simplified Evaluation Logic**
 ```python
-def render_disposition_with_comments(disposition_name, disposition_id):
-    """Render disposition slider with comment box"""
-    col1, col2 = st.columns([1, 2])
+# NEW: Conditional disposition display
+def show_evaluation_form():
+    # ... evaluation setup ...
     
-    with col1:
-        score = st.select_slider(
-            f"{disposition_name}",
-            options=range(1, 5),
-            format_func=get_disposition_level_name
-        )
+    # Simplified role assignment
+    evaluator_role = "supervisor"  # Fixed role
     
-    with col2:
-        comment = st.text_area(
-            "Feedback & Suggestions",
-            key=f"comment_{disposition_id}",
-            height=100,
-            max_chars=500,
-            placeholder="Provide specific feedback..."
-        )
+    # Conditional dispositions based on evaluation type
+    if rubric_type == "field_evaluation":
+        show_professional_dispositions()  # Include dispositions
+    # STER evaluations: No dispositions section
     
-    # Auto-save to session state
-    st.session_state[f"disp_{disposition_id}_comment"] = comment
-    
-    return score, comment
+    # Combined analysis and scoring interface
+    show_combined_analysis_scoring_interface(items)
 ```
 
-#### Database Schema
-```sql
--- Disposition comments table
-CREATE TABLE disposition_comments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    evaluation_id UUID REFERENCES evaluations(id),
-    disposition_id VARCHAR(50),
-    score INTEGER CHECK (score BETWEEN 1 AND 4),
-    comment TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-```
+## Updated Component Architecture
 
-### 4. Email Distribution System
+### **Evaluation Form Components (Simplified)**
 
-#### Email Service Implementation
 ```python
-class EmailDistributionService:
-    def __init__(self, email_provider):
-        self.provider = email_provider  # SendGrid/AWS SES
+# app.py - Main evaluation form
+def show_evaluation_form():
+    """Streamlined supervisor-focused evaluation form"""
+    
+    # Step 1: Lesson Plan (Optional)
+    lesson_plan_section()
+    
+    # Step 2: Basic Information  
+    student_evaluator_info()
+    
+    # Step 3: Observation Notes with AI Analysis Button
+    observation_notes_with_ai_button()
+    
+    # Step 4: Combined Analysis & Scoring Interface
+    combined_analysis_scoring_section()
+    
+    # Step 5: Conditional Dispositions (Field only)
+    if rubric_type == "field_evaluation":
+        dispositions_section()
+    
+    # Step 6: Save/Complete with Session Clearing
+    save_complete_with_clearing()
+
+def combined_analysis_scoring_section():
+    """NEW: Side-by-side analysis and scoring"""
+    for item in items:
+        col1, col2 = st.columns([2, 1])
         
-    async def send_evaluation_report(self, evaluation_id):
-        """Send completed evaluation to all stakeholders"""
-        # 1. Generate PDF report
-        pdf_report = await self.generate_pdf_report(evaluation_id)
+        with col1:
+            # AI Analysis Display & Edit
+            show_ai_analysis_for_item(item)
+            edit_justification_inline(item)
         
-        # 2. Get recipient list
-        recipients = await self.get_recipients(evaluation_id)
-        
-        # 3. Prepare email content
-        email_content = self.prepare_email_content(evaluation_id)
-        
-        # 4. Send emails
-        for recipient in recipients:
-            await self.send_email(
-                to=recipient.email,
-                subject=f"Evaluation Report - {recipient.student_name}",
-                content=email_content,
-                attachments=[pdf_report]
-            )
+        with col2:
+            # Scoring Controls
+            score_with_enhanced_options(item)
+            display_score_description(item)
 ```
 
-#### Email Templates
-```html
-<!-- evaluation_complete.html -->
-<html>
-<body>
-    <h2>Student Teaching Evaluation Complete</h2>
-    <p>Dear {{ recipient_name }},</p>
-    <p>The {{ evaluation_type }} evaluation for {{ student_name }} has been completed.</p>
-    
-    <h3>Summary:</h3>
-    <ul>
-        <li>Date: {{ evaluation_date }}</li>
-        <li>Supervisor: {{ supervisor_name }}</li>
-        <li>Overall Performance: {{ overall_score }}</li>
-    </ul>
-    
-    <p>Please find the detailed evaluation report attached.</p>
-</body>
-</html>
-```
+### **Session Management (Enhanced)**
 
-### 5. Data Storage & Knowledge Base
-
-#### Seven-Year Retention Strategy
 ```python
-class DataRetentionManager:
-    def __init__(self, db, storage):
-        self.db = db
-        self.storage = storage
+# utils/session.py - NEW: Enhanced session management
+class SessionManager:
+    @staticmethod
+    def clear_evaluation_data():
+        """Clear all evaluation-related session data"""
+        keys_to_clear = [
+            'scores', 'justifications', 'disposition_scores',
+            'disposition_comments', 'ai_analyses', 'extracted_info'
+        ]
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+    
+    @staticmethod
+    def start_new_evaluation():
+        """Initialize new evaluation with clear state"""
+        SessionManager.clear_evaluation_data()
+        st.success("✅ New evaluation started - previous data cleared")
+    
+    @staticmethod
+    def complete_evaluation(evaluation_data):
+        """Complete evaluation and clear session"""
+        save_evaluation(evaluation_data)
+        SessionManager.clear_evaluation_data()
+        st.success("🎉 Evaluation completed - ready for next evaluation")
+```
+
+### **Enhanced Scoring Interface**
+
+```python
+# components/scoring.py - NEW: Enhanced scoring options
+def render_score_selector(item_id, current_score=None):
+    """Enhanced score selector with 'Not Observed' option"""
+    
+    options = [None, "not_observed", 0, 1, 2, 3]
+    
+    def format_option(score):
+        if score is None:
+            return "Select score..."
+        elif score == "not_observed":
+            return "Not Observed - Competency not demonstrated"
+        else:
+            return f"Level {score} - {get_level_name(score)}"
+    
+    score = st.selectbox(
+        "Score",
+        options=options,
+        index=get_score_index(current_score),
+        format_func=format_option,
+        key=f"score_{item_id}"
+    )
+    
+    return score
+
+def validate_scores_with_not_observed(scores):
+    """Updated validation allowing 'not_observed' as valid"""
+    missing = []
+    for item_id, score in scores.items():
+        if score is None:  # Only None is invalid
+            missing.append(item_id)
+    return missing
+```
+
+## Updated Data Models
+
+### **Evaluation Data Structure (Simplified)**
+
+```python
+# data/models.py
+class Evaluation:
+    def __init__(self):
+        self.id = str(uuid.uuid4())
+        self.student_name = ""
+        self.evaluator_name = ""
+        self.evaluator_role = "supervisor"  # Fixed role
+        self.rubric_type = ""  # "field_evaluation" or "ster"
+        self.scores = {}  # Can include "not_observed" values
+        self.justifications = {}
+        self.disposition_scores = {}  # Only for field evaluations
+        self.disposition_comments = {}  # Only for field evaluations
+        self.status = "draft"  # "draft" or "completed"
+        self.created_at = datetime.now().isoformat()
+        self.completed_at = None
+
+class ScoreValidation:
+    @staticmethod
+    def is_valid_score(score):
+        """Check if score is valid (includes 'not_observed')"""
+        return score in [0, 1, 2, 3, "not_observed"]
+    
+    @staticmethod
+    def is_complete_evaluation(scores, rubric_type):
+        """Check if evaluation is complete"""
+        # All items must have a score (including 'not_observed')
+        incomplete_items = [k for k, v in scores.items() if v is None]
+        return len(incomplete_items) == 0
+```
+
+## UI/UX Improvements Implementation
+
+### **Terminology Updates**
+```python
+# utils/terminology.py - NEW: Positive terminology
+TERMINOLOGY_MAP = {
+    "Critical Areas": "Areas for Improvement",
+    "critical areas": "areas for improvement",
+    "Failed": "Needs Development", 
+    "❌ Not Met": "⚠️ Needs Improvement",
+    "Red X": "⚠️ Warning Icon"
+}
+
+def update_terminology(text):
+    """Replace negative terminology with positive alternatives"""
+    for old_term, new_term in TERMINOLOGY_MAP.items():
+        text = text.replace(old_term, new_term)
+    return text
+```
+
+### **Visual Stress Reduction**
+```python
+# components/indicators.py - NEW: Stress-reduced indicators
+def show_evaluation_status(meets_requirements):
+    """Show status without stressful red X indicators"""
+    if meets_requirements:
+        st.success("✅ Requirements Met")
+    else:
+        st.warning("⚠️ Needs Improvement - Some areas require Level 2+")
+        # REMOVED: Red X and "FAILED" messaging
+
+def show_competency_status(score):
+    """Show individual competency status with neutral colors"""
+    if score is None:
+        st.info("⏸️ Not yet scored")
+    elif score == "not_observed":
+        st.info("👁️ Not observed in this session")
+    elif score >= 2:
+        st.success(f"✅ Level {score}")
+    else:
+        st.warning(f"⚠️ Level {score} - Consider improvement strategies")
+```
+
+## Export and Data Management
+
+### **PDF Export System (NEW)**
+```python
+# services/export.py - NEW: PDF generation for completed evaluations
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+
+class PDFExportService:
+    @staticmethod
+    def generate_evaluation_pdf(evaluation):
+        """Generate PDF report for completed evaluation"""
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
         
-    def archive_old_data(self):
-        """Archive data older than 7 years"""
-        cutoff_date = datetime.now() - timedelta(days=7*365)
+        # Header
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(50, 750, f"AI-STER Evaluation Report")
         
-        # 1. Identify old records
-        old_evaluations = self.db.query(Evaluation).filter(
-            Evaluation.created_at < cutoff_date
-        )
+        # Student Information
+        p.setFont("Helvetica", 12)
+        y_position = 700
+        p.drawString(50, y_position, f"Student: {evaluation['student_name']}")
+        p.drawString(50, y_position - 20, f"Evaluator: {evaluation['evaluator_name']}")
+        p.drawString(50, y_position - 40, f"Date: {evaluation['created_at'][:10]}")
         
-        # 2. Export to cold storage
-        for evaluation in old_evaluations:
-            self.export_to_cold_storage(evaluation)
+        # Scores and Justifications
+        y_position = 620
+        for item_id, score in evaluation['scores'].items():
+            item_title = get_item_title(item_id)
+            justification = evaluation['justifications'].get(item_id, '')
             
-        # 3. Remove from active database
-        self.db.query(Evaluation).filter(
-            Evaluation.created_at < cutoff_date
-        ).update({"archived": True})
+            p.drawString(50, y_position, f"{item_id}: {format_score_display(score)}")
+            y_position -= 20
+            
+            if justification:
+                wrapped_text = wrap_text(justification, 80)
+                for line in wrapped_text:
+                    p.drawString(70, y_position, line)
+                    y_position -= 15
+            
+            y_position -= 10
+        
+        p.save()
+        buffer.seek(0)
+        return buffer
+
+def format_score_display(score):
+    """Format score for display in reports"""
+    if score == "not_observed":
+        return "Not Observed"
+    elif isinstance(score, int):
+        return f"Level {score}"
+    else:
+        return "Not Scored"
 ```
 
-#### Vector Knowledge Base
-```python
-class VectorKnowledgeBase:
-    def __init__(self, vector_db_client):
-        self.client = vector_db_client  # Pinecone/Weaviate
-        
-    def store_evaluation_embedding(self, evaluation):
-        """Store evaluation as vector embedding"""
-        # 1. Extract text content
-        text = self.extract_evaluation_text(evaluation)
-        
-        # 2. Remove PII
-        clean_text = self.remove_pii(text)
-        
-        # 3. Generate embedding
-        embedding = self.generate_embedding(clean_text)
-        
-        # 4. Store in vector DB
-        self.client.upsert(
-            id=evaluation.id,
-            vector=embedding,
-            metadata={
-                "type": evaluation.type,
-                "date": evaluation.date,
-                "anonymized": True
-            }
-        )
-```
+## Implementation Dependencies
 
-### 6. Qualtrics Integration
+### **Phase 1 Dependencies (Week 1-2)**
+1. **Score Dropdown Enhancement**
+   - Update: `app.py` scoring interface
+   - Update: `utils/validation.py` score validation
+   - Test: All evaluation workflows
 
-#### Import/Export Service
-```python
-class QualtricsIntegration:
-    def __init__(self, qualtrics_api_key):
-        self.api_key = qualtrics_api_key
-        
-    def import_from_qualtrics(self, survey_id):
-        """Import evaluation data from Qualtrics"""
-        # 1. Fetch survey responses
-        responses = self.fetch_survey_responses(survey_id)
-        
-        # 2. Transform to internal format
-        evaluations = self.transform_responses(responses)
-        
-        # 3. Store in database
-        return self.store_evaluations(evaluations)
-        
-    def export_to_qualtrics(self, evaluation_ids):
-        """Export evaluations to Qualtrics format"""
-        # 1. Fetch evaluations
-        evaluations = self.get_evaluations(evaluation_ids)
-        
-        # 2. Transform to Qualtrics format
-        qualtrics_data = self.transform_to_qualtrics(evaluations)
-        
-        # 3. Create CSV/JSON export
-        return self.create_export_file(qualtrics_data)
-```
+2. **Terminology Updates**  
+   - Update: All UI text in `app.py`
+   - Update: Status indicators and messages
+   - Update: Documentation and help text
 
-## Security & Compliance
+3. **Visual Improvements**
+   - Update: CSS/styling for status indicators
+   - Remove: Red error styling
+   - Add: Neutral warning styling
 
-### FERPA Compliance
-```python
-class FERPACompliance:
-    """Ensure FERPA compliance for student data"""
-    
-    @staticmethod
-    def validate_access(user, student_record):
-        """Validate user has legitimate educational interest"""
-        # Check user role and relationship to student
-        
-    @staticmethod
-    def audit_access(user, action, resource):
-        """Log all access for audit trail"""
-        # Create audit log entry
-        
-    @staticmethod
-    def anonymize_for_research(data):
-        """Remove identifying information for research use"""
-        # Apply anonymization rules
-```
+### **Phase 2 Dependencies (Week 2-3)**
+1. **Interface Consolidation**
+   - Redesign: Evaluation form layout
+   - Combine: Analysis and scoring sections
+   - Update: Session state management
 
-### Data Encryption
-```python
-# Encryption at rest
-class EncryptedField(db.Column):
-    """Custom SQLAlchemy field for encrypted data"""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.encryptor = Fernet(settings.ENCRYPTION_KEY)
-    
-    def process_bind_param(self, value, dialect):
-        """Encrypt before storing"""
-        if value:
-            return self.encryptor.encrypt(value.encode())
-        return value
-    
-    def process_result_value(self, value, dialect):
-        """Decrypt when retrieving"""
-        if value:
-            return self.encryptor.decrypt(value).decode()
-        return value
-```
+2. **AI Analysis Button**
+   - Add: Prominent analysis trigger button
+   - Update: Workflow guidance
+   - Improve: User experience flow
 
-## Performance Optimization
+### **Phase 3 Dependencies (Week 3-4)**
+1. **Role Simplification**
+   - Remove: Cooperating teacher logic
+   - Update: Item filtering logic
+   - Simplify: User interface
 
-### Caching Strategy
-```python
-# Redis caching for frequent queries
-@cache.memoize(timeout=300)
-def get_student_evaluation_summary(student_id):
-    """Cache student evaluation summaries"""
-    return db.session.query(Evaluation).filter_by(
-        student_id=student_id
-    ).all()
+2. **Evaluation Type Configuration**
+   - Update: Disposition conditional logic
+   - Test: Field evaluation workflow
+   - Validate: STER evaluation workflow
 
-# Invalidate cache on updates
-def invalidate_student_cache(student_id):
-    cache.delete_memoized(get_student_evaluation_summary, student_id)
-```
+### **Phase 4 Dependencies (Week 4-5)**
+1. **PDF Export**
+   - Install: ReportLab library
+   - Implement: PDF generation service
+   - Add: Download buttons
 
-### Database Indexing
-```
-```
+2. **Session Management**
+   - Implement: Clear data functions
+   - Update: Save/complete workflows
+   - Add: Clear user feedback
+
+## Success Metrics & Testing
+
+### **User Experience Metrics**
+- Evaluation completion time reduction: Target 25%
+- User error rate reduction: Target 50%
+- User satisfaction improvement: Target to 4.5/5
+- Support requests reduction: Target 60%
+
+### **Technical Quality Metrics**
+- Zero data persistence bugs
+- 100% successful PDF generation
+- Clear session behavior validation
+- Proper evaluation type differentiation
+
+### **Testing Strategy**
+1. **Unit Tests**: Each component function
+2. **Integration Tests**: Complete evaluation workflows  
+3. **User Acceptance Tests**: Real supervisor testing
+4. **Performance Tests**: Large evaluation datasets
+5. **Accessibility Tests**: Screen reader compatibility
+
+---
+
+**Architecture Updated**: January 2025  
+**Next Review**: After Phase 1 completion  
+**Maintainer**: AI-STER Development Team

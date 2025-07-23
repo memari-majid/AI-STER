@@ -5,6 +5,39 @@ All notable changes to AI-STER will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2024-12-20
+
+### 🎉 **Phase 1 Implementation - Enhanced User Experience**
+
+#### Added
+- **"Not Observed" Option**: New dropdown option for unobserved competencies
+  - Prevents unnecessary warnings for items that couldn't be evaluated
+  - Excluded from total score calculations
+  - Clear visual indication when selected
+
+#### Changed
+- **Positive Language Throughout**:
+  - "Critical Areas" → "Areas for Improvement"
+  - "❌ Not Met" → "⚠️ Needs Improvement"
+  - "Critical Priority" → "Priority for Development"
+- **Reduced Visual Stress**:
+  - Replaced red error messages with gentler warning styles
+  - Changed "⚠️" to "⏸️" for unscored items
+  - Converted st.error to st.warning for softer feedback
+- **API Key Management**:
+  - Enhanced settings interface with persistent session state
+  - Fixed API key resetting issue during app navigation
+
+#### Fixed
+- **TypeError Bug**: Fixed comparison between "not_observed" string and integers in validation
+- **Score Calculations**: Updated to properly handle "not_observed" values
+- **Validation Logic**: Now correctly accepts "not_observed" as a valid score option
+
+#### Technical
+- Updated `utils/validation.py` with isinstance() type checking
+- Modified `app.py` score dropdowns and calculations
+- Enhanced session state management for API settings
+
 ## [Unreleased - v1.1.0] - STER Evaluation System Enhancement
 
 ### Planned

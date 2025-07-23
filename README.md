@@ -236,6 +236,17 @@ AI-STER is fully compliant with Utah State Board of Education standards (July 20
 *"The synthetic data feature allowed us to train supervisors before the semester started. Game changer!"*
 — **Prof. Michael Chen, Teacher Preparation Program**
 
+## 🆕 **Latest Updates (Phase 1 - December 2024)**
+
+### **Enhanced User Experience**
+- ✅ **No Score Option**: Added "Not Observed" option in all score dropdowns
+- ✅ **Positive Language**: Replaced "critical" terminology with encouraging language
+  - "Critical Areas" → "Areas for Improvement"
+  - "Not Met" → "Needs Improvement"
+  - "Critical Priority" → "Priority for Development"
+- ✅ **Reduced Visual Stress**: Removed red X indicators, using gentler warning symbols
+- ✅ **API Key Management**: Enhanced settings interface with persistent session state
+
 ## 🛣 **Roadmap**
 
 ### **v1.1 (Next Release) - STER Evaluation System**
