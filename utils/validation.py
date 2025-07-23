@@ -19,7 +19,7 @@ def validate_evaluation(
     """
     errors = []
     
-    # Check that all items are scored
+    # Check that all items are scored (including "not_observed" as valid)
     item_ids = {item['id'] for item in items}
     scored_item_ids = set(scores.keys())
     
@@ -27,19 +27,19 @@ def validate_evaluation(
     if missing_scores:
         errors.append(f"Missing scores for items: {', '.join(sorted(missing_scores))}")
     
-    # Check minimum score requirements (all items must score >= 2)
+    # Check minimum score requirements (all scored items must score >= 2, except "not_observed")
     failing_items = []
     for item_id, score in scores.items():
-        if score < 2:
+        if score != "not_observed" and isinstance(score, int) and score < 2:
             failing_items.append(item_id)
     
     if failing_items:
         errors.append(f"Items scoring below Level 2 (required minimum): {', '.join(sorted(failing_items))}")
     
-    # Check justifications for items scoring >= 2
+    # Check justifications for items scoring >= 2 (not required for "not_observed")
     missing_justifications = []
     for item_id, score in scores.items():
-        if score >= 2 and not justifications.get(item_id, '').strip():
+        if isinstance(score, int) and score >= 2 and not justifications.get(item_id, '').strip():
             missing_justifications.append(item_id)
     
     if missing_justifications:
@@ -65,8 +65,8 @@ def validate_evaluation(
     return errors
 
 def calculate_score(scores: Dict[str, int]) -> int:
-    """Calculate total score from individual item scores"""
-    return sum(scores.values())
+    """Calculate total score from individual item scores (excludes 'not_observed')"""
+    return sum(score for score in scores.values() if isinstance(score, int))
 
 def get_score_summary(scores: Dict[str, int]) -> Dict[str, Any]:
     """Get summary statistics for scores"""
@@ -74,19 +74,26 @@ def get_score_summary(scores: Dict[str, int]) -> Dict[str, Any]:
         return {
             'total': 0,
             'average': 0.0,
-            'distribution': {0: 0, 1: 0, 2: 0, 3: 0},
+            'distribution': {0: 0, 1: 0, 2: 0, 3: 0, 'not_observed': 0},
             'meets_minimum': False
         }
     
-    total = sum(scores.values())
-    average = total / len(scores)
+    # Only count numeric scores for calculations
+    numeric_scores = [score for score in scores.values() if isinstance(score, int)]
+    total = sum(numeric_scores)
+    average = total / len(numeric_scores) if numeric_scores else 0.0
     
     distribution = {level: 0 for level in range(4)}
-    for score in scores.values():
-        distribution[score] += 1
+    distribution['not_observed'] = 0
     
-    # Check if meets minimum requirements (all scores >= 2)
-    meets_minimum = all(score >= 2 for score in scores.values())
+    for score in scores.values():
+        if score == "not_observed":
+            distribution['not_observed'] += 1
+        elif isinstance(score, int):
+            distribution[score] += 1
+    
+    # Check if meets minimum requirements (all numeric scores >= 2)
+    meets_minimum = all(score >= 2 for score in numeric_scores)
     
     return {
         'total': total,

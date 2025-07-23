@@ -1042,7 +1042,7 @@ Be as detailed as possible - these notes will be used to generate evidence-based
     
     st.markdown("**Score Each Competency (Level 0-3)**")
     
-    # Check for missing scores and show warning
+    # Check for missing scores and show warning (treat "not_observed" as valid)
     total_items = len(items)
     scored_items = len([s for s in st.session_state.scores.values() if s is not None])
     missing_scores = total_items - scored_items
@@ -1126,11 +1126,19 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                         st.warning("AI analysis not yet generated. Generate AI analysis above to see insights.")
             
             with col2:
+                def format_score_option(score):
+                    if score is None:
+                        return "Select score..."
+                    elif score == "not_observed":
+                        return "Not Observed - Competency not demonstrated in this observation"
+                    else:
+                        return f"Level {score} - {get_level_name(score)}"
+                
                 score = st.selectbox(
                     f"Score",
-                    options=[None, 0, 1, 2, 3],
-                    index=0 if current_score is None else current_score + 1,
-                    format_func=lambda x: "Select..." if x is None else f"Level {x} - {get_level_name(x)}",
+                    options=[None, "not_observed", 0, 1, 2, 3],
+                    index=0 if current_score is None else (1 if current_score == "not_observed" else current_score + 2),
+                    format_func=format_score_option,
                     key=f"score_select_{item_id}",
                     help=f"Select score level for {item['code']} based on your observations and AI analysis"
                 )
@@ -1162,18 +1170,22 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                         
                         if clean_analysis.strip():
                             st.session_state.justifications[item_id] = clean_analysis
-                    total_score += score
+                    if isinstance(score, int):  # Only add numeric scores to total
+                        total_score += score
                 else:
                     all_items_scored = False
             
             # Show selected score description (use actual selected score, not session state)
             display_score = score if score is not None else current_score
             if display_score is not None:
-                score_desc = item['levels'].get(str(display_score), 'No description available')
-                st.info(f"**Level {display_score}:** {score_desc}")
+                if display_score == "not_observed":
+                    st.info(f"**Not Observed:** This competency was not demonstrated during this observation session")
+                else:
+                    score_desc = item['levels'].get(str(display_score), 'No description available')
+                    st.info(f"**Level {display_score}:** {score_desc}")
             else:
                 # Show that this competency is not yet scored with warning
-                st.error(f"⚠️ **Not yet scored** - {item['code']} requires a score level to complete the evaluation")
+                st.warning(f"⏸️ **Not yet scored** - {item['code']} requires a score level to complete the evaluation")
         
         st.divider()
     
@@ -1191,12 +1203,12 @@ Be as detailed as possible - these notes will be used to generate evidence-based
             st.metric("Items Scored", f"{scored_items}/{len(items)}", delta="Complete ✅")
     with col2:
         if critical_areas > 0:
-            st.metric("Critical Areas", critical_areas, delta="Need Level 2+", delta_color="inverse", help="Areas scoring Level 0-1 that must improve to Level 2+ to pass")
+            st.metric("Areas for Improvement", critical_areas, delta="Need Level 2+", delta_color="inverse", help="Areas scoring Level 0-1 that must improve to Level 2+ to pass")
         else:
-            st.metric("Critical Areas", 0, delta="All Level 2+ ✅", help="All competencies meeting minimum requirements")
+            st.metric("Areas for Improvement", 0, delta="All Level 2+ ✅", help="All competencies meeting minimum requirements")
     with col3:
         if scored_items > 0:
-            passing_items = len([s for s in st.session_state.scores.values() if s >= 2])
+            passing_items = len([s for s in st.session_state.scores.values() if isinstance(s, int) and s >= 2])
             st.metric("Meeting Standards", f"{passing_items}/{scored_items}", help="Competencies at Level 2 or higher")
         else:
             st.metric("Meeting Standards", "0/0")
@@ -1206,7 +1218,7 @@ Be as detailed as possible - these notes will be used to generate evidence-based
         if meets_minimum:
             st.metric("Pass Requirements", "✅ Met", help="All competencies at Level 2+")
         elif all_items_scored:
-            st.metric("Pass Requirements", "❌ Not Met", delta=f"{critical_areas} areas need improvement", delta_color="inverse")
+            st.metric("Pass Requirements", "⚠️ Needs Improvement", delta=f"{critical_areas} areas need improvement", delta_color="inverse")
         else:
             st.metric("Pass Requirements", "⏳ Pending", help="Complete scoring to determine status")
     
@@ -1220,7 +1232,7 @@ Be as detailed as possible - these notes will be used to generate evidence-based
             st.caption("Students must achieve Level 2+ in ALL competencies to pass. Focus conference discussions on these specific areas.")
             
             if level_0_items:
-                st.error("**Level 0 - Does Not Demonstrate (Critical Priority)**")
+                st.warning("**Level 0 - Does Not Demonstrate (Priority for Development)**")
                 for item_id, item in level_0_items:
                     st.write(f"• **{item['code']}**: {item['title']}")
             
@@ -1382,10 +1394,10 @@ Be as detailed as possible - these notes will be used to generate evidence-based
             elif display_score == 2:
                 st.warning(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
             else:
-                st.error(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
+                st.warning(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
         else:
             # Show warning for unscored disposition
-            st.error(f"⚠️ **Not yet scored** - {disposition['name']} requires a score level to complete the evaluation")
+                            st.warning(f"⏸️ **Not yet scored** - {disposition['name']} requires a score level to complete the evaluation")
         
         st.divider()
     
@@ -1656,18 +1668,51 @@ def show_settings():
     # OpenAI Configuration
     st.subheader("🤖 AI Configuration")
     
-    api_key = st.text_input(
-        "OpenAI API Key",
-        value=os.getenv('OPENAI_API_KEY', ''),
-        type="password",
-        help="Your OpenAI API key for AI-powered features"
-    )
+    # Initialize session state for API key
+    if 'api_key' not in st.session_state:
+        st.session_state.api_key = os.getenv('OPENAI_API_KEY', '')
     
-    if api_key:
-        os.environ['OPENAI_API_KEY'] = api_key
-        st.success("API key configured! AI features are now available.")
+    # Check current API key status
+    current_key = os.getenv('OPENAI_API_KEY', '') or st.session_state.api_key
+    
+    if current_key:
+        st.success("✅ API key is configured! AI features are available.")
+        st.info(f"Using API key: {current_key[:7]}{'*' * 20}{current_key[-4:]}")
+        
+        if st.button("🔄 Update API Key"):
+            st.session_state.show_api_input = True
     else:
-        st.info("Add your OpenAI API key to enable AI features.")
+        st.warning("⚠️ No API key configured. AI features are disabled.")
+        st.session_state.show_api_input = True
+    
+    # Show API key input if needed
+    if st.session_state.get('show_api_input', False) or not current_key:
+        api_key = st.text_input(
+            "OpenAI API Key",
+            value=st.session_state.api_key,
+            type="password",
+            help="Your OpenAI API key for AI-powered features",
+            placeholder="sk-proj-..."
+        )
+        
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("💾 Save API Key"):
+                if api_key.strip():
+                    os.environ['OPENAI_API_KEY'] = api_key.strip()
+                    st.session_state.api_key = api_key.strip()
+                    st.session_state.show_api_input = False
+                    st.success("API key saved for this session!")
+                    st.rerun()
+                else:
+                    st.error("Please enter a valid API key")
+        
+        with col2:
+            if st.button("❌ Cancel"):
+                st.session_state.show_api_input = False
+                st.rerun()
+        
+        st.caption("💡 **Note**: API key is saved for this session only. Set OPENAI_API_KEY environment variable for permanent storage.")
     
     model = st.selectbox(
         "OpenAI Model",
@@ -1699,15 +1744,20 @@ def show_settings():
     - **AI Features:** OpenAI-powered evaluation assistance
     """)
 
-def get_level_name(level: int) -> str:
+def get_level_name(level) -> str:
     """Get the name for a scoring level"""
-    names = {
-        0: "Does not demonstrate",
-        1: "Approaching", 
-        2: "Demonstrates",
-        3: "Exceeds"
-    }
-    return names.get(level, "Unknown")
+    if level == "not_observed":
+        return "Not Observed"
+    elif isinstance(level, int):
+        names = {
+            0: "Does not demonstrate",
+            1: "Approaching", 
+            2: "Demonstrates",
+            3: "Exceeds"
+        }
+        return names.get(level, "Unknown")
+    else:
+        return "Unknown"
 
 def get_disposition_level_name(level: int) -> str:
     """Get the name for a disposition scoring level"""
