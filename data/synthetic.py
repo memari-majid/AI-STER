@@ -269,8 +269,8 @@ def generate_synthetic_evaluations(
         
         # Generate basic info
         student_name = random.choice(STUDENT_NAMES)
-        evaluator_role = random.choice(["supervisor", "cooperating_teacher"])
-        evaluator_name = random.choice(SUPERVISORS if evaluator_role == "supervisor" else COOPERATING_TEACHERS)
+        evaluator_role = "supervisor"  # Only supervisors in the system now
+        evaluator_name = random.choice(SUPERVISORS)
         
         # Add realistic school context
         school = random.choice(SCHOOL_SETTINGS)

@@ -5,9 +5,13 @@ from datetime import datetime, date
 import uuid
 from typing import Dict, List, Optional
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Import our modules
-from data.rubrics import get_field_evaluation_items, get_ster_items, get_professional_dispositions, filter_items_by_evaluator_role
+from data.rubrics import get_field_evaluation_items, get_ster_items, get_professional_dispositions
 from data.synthetic import generate_synthetic_evaluations
 from services.openai_service import OpenAIService
 from utils.storage import save_evaluation, load_evaluations, export_data, import_data
@@ -45,7 +49,8 @@ def main():
         
         page = st.selectbox(
             "Navigation",
-            ["📊 Dashboard", "📝 New Evaluation", "🧪 Test Data", "⚙️ Settings"]
+            ["📝 New Evaluation", "📊 Dashboard", "🧪 Test Data", "⚙️ Settings"],
+            index=0  # Explicitly set the default to first item (New Evaluation)
         )
         
         # Quick stats
@@ -769,7 +774,9 @@ def show_evaluation_form():
     with col1:
         evaluator_name = st.text_input("Evaluator Name *", key="evaluator_name")
     with col2:
-        evaluator_role = st.selectbox("Evaluator Role", ["supervisor", "cooperating_teacher"])
+        # Supervisor is the only role now
+        evaluator_role = "supervisor"
+        st.text_input("Evaluator Role", value="Supervisor", disabled=True)
     
     # Evaluation Type Selection
     st.subheader("📋 Evaluation Type")
@@ -780,36 +787,19 @@ def show_evaluation_form():
         format_func=lambda x: "Field Evaluation" if x == "field_evaluation" else "STER"
     )
     
-    # Get rubric items based on evaluation type and evaluator role
+    # Get rubric items based on evaluation type
     if rubric_type == "field_evaluation":
         items = get_field_evaluation_items()
     else:  # STER evaluation
-        all_ster_items = get_ster_items()
-        items = filter_items_by_evaluator_role(all_ster_items, evaluator_role)
+        # Get all STER items (no filtering needed since only supervisors exist)
+        items = get_ster_items()
         
-        # Display role-specific information
-        role_display = "Cooperating Teacher" if evaluator_role == "cooperating_teacher" else "Supervisor"
-        role_color = "🟡" if evaluator_role == "cooperating_teacher" else "⚪"
-        st.info(f"{role_color} **{role_display} STER Evaluation** - You will evaluate {len(items)} competencies assigned to your role")
+        # Display evaluation information
+        st.info(f"📋 **Supervisor STER Evaluation** - You will evaluate {len(items)} competencies")
+        st.caption("All items based on classroom observation and lesson planning")
         
-        if evaluator_role == "cooperating_teacher":
-            st.caption("📋 Cream rows: Items requiring mentor teacher conference and collaboration assessment")
-        else:
-            st.caption("📋 White rows: Items based on classroom observation and lesson planning")
-        
-        # Add legend for role indicators
-        with st.expander("📖 Role Indicator Legend", expanded=False):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("🟡 **Cooperating Teacher Items**")
-                st.caption("• Conference with mentor teacher required")
-                st.caption("• Collaboration and support assessment")
-                st.caption("• Professional responsibility items")
-            with col2:
-                st.markdown("⚪ **Supervisor Items**") 
-                st.caption("• Classroom observation based")
-                st.caption("• Lesson planning assessment")
-                st.caption("• Instructional practice evaluation")
+        # Remove role indicator legend since we only have supervisors now
+
     
     # Check if we have minimum required information
     if not student_name or not evaluator_name:
@@ -941,15 +931,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 for item in area_items:
                     item_id = item['id']
                     
-                    # Add role indicator for STER evaluations
-                    role_indicator = ""
-                    if rubric_type == "ster" and 'evaluator_role' in item:
-                        if item['evaluator_role'] == 'cooperating_teacher':
-                            role_indicator = "🟡 "
-                        else:
-                            role_indicator = "⚪ "
-                    
-                    st.markdown(f"**{role_indicator}{item['code']}: {item['title']}**")
+                    # No role indicator needed - all items are for supervisors
+                    st.markdown(f"**{item['code']}: {item['title']}**")
                     st.markdown(f"*{item['context']}*")
                     
                     # Always display something for each competency - either AI analysis or a placeholder
@@ -1074,15 +1057,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
             col1, col2 = st.columns([3, 1])
             
             with col1:
-                # Add role indicator for STER evaluations
-                role_indicator = ""
-                if rubric_type == "ster" and 'evaluator_role' in item:
-                    if item['evaluator_role'] == 'cooperating_teacher':
-                        role_indicator = "🟡 "
-                    else:
-                        role_indicator = "⚪ "
-                
-                st.markdown(f"*{role_indicator}{item['code']}: {item['title']}*")
+                # No role indicator needed - all items are for supervisors
+                st.markdown(f"*{item['code']}: {item['title']}*")
                 st.caption(f"{item['context']}")
                 
                 # Show AI analysis if available
@@ -1218,26 +1194,26 @@ Be as detailed as possible - these notes will be used to generate evidence-based
         if meets_minimum:
             st.metric("Pass Requirements", "✅ Met", help="All competencies at Level 2+")
         elif all_items_scored:
-            st.metric("Pass Requirements", "⚠️ Needs Improvement", delta=f"{critical_areas} areas need improvement", delta_color="inverse")
+            st.metric("Pass Requirements", "🌱 Growing", delta=f"{critical_areas} areas for growth", delta_color="inverse")
         else:
             st.metric("Pass Requirements", "⏳ Pending", help="Complete scoring to determine status")
     
-    # Critical Areas Alert (Level 1 scores)
+    # Growth Areas Alert (Level 1 scores)
     if scored_items > 0:
         level_1_items = [(item_id, item) for item in items for item_id, score in st.session_state.scores.items() if item['id'] == item_id and score == 1]
         level_0_items = [(item_id, item) for item in items for item_id, score in st.session_state.scores.items() if item['id'] == item_id and score == 0]
         
         if level_1_items or level_0_items:
-            st.subheader("⚠️ Critical Areas Requiring Immediate Attention")
-            st.caption("Students must achieve Level 2+ in ALL competencies to pass. Focus conference discussions on these specific areas.")
+            st.subheader("🌟 Areas for Growth and Development")
+            st.caption("Supporting student teachers to achieve Level 2+ in all competencies. These areas offer opportunities for focused improvement.")
             
             if level_0_items:
-                st.warning("**Level 0 - Does Not Demonstrate (Priority for Development)**")
+                st.info("**Level 0 - Emerging Skills (Priority for Development)**")
                 for item_id, item in level_0_items:
                     st.write(f"• **{item['code']}**: {item['title']}")
             
             if level_1_items:
-                st.warning("**Level 1 - Approaching Competency (Must Improve to Level 2)**")
+                st.info("**Level 1 - Developing Competency (Almost There!)**")
                 for item_id, item in level_1_items:
                     st.write(f"• **{item['code']}**: {item['title']}")
             
@@ -1266,18 +1242,11 @@ Be as detailed as possible - these notes will be used to generate evidence-based
             item_id = item['id']
             current_score = st.session_state.scores.get(item_id)
             
-            # Show all competencies with role indicators, indicate scoring status
-            role_indicator = ""
-            if rubric_type == "ster" and 'evaluator_role' in item:
-                if item['evaluator_role'] == 'cooperating_teacher':
-                    role_indicator = "🟡 "
-                else:
-                    role_indicator = "⚪ "
-            
+            # Show all competencies, indicate scoring status
             if current_score is not None:
-                st.markdown(f"**{role_indicator}{item['code']}: {item['title']}** (Level {current_score} ✅)")
+                st.markdown(f"**{item['code']}: {item['title']}** (Level {current_score} ✅)")
             else:
-                st.markdown(f"**{role_indicator}{item['code']}: {item['title']}** (Not scored ⏸️)")
+                st.markdown(f"**{item['code']}: {item['title']}** (Not scored ⏸️)")
             
             # Justification text area for all items
             current_justification = st.session_state.justifications.get(item_id, "")
@@ -1435,7 +1404,7 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     • 🎯 **Focus on Level 1 areas**: Students must achieve Level 2+ in ALL competencies to pass
                     • 📝 **Use specific improvement steps**: Provide targeted guidance for moving from Level 1 to Level 2
                     • 🗣️ **Conference planning**: Address specific concerns rather than overall averages
-                    • 📈 **Track progress**: Monitor improvement in identified critical areas
+                    • 📈 **Track progress**: Monitor improvement in identified growth areas
                     • 💪 **Leverage strengths**: Use Level 2-3 areas to support growth in struggling competencies
                     """)
                     
@@ -1668,6 +1637,10 @@ def show_settings():
     # OpenAI Configuration
     st.subheader("🤖 AI Configuration")
     
+    # Show current model status
+    current_model_display = openai_service.model if openai_service else os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
+    st.info(f"🎯 Currently using model: **{current_model_display}**")
+    
     # Initialize session state for API key
     if 'api_key' not in st.session_state:
         st.session_state.api_key = os.getenv('OPENAI_API_KEY', '')
@@ -1714,10 +1687,20 @@ def show_settings():
         
         st.caption("💡 **Note**: API key is saved for this session only. Set OPENAI_API_KEY environment variable for permanent storage.")
     
+    # Get current model from OpenAI service
+    current_model = openai_service.model if openai_service else os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
+    
+    # Create model options with current model first
+    model_options = ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]
+    if current_model in model_options:
+        model_options.remove(current_model)
+        model_options.insert(0, current_model)
+    
     model = st.selectbox(
         "OpenAI Model",
-        ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
-        help="Choose the AI model for evaluation assistance"
+        model_options,
+        index=0,  # Select the current model
+        help=f"Currently using: {current_model}. Choose a different model to override for this session."
     )
     
     # App Configuration
