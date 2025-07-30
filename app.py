@@ -1293,82 +1293,83 @@ Be as detailed as possible - these notes will be used to generate evidence-based
             
             st.divider()
     
-    # STEP 7: Professional Dispositions
-    st.subheader("🌟 Step 7: Professional Dispositions (Supervisor Manual Assessment)")
-    st.caption("Supervisors evaluate dispositions based on observations across multiple interactions and timeframes, not limited to a single lesson.")
-    
-    # Add context about manual assessment
-    st.info("""
-    **Professional Dispositions Assessment:**
-    • ⏰ **Broader Time Scope**: Based on multiple observations, conferences, and interactions over time
-    • 👨‍🏫 **Supervisor Assessment**: Manual evaluation by supervisor (no AI assistance)  
-    • 📝 **Feedback Required**: Provide specific comments and suggestions for growth
-    • ⭐ **Completion Requirement**: All dispositions must score Level 3+ to complete evaluation
-    """)
-    
-    st.markdown("**Score Each Disposition (Level 1-4) and Provide Feedback**")
-    
-    all_dispositions_scored = True
-    
-    for disposition in dispositions:
-        disp_id = disposition['id']
-        current_score = st.session_state.disposition_scores.get(disp_id)
-        current_comment = st.session_state.disposition_comments.get(disp_id, "")
+    # STEP 7: Professional Dispositions (Field Evaluation Only)
+    if rubric_type == "field_evaluation":
+        st.subheader("🌟 Step 7: Professional Dispositions (Supervisor Manual Assessment)")
+        st.caption("Supervisors evaluate dispositions based on observations across multiple interactions and timeframes, not limited to a single lesson.")
         
-        # Create header for each disposition
-        st.markdown(f"**{disposition['name']}**")
-        st.caption(disposition['description'])
+        # Add context about manual assessment
+        st.info("""
+        **Professional Dispositions Assessment:**
+        • ⏰ **Broader Time Scope**: Based on multiple observations, conferences, and interactions over time
+        • 👨‍🏫 **Supervisor Assessment**: Manual evaluation by supervisor (no AI assistance)  
+        • 📝 **Feedback Required**: Provide specific comments and suggestions for growth
+        • ⭐ **Completion Requirement**: All dispositions must score Level 3+ to complete evaluation
+        """)
         
-        # Create scoring and comment interface for each disposition  
-        col1, col2 = st.columns([1, 2])
+        st.markdown("**Score Each Disposition (Level 1-4) and Provide Feedback**")
         
-        with col1:
-            score = st.selectbox(
-                f"Score",
-                options=[None, 1, 2, 3, 4],
-                index=0 if current_score is None else current_score,
-                format_func=lambda x: "Select..." if x is None else f"Level {x} - {get_disposition_level_name(x)}",
-                key=f"disposition_select_{disp_id}",
-                help=f"Select score level for {disposition['name']}"
-            )
+        all_dispositions_scored = True
+        
+        for disposition in dispositions:
+            disp_id = disposition['id']
+            current_score = st.session_state.disposition_scores.get(disp_id)
+            current_comment = st.session_state.disposition_comments.get(disp_id, "")
             
-            if score is not None:
-                st.session_state.disposition_scores[disp_id] = score
+            # Create header for each disposition
+            st.markdown(f"**{disposition['name']}**")
+            st.caption(disposition['description'])
+            
+            # Create scoring and comment interface for each disposition  
+            col1, col2 = st.columns([1, 2])
+            
+            with col1:
+                score = st.selectbox(
+                    f"Score",
+                    options=[None, 1, 2, 3, 4],
+                    index=0 if current_score is None else current_score,
+                    format_func=lambda x: "Select..." if x is None else f"Level {x} - {get_disposition_level_name(x)}",
+                    key=f"disposition_select_{disp_id}",
+                    help=f"Select score level for {disposition['name']}"
+                )
+                
+                if score is not None:
+                    st.session_state.disposition_scores[disp_id] = score
+                else:
+                    all_dispositions_scored = False
+            
+            with col2:
+                comment = st.text_area(
+                    "Feedback & Suggestions",
+                    value=current_comment,
+                    height=100,
+                    placeholder="Provide specific feedback, observations, and suggestions for professional growth...",
+                    key=f"disposition_comment_{disp_id}",
+                    help="Enter detailed feedback based on your observations across multiple interactions",
+                    max_chars=1000
+                )
+                
+                # Update session state for comments
+                st.session_state.disposition_comments[disp_id] = comment
+                
+                # Character count
+                st.caption(f"{len(comment)}/1000 characters")
+            
+            # Show selected score description and color coding
+            display_score = score if score is not None else current_score
+            if display_score is not None:
+                score_desc = get_disposition_level_name(display_score)
+                if display_score >= 3:
+                    st.success(f"**Level {display_score}:** {score_desc}")
+                elif display_score == 2:
+                    st.warning(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
+                else:
+                    st.warning(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
             else:
-                all_dispositions_scored = False
-        
-        with col2:
-            comment = st.text_area(
-                "Feedback & Suggestions",
-                value=current_comment,
-                height=100,
-                placeholder="Provide specific feedback, observations, and suggestions for professional growth...",
-                key=f"disposition_comment_{disp_id}",
-                help="Enter detailed feedback based on your observations across multiple interactions",
-                max_chars=1000
-            )
+                # Show warning for unscored disposition
+                st.warning(f"⏸️ **Not yet scored** - {disposition['name']} requires a score level to complete the evaluation")
             
-            # Update session state for comments
-            st.session_state.disposition_comments[disp_id] = comment
-            
-            # Character count
-            st.caption(f"{len(comment)}/1000 characters")
-        
-        # Show selected score description and color coding
-        display_score = score if score is not None else current_score
-        if display_score is not None:
-            score_desc = get_disposition_level_name(display_score)
-            if display_score >= 3:
-                st.success(f"**Level {display_score}:** {score_desc}")
-            elif display_score == 2:
-                st.warning(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
-            else:
-                st.warning(f"**Level {display_score}:** {score_desc} (Level 3+ required)")
-        else:
-            # Show warning for unscored disposition
-                            st.warning(f"⏸️ **Not yet scored** - {disposition['name']} requires a score level to complete the evaluation")
-        
-        st.divider()
+            st.divider()
     
     # AI Analysis
     if openai_service.is_enabled() and st.session_state.scores:
@@ -1377,10 +1378,15 @@ Be as detailed as possible - these notes will be used to generate evidence-based
         
         # Show preview of areas needing attention
         level_1_items = [item_id for item_id, score in st.session_state.scores.items() if score == 1]
-        low_dispositions = [disp_id for disp_id, score in st.session_state.disposition_scores.items() if score < 3]
+        low_dispositions = []
+        if rubric_type == "field_evaluation":
+            low_dispositions = [disp_id for disp_id, score in st.session_state.disposition_scores.items() if score < 3]
         
         if level_1_items or low_dispositions:
-            st.warning(f"⚠️ **Areas Requiring Attention**: {len(level_1_items)} competencies at Level 1, {len(low_dispositions)} dispositions below Level 3")
+            warning_msg = f"⚠️ **Areas Requiring Attention**: {len(level_1_items)} competencies at Level 1"
+            if low_dispositions:
+                warning_msg += f", {len(low_dispositions)} dispositions below Level 3"
+            st.warning(warning_msg)
         else:
             st.success("✅ **All areas meeting minimum requirements** - Analysis will focus on strengths and growth opportunities")
         
@@ -1416,7 +1422,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
     
     # Check for completion before saving
     missing_competency_scores = len(items) - len([s for s in st.session_state.scores.values() if s is not None])
-    missing_disposition_scores = len(dispositions) - len([s for s in st.session_state.disposition_scores.values() if s is not None])
+    missing_disposition_scores = 0
+    if rubric_type == "field_evaluation":
+        missing_disposition_scores = len(dispositions) - len([s for s in st.session_state.disposition_scores.values() if s is not None])
     
     if missing_competency_scores > 0 or missing_disposition_scores > 0:
         warning_msg = "⚠️ **Incomplete Evaluation Warning:**\n"
@@ -1427,7 +1435,10 @@ Be as detailed as possible - these notes will be used to generate evidence-based
         warning_msg += "\n\n*You can save as draft with missing scores, but completion requires all items to be scored.*"
         st.warning(warning_msg)
     else:
-        st.success("✅ **Evaluation is complete!** All competencies and dispositions have been scored.")
+        if rubric_type == "field_evaluation":
+            st.success("✅ **Evaluation is complete!** All competencies and dispositions have been scored.")
+        else:
+            st.success("✅ **Evaluation is complete!** All competencies have been scored.")
     
     col1, col2 = st.columns(2)
     
@@ -1442,8 +1453,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'evaluated_items_count': len(items),  # Track how many items this role evaluated
                 'scores': st.session_state.scores,
                 'justifications': st.session_state.justifications,
-                'disposition_scores': st.session_state.disposition_scores,
-                'disposition_comments': st.session_state.disposition_comments,
+                'disposition_scores': st.session_state.disposition_scores if rubric_type == "field_evaluation" else {},
+                'disposition_comments': st.session_state.disposition_comments if rubric_type == "field_evaluation" else {},
                 'total_score': total_score,
                 'status': 'draft',
                 'created_at': datetime.now().isoformat(),
@@ -1456,13 +1467,23 @@ Be as detailed as possible - these notes will be used to generate evidence-based
     with col2:
         if st.button("✅ Complete Evaluation"):
             # Validation
-            errors = validate_evaluation(
-                st.session_state.scores,
-                st.session_state.justifications,
-                st.session_state.disposition_scores,
-                items,
-                dispositions
-            )
+            if rubric_type == "field_evaluation":
+                errors = validate_evaluation(
+                    st.session_state.scores,
+                    st.session_state.justifications,
+                    st.session_state.disposition_scores,
+                    items,
+                    dispositions
+                )
+            else:
+                # For STER, validate without dispositions
+                errors = validate_evaluation(
+                    st.session_state.scores,
+                    st.session_state.justifications,
+                    {},  # Empty dispositions for STER
+                    items,
+                    []   # Empty dispositions list for STER
+                )
             
             if errors:
                 for error in errors:
