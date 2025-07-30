@@ -1,7 +1,7 @@
 Collecting reportlab
   Using cached reportlab-4.4.3-py3-none-any.whl.metadata (1.7 kB)
-Requirement already satisfied: pillow>=9.0.0 in /home/majid/anaconda3/lib/python3.12/site-packages (from reportlab) (11.1.0)
-Requirement already satisfied: charset-normalizer in /home/majid/anaconda3/lib/python3.12/site-packages (from reportlab) (3.3.2)
+Requirement already satisfied: pillow>=9.0.0 in ./ai-ster-env/lib/python3.12/site-packages (from reportlab) (11.2.1)
+Requirement already satisfied: charset-normalizer in ./ai-ster-env/lib/python3.12/site-packages (from reportlab) (3.4.2)
 Using cached reportlab-4.4.3-py3-none-any.whl (2.0 MB)
 Installing collected packages: reportlab
 Successfully installed reportlab-4.4.3

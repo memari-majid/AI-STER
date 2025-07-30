@@ -493,7 +493,6 @@ def show_detailed_evaluation_view(evaluation):
             'subject': evaluation.get('subject_area', 'N/A'),
             'is_formative': True,  # TODO: Add formative/summative tracking
             'competency_scores': [],
-            'overall_average': evaluation['total_score'] / len(items) if items else 0,
             'total_items': len(items),
             'meeting_expectations': sum(1 for score in scores.values() if score >= 3),
             'areas_for_growth': sum(1 for score in scores.values() if score < 3)
@@ -519,6 +518,38 @@ def show_detailed_evaluation_view(evaluation):
                     'score': score,
                     'notes': disposition_comments.get(disp_id, '')
                 })
+        
+        # Add AI analysis if available
+        ai_analyses = evaluation.get('ai_analyses', {})
+        if ai_analyses:
+            # Collect all AI analyses
+            all_analyses = []
+            strengths = []
+            areas_for_growth = []
+            
+            for item_id, analysis in ai_analyses.items():
+                if analysis and isinstance(analysis, str):
+                    # Get the item name for context
+                    item = next((i for i in items if i['id'] == item_id), None)
+                    if item:
+                        item_name = f"{item['code']}: {item['title']}"
+                        # Add the analysis with context
+                        all_analyses.append(f"{item_name}\n{analysis}")
+                        
+                        # Extract strengths (look for positive indicators)
+                        if any(word in analysis.lower() for word in ['strong', 'excellent', 'effective', 'well', 'good', 'demonstrates']):
+                            strengths.append(f"{item['code']}: {analysis[:150]}...")
+                        
+                        # Extract areas for growth (look for improvement indicators)
+                        if any(word in analysis.lower() for word in ['improve', 'develop', 'consider', 'could', 'should', 'needs']):
+                            areas_for_growth.append(f"{item['code']}: {analysis[:150]}...")
+            
+            pdf_data['ai_analysis'] = {
+                'strengths': strengths[:5],  # Limit to top 5
+                'areas_for_growth': areas_for_growth[:5],  # Limit to top 5
+                'recommendations': [],  # Could be extracted from overall analysis
+                'full_analyses': all_analyses  # Include all analyses
+            }
         
         # Generate PDF
         try:
@@ -1592,7 +1623,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'status': 'draft',
                 'created_at': datetime.now().isoformat(),
                 'lesson_plan_provided': st.session_state.lesson_plan_analysis is not None,
-                'lesson_plan_method': input_method if 'input_method' in locals() else 'unknown'
+                'lesson_plan_method': input_method if 'input_method' in locals() else 'unknown',
+                'ai_analyses': st.session_state.get('ai_analyses', {})
             }
             save_evaluation(evaluation)
             st.success("Evaluation saved as draft!")
@@ -1619,36 +1651,47 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 )
             
             if errors:
+                st.warning("⚠️ **Evaluation has issues:**")
                 for error in errors:
                     st.error(error)
+                st.info("The evaluation will be saved with a 'needs_improvement' status.")
+            
+            # Save evaluation regardless of validation errors
+            evaluation = {
+                'id': str(uuid.uuid4()),
+                'student_name': student_name,
+                'evaluator_name': evaluator_name,
+                'evaluator_role': evaluator_role,
+                'rubric_type': rubric_type,
+                'scores': st.session_state.scores,
+                'justifications': st.session_state.justifications,
+                'disposition_scores': st.session_state.disposition_scores,
+                'disposition_comments': st.session_state.disposition_comments,
+                'total_score': total_score,
+                'status': 'needs_improvement' if errors else 'completed',
+                'validation_errors': errors if errors else [],
+                'created_at': datetime.now().isoformat(),
+                'completed_at': datetime.now().isoformat(),
+                'lesson_plan_provided': st.session_state.lesson_plan_analysis is not None,
+                'lesson_plan_method': input_method if 'input_method' in locals() else 'unknown',
+                'ai_analyses': st.session_state.get('ai_analyses', {})
+            }
+            save_evaluation(evaluation)
+            
+            if errors:
+                st.warning("🎯 **Evaluation saved with 'needs improvement' status**")
+                st.caption("The student teacher requires additional support in the identified areas.")
             else:
-                evaluation = {
-                    'id': str(uuid.uuid4()),
-                    'student_name': student_name,
-                    'evaluator_name': evaluator_name,
-                    'evaluator_role': evaluator_role,
-                    'rubric_type': rubric_type,
-                    'scores': st.session_state.scores,
-                    'justifications': st.session_state.justifications,
-                    'disposition_scores': st.session_state.disposition_scores,
-                    'disposition_comments': st.session_state.disposition_comments,
-                    'total_score': total_score,
-                    'status': 'completed',
-                    'created_at': datetime.now().isoformat(),
-                    'completed_at': datetime.now().isoformat(),
-                    'lesson_plan_provided': st.session_state.lesson_plan_analysis is not None,
-                    'lesson_plan_method': input_method if 'input_method' in locals() else 'unknown'
-                }
-                save_evaluation(evaluation)
                 st.success("🎉 Evaluation completed successfully!")
-                
-                # Add PDF export button
-                st.markdown("---")
-                col1_pdf, col2_pdf = st.columns(2)
-                
-                with col1_pdf:
-                    # Prepare data for PDF generation
-                    pdf_data = {
+            
+            # Add PDF export button for all evaluations (regardless of status)
+            st.markdown("---")
+            st.subheader("📄 Download Your Evaluation Report")
+            col1_pdf, col2_pdf = st.columns(2)
+            
+            with col1_pdf:
+                # Prepare data for PDF generation
+                pdf_data = {
                         'rubric_type': rubric_type,
                         'student_name': student_name,
                         'evaluator_name': evaluator_name,
@@ -1657,69 +1700,91 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                         'subject': st.session_state.get('subject_grade', 'N/A'),
                         'is_formative': True,  # TODO: Add formative/summative selection
                         'competency_scores': [],
-                        'overall_average': total_score / len(items) if items else 0,
                         'total_items': len(items),
                         'meeting_expectations': sum(1 for score in st.session_state.scores.values() if score >= 3),
                         'areas_for_growth': sum(1 for score in st.session_state.scores.values() if score < 3)
-                    }
-                    
-                    # Add competency scores
-                    for item_key, score in st.session_state.scores.items():
-                        item = next((i for i in items if i['key'] == item_key), None)
-                        if item:
-                            pdf_data['competency_scores'].append({
+                }
+                
+                # Add competency scores
+                for item_key, score in st.session_state.scores.items():
+                    item = next((i for i in items if i['key'] == item_key), None)
+                    if item:
+                        pdf_data['competency_scores'].append({
                                 'competency': item['item'],
                                 'score': score,
                                 'justification': st.session_state.justifications.get(item_key, '')
-                            })
-                    
-                    # Add dispositions for field evaluations
-                    if rubric_type == 'field_evaluation' and st.session_state.disposition_scores:
-                        pdf_data['dispositions'] = []
-                        for disp_key, score in st.session_state.disposition_scores.items():
-                            disp = next((d for d in dispositions if d['key'] == disp_key), None)
-                            if disp:
-                                pdf_data['dispositions'].append({
+                        })
+                
+                # Add dispositions for field evaluations
+                if rubric_type == 'field_evaluation' and st.session_state.disposition_scores:
+                    pdf_data['dispositions'] = []
+                    for disp_key, score in st.session_state.disposition_scores.items():
+                        disp = next((d for d in dispositions if d['key'] == disp_key), None)
+                        if disp:
+                            pdf_data['dispositions'].append({
                                     'disposition': disp['disposition'],
                                     'score': score,
                                     'notes': st.session_state.disposition_comments.get(disp_key, '')
-                                })
+                            })
+                
+                # Add AI analysis if available
+                if hasattr(st.session_state, 'ai_analyses') and st.session_state.ai_analyses:
+                    # Collect all AI analyses
+                    all_analyses = []
+                    strengths = []
+                    areas_for_growth = []
                     
-                    # Add AI analysis if available
-                    if hasattr(st.session_state, 'ai_analyses') and st.session_state.ai_analyses:
-                        # Extract strengths and areas for growth from AI analyses
-                        pdf_data['ai_analysis'] = {
-                            'strengths': [],
-                            'areas_for_growth': [],
-                            'recommendations': []
-                        }
-                        # This is simplified - you may want to parse the actual AI responses
-                        # for more structured data
+                    for item_id, analysis in st.session_state.ai_analyses.items():
+                        if analysis and isinstance(analysis, str):
+                            # Get the item name for context
+                            item = next((i for i in items if i.get('key', i.get('id')) == item_id), None)
+                            if item:
+                                item_name = f"{item['code']}: {item['item']}"
+                                # Add the analysis with context
+                                all_analyses.append(f"{item_name}\n{analysis}")
+                                
+                                # Extract strengths (look for positive indicators)
+                                if any(word in analysis.lower() for word in ['strong', 'excellent', 'effective', 'well', 'good', 'demonstrates']):
+                                    strengths.append(f"{item['code']}: {analysis[:150]}...")
+                                
+                                # Extract areas for growth (look for improvement indicators)
+                                if any(word in analysis.lower() for word in ['improve', 'develop', 'consider', 'could', 'should', 'needs']):
+                                    areas_for_growth.append(f"{item['code']}: {analysis[:150]}...")
                     
-                    # Generate PDF
-                    try:
-                        pdf_bytes = pdf_service.generate_evaluation_pdf(pdf_data)
-                        
-                        # Create filename
-                        filename = f"{student_name.replace(' ', '_')}_{rubric_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                        
-                        st.download_button(
+                    pdf_data['ai_analysis'] = {
+                        'strengths': strengths[:5],  # Limit to top 5
+                        'areas_for_growth': areas_for_growth[:5],  # Limit to top 5
+                        'recommendations': [],  # Could be extracted from overall analysis
+                        'full_analyses': all_analyses  # Include all analyses
+                    }
+                
+                # Generate PDF
+                try:
+                    pdf_bytes = pdf_service.generate_evaluation_pdf(pdf_data)
+                    
+                    # Create filename
+                    filename = f"{student_name.replace(' ', '_')}_{rubric_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    
+                    st.download_button(
                             label="📄 Download Evaluation Report (PDF)",
                             data=pdf_bytes,
                             file_name=filename,
                             mime="application/pdf",
                             help="Download the complete evaluation report as a PDF file"
-                        )
-                    except Exception as e:
-                        st.error(f"Error generating PDF: {str(e)}")
+                    )
+                except Exception as e:
+                    st.error(f"Error generating PDF: {str(e)}")
+            
+            with col2_pdf:
+                st.info("💡 **Tip**: Download the PDF report for your records or to share with the student teacher.")
+            
+            # Show a message about refreshing
+            st.info("🔄 To create another evaluation, refresh the page or click 'New Evaluation' in the sidebar.")
                 
-                with col2_pdf:
-                    st.info("💡 **Tip**: Download the PDF report for your records or to share with the student teacher.")
-                
-                # Clear session state
-                for key in ['scores', 'justifications', 'disposition_scores', 'disposition_comments', 'ai_analyses']:
-                    if key in st.session_state:
-                        del st.session_state[key]
+                # TODO: Add session clearing logic after user confirms they've downloaded the PDF
+                # for key in ['scores', 'justifications', 'disposition_scores', 'disposition_comments', 'ai_analyses']:
+                #     if key in st.session_state:
+                #         del st.session_state[key]
 
 def show_test_data():
     """Test data generation and management"""

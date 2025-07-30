@@ -168,10 +168,7 @@ class PDFService:
         # Overall statistics
         summary_data = []
         
-        # Calculate overall score if available
-        if 'overall_average' in data:
-            summary_data.append(['Overall Average Score:', f"{data['overall_average']:.2f}"])
-        
+        # Don't show average score, just item counts
         if 'total_items' in data:
             summary_data.append(['Total Items Evaluated:', str(data['total_items'])])
             
