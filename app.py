@@ -14,6 +14,7 @@ load_dotenv()
 from data.rubrics import get_field_evaluation_items, get_ster_items, get_professional_dispositions
 from data.synthetic import generate_synthetic_evaluations
 from services.openai_service import OpenAIService
+from services.pdf_service import PDFService
 from utils.storage import save_evaluation, load_evaluations, export_data, import_data
 from utils.validation import validate_evaluation, calculate_score
 
@@ -27,6 +28,7 @@ st.set_page_config(
 
 # Initialize services
 openai_service = OpenAIService()
+pdf_service = PDFService()
 
 def main():
     """Main application entry point"""
@@ -474,6 +476,69 @@ def show_detailed_evaluation_view(evaluation):
         with col2:
             st.write("**Supervisor Feedback:**")
             st.write(comment if comment.strip() else "_No feedback provided_")
+    
+    # PDF Export button for this evaluation
+    st.markdown("---")
+    st.subheader("📄 Export Options")
+    col1_export, col2_export = st.columns(2)
+    
+    with col1_export:
+        # Prepare data for PDF generation
+        pdf_data = {
+            'rubric_type': evaluation['rubric_type'],
+            'student_name': evaluation['student_name'],
+            'evaluator_name': evaluation['evaluator_name'],
+            'date': evaluation.get('created_at', datetime.now().isoformat())[:10],
+            'school': evaluation.get('school_name', 'N/A'),
+            'subject': evaluation.get('subject_area', 'N/A'),
+            'is_formative': True,  # TODO: Add formative/summative tracking
+            'competency_scores': [],
+            'overall_average': evaluation['total_score'] / len(items) if items else 0,
+            'total_items': len(items),
+            'meeting_expectations': sum(1 for score in scores.values() if score >= 3),
+            'areas_for_growth': sum(1 for score in scores.values() if score < 3)
+        }
+        
+        # Add competency scores
+        for item in items:
+            score = scores.get(item['id'], 0)
+            pdf_data['competency_scores'].append({
+                'competency': f"{item['code']}: {item['title']}",
+                'score': score,
+                'justification': justifications.get(item['id'], 'No justification provided')
+            })
+        
+        # Add dispositions
+        if evaluation['rubric_type'] == 'field_evaluation' and disposition_scores:
+            pdf_data['dispositions'] = []
+            for disposition in dispositions:
+                disp_id = disposition['id']
+                score = disposition_scores.get(disp_id, 0)
+                pdf_data['dispositions'].append({
+                    'disposition': disposition['name'],
+                    'score': score,
+                    'notes': disposition_comments.get(disp_id, '')
+                })
+        
+        # Generate PDF
+        try:
+            pdf_bytes = pdf_service.generate_evaluation_pdf(pdf_data)
+            
+            # Create filename
+            filename = f"{evaluation['student_name'].replace(' ', '_')}_{evaluation['rubric_type']}_{evaluation.get('created_at', datetime.now().isoformat())[:10]}.pdf"
+            
+            st.download_button(
+                label="📄 Download Evaluation Report (PDF)",
+                data=pdf_bytes,
+                file_name=filename,
+                mime="application/pdf",
+                help="Download the complete evaluation report as a PDF file"
+            )
+        except Exception as e:
+            st.error(f"Error generating PDF: {str(e)}")
+    
+    with col2_export:
+        st.info("💡 **Tip**: Download the PDF report for archival or distribution purposes.")
 
 def show_evaluation_form():
     """Evaluation form for creating new evaluations"""
@@ -1576,6 +1641,80 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 }
                 save_evaluation(evaluation)
                 st.success("🎉 Evaluation completed successfully!")
+                
+                # Add PDF export button
+                st.markdown("---")
+                col1_pdf, col2_pdf = st.columns(2)
+                
+                with col1_pdf:
+                    # Prepare data for PDF generation
+                    pdf_data = {
+                        'rubric_type': rubric_type,
+                        'student_name': student_name,
+                        'evaluator_name': evaluator_name,
+                        'date': datetime.now().strftime('%Y-%m-%d'),
+                        'school': st.session_state.get('school_name', 'N/A'),
+                        'subject': st.session_state.get('subject_grade', 'N/A'),
+                        'is_formative': True,  # TODO: Add formative/summative selection
+                        'competency_scores': [],
+                        'overall_average': total_score / len(items) if items else 0,
+                        'total_items': len(items),
+                        'meeting_expectations': sum(1 for score in st.session_state.scores.values() if score >= 3),
+                        'areas_for_growth': sum(1 for score in st.session_state.scores.values() if score < 3)
+                    }
+                    
+                    # Add competency scores
+                    for item_key, score in st.session_state.scores.items():
+                        item = next((i for i in items if i['key'] == item_key), None)
+                        if item:
+                            pdf_data['competency_scores'].append({
+                                'competency': item['item'],
+                                'score': score,
+                                'justification': st.session_state.justifications.get(item_key, '')
+                            })
+                    
+                    # Add dispositions for field evaluations
+                    if rubric_type == 'field_evaluation' and st.session_state.disposition_scores:
+                        pdf_data['dispositions'] = []
+                        for disp_key, score in st.session_state.disposition_scores.items():
+                            disp = next((d for d in dispositions if d['key'] == disp_key), None)
+                            if disp:
+                                pdf_data['dispositions'].append({
+                                    'disposition': disp['disposition'],
+                                    'score': score,
+                                    'notes': st.session_state.disposition_comments.get(disp_key, '')
+                                })
+                    
+                    # Add AI analysis if available
+                    if hasattr(st.session_state, 'ai_analyses') and st.session_state.ai_analyses:
+                        # Extract strengths and areas for growth from AI analyses
+                        pdf_data['ai_analysis'] = {
+                            'strengths': [],
+                            'areas_for_growth': [],
+                            'recommendations': []
+                        }
+                        # This is simplified - you may want to parse the actual AI responses
+                        # for more structured data
+                    
+                    # Generate PDF
+                    try:
+                        pdf_bytes = pdf_service.generate_evaluation_pdf(pdf_data)
+                        
+                        # Create filename
+                        filename = f"{student_name.replace(' ', '_')}_{rubric_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                        
+                        st.download_button(
+                            label="📄 Download Evaluation Report (PDF)",
+                            data=pdf_bytes,
+                            file_name=filename,
+                            mime="application/pdf",
+                            help="Download the complete evaluation report as a PDF file"
+                        )
+                    except Exception as e:
+                        st.error(f"Error generating PDF: {str(e)}")
+                
+                with col2_pdf:
+                    st.info("💡 **Tip**: Download the PDF report for your records or to share with the student teacher.")
                 
                 # Clear session state
                 for key in ['scores', 'justifications', 'disposition_scores', 'disposition_comments', 'ai_analyses']:
