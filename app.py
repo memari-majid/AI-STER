@@ -1707,10 +1707,10 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 
                 # Add competency scores
                 for item_key, score in st.session_state.scores.items():
-                    item = next((i for i in items if i['key'] == item_key), None)
+                    item = next((i for i in items if i.get('key', i.get('id')) == item_key), None)
                     if item:
                         pdf_data['competency_scores'].append({
-                                'competency': item['item'],
+                                'competency': item['title'],
                                 'score': score,
                                 'justification': st.session_state.justifications.get(item_key, '')
                         })
@@ -1739,7 +1739,7 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                             # Get the item name for context
                             item = next((i for i in items if i.get('key', i.get('id')) == item_id), None)
                             if item:
-                                item_name = f"{item['code']}: {item['item']}"
+                                item_name = f"{item['code']}: {item['title']}"
                                 # Add the analysis with context
                                 all_analyses.append(f"{item_name}\n{analysis}")
                                 
