@@ -228,28 +228,6 @@ AI-STER is fully compliant with Utah State Board of Education standards (July 20
 - ✅ **Open Source**: Customize and extend as needed
 - ✅ **Community Driven**: Collaborative improvement
 
-
-## 🛣 **Roadmap**
-
-### **v1.1 (Next Release) - STER Evaluation System**
-- [ ] **STER Progress Tracking**: Formative 1-4 and summative evaluation management
-- [ ] **Student Progress Dashboard**: Visual tracking of evaluation completion
-- [ ] **Smart Type Selection**: Grayed-out completed evaluations
-- [ ] **Evaluation History**: Complete storage of all evaluations per student
-- [ ] **PDF Export**: Professional evaluation reports
-
-### **v1.2 (Following Release)**
-- [ ] **Email Integration**: Automatic evaluation reminders and reports
-- [ ] **Bulk Operations**: Process multiple evaluations simultaneously
-- [ ] **Advanced Analytics**: Longitudinal STER progress tracking
-- [ ] **Disposition Comments**: Enhanced feedback system
-
-### **v2.0 (Future)**
-- [ ] **Multi-Institution**: Support for multiple organizations
-- [ ] **Database Backend**: PostgreSQL for large-scale deployments
-- [ ] **API Endpoints**: Integration with existing systems
-- [ ] **Advanced AI**: Predictive analytics and insights
-
 ## 📄 **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
