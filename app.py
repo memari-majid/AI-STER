@@ -793,11 +793,23 @@ def show_evaluation_form():
             st.markdown("### Field Evaluation Rubric")
             st.caption("Official USBE STER standards applied to field evaluation context")
             
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
-                st.markdown("[📄 View Full Field Evaluation Rubric (PDF)](https://github.com/memari-majid/AI-STER/blob/main/docs/STER%20Rubric.pdf)")
+                st.markdown("[📄 View Online (PDF)](https://github.com/memari-majid/AI-STER/blob/main/docs/STER%20Rubric.pdf)")
             with col2:
-                st.info("💡 **Tip**: Right-click to open in new tab")
+                # Add download button
+                try:
+                    with open("docs/STER Rubric.pdf", "rb") as pdf_file:
+                        st.download_button(
+                            label="⬇️ Download PDF",
+                            data=pdf_file.read(),
+                            file_name="STER_Rubric.pdf",
+                            mime="application/pdf"
+                        )
+                except FileNotFoundError:
+                    st.error("PDF file not found")
+            with col3:
+                st.info("💡 **Tip**: View online or download for offline use")
             
             # Quick reference for Field Evaluation
             st.markdown("""
@@ -810,11 +822,23 @@ def show_evaluation_form():
             st.markdown("### STER Evaluation Rubric")
             st.caption("Official USBE STER (Student Teaching Evaluation Rubric) standards")
             
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
-                st.markdown("[📄 View Full STER Rubric (PDF)](https://github.com/memari-majid/AI-STER/blob/main/docs/STER%20Rubric.pdf)")
+                st.markdown("[📄 View Online (PDF)](https://github.com/memari-majid/AI-STER/blob/main/docs/STER%20Rubric.pdf)")
             with col2:
-                st.info("💡 **Tip**: Right-click to open in new tab")
+                # Add download button
+                try:
+                    with open("docs/STER Rubric.pdf", "rb") as pdf_file:
+                        st.download_button(
+                            label="⬇️ Download PDF",
+                            data=pdf_file.read(),
+                            file_name="STER_Rubric.pdf",
+                            mime="application/pdf"
+                        )
+                except FileNotFoundError:
+                    st.error("PDF file not found")
+            with col3:
+                st.info("💡 **Tip**: View online or download for offline use")
             
             # Quick reference for STER
             st.markdown("""
