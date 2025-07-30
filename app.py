@@ -787,6 +787,50 @@ def show_evaluation_form():
         format_func=lambda x: "Field Evaluation" if x == "field_evaluation" else "STER"
     )
     
+    # Add rubric reference section
+    with st.expander("📖 **View Official Rubric**", expanded=False):
+        if rubric_type == "field_evaluation":
+            st.markdown("### Field Evaluation Rubric")
+            st.caption("Official USBE Field Evaluation standards and competency descriptions")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("[🔗 View Full Field Evaluation Rubric](https://github.com/memari-majid/AI-STER/blob/main/docs/Field%20Evaluations.md)")
+            with col2:
+                st.info("💡 **Tip**: Right-click to open in new tab")
+            
+            # Quick reference for Field Evaluation
+            st.markdown("""
+            **Field Evaluation Components:**
+            - 8 Core Competency Items
+            - 6 Professional Dispositions (Level 3+ required)
+            - Focus on 3-week field experience assessment
+            """)
+        else:  # STER evaluation
+            st.markdown("### STER Evaluation Rubric")
+            st.caption("Official USBE STER (Student Teaching Evaluation Rubric) standards")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("[🔗 View Full STER Rubric](https://github.com/memari-majid/AI-STER/blob/main/docs/STER%20CT%26US%20FINAL%203.md)")
+            with col2:
+                st.info("💡 **Tip**: Right-click to open in new tab")
+            
+            # Quick reference for STER
+            st.markdown("""
+            **STER Competency Areas:**
+            - **Learners and Learning (LL)**: LL1-LL7
+            - **Instructional Clarity (IC)**: IC1/IC2, IC3, IC4, IC5/IC6, IC7
+            - **Instructional Practice (IP)**: IP1-IP8
+            - **Classroom Climate (CC)**: CC1-CC8
+            - **Professional Responsibility (PR)**: PR1-PR7
+            
+            *All 35 competencies require Level 2+ for passing*
+            """)
+        
+        st.divider()
+        st.caption("📌 Keep the rubric open in another tab for easy reference during evaluation")
+    
     # Get rubric items based on evaluation type
     if rubric_type == "field_evaluation":
         items = get_field_evaluation_items()
