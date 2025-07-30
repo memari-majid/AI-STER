@@ -791,11 +791,11 @@ def show_evaluation_form():
     with st.expander("📖 **View Official Rubric**", expanded=False):
         if rubric_type == "field_evaluation":
             st.markdown("### Field Evaluation Rubric")
-            st.caption("Official USBE Field Evaluation standards and competency descriptions")
+            st.caption("Official USBE STER standards applied to field evaluation context")
             
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown("[🔗 View Full Field Evaluation Rubric](https://github.com/memari-majid/AI-STER/blob/main/docs/Field%20Evaluations.md)")
+                st.markdown("[📄 View Full Field Evaluation Rubric (PDF)](https://github.com/memari-majid/AI-STER/blob/main/docs/STER%20Rubric.pdf)")
             with col2:
                 st.info("💡 **Tip**: Right-click to open in new tab")
             
@@ -812,7 +812,7 @@ def show_evaluation_form():
             
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown("[🔗 View Full STER Rubric](https://github.com/memari-majid/AI-STER/blob/main/docs/STER%20CT%26US%20FINAL%203.md)")
+                st.markdown("[📄 View Full STER Rubric (PDF)](https://github.com/memari-majid/AI-STER/blob/main/docs/STER%20Rubric.pdf)")
             with col2:
                 st.info("💡 **Tip**: Right-click to open in new tab")
             
