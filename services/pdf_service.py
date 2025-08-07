@@ -112,6 +112,11 @@ class PDFService:
             elements.append(PageBreak())
             elements.extend(self._create_ai_analysis_section(evaluation_data))
         
+        # Add targeted improvement analysis if available
+        if 'targeted_improvement_analysis' in evaluation_data and evaluation_data['targeted_improvement_analysis']:
+            elements.append(Spacer(1, 0.3*inch))
+            elements.extend(self._create_targeted_improvement_section(evaluation_data))
+        
         # Add signature section
         elements.append(Spacer(1, 0.5*inch))
         elements.extend(self._create_signature_section(evaluation_data))
@@ -320,6 +325,28 @@ class PDFService:
             elements.append(Paragraph("<b>Recommendations:</b>", self.styles['Normal']))
             for rec in ai_analysis['recommendations']:
                 elements.append(Paragraph(f"• {rec}", self.styles['Normal']))
+        
+        return elements
+    
+    def _create_targeted_improvement_section(self, data: Dict[str, Any]) -> list:
+        """Create the targeted improvement analysis section"""
+        elements = []
+        
+        # Add section header
+        elements.append(Paragraph("Targeted Improvement Analysis", self.styles['section_heading']))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Add the analysis text
+        analysis_text = data.get('targeted_improvement_analysis', '')
+        if analysis_text:
+            # Split into paragraphs for better formatting
+            paragraphs = analysis_text.split('\n\n')
+            for paragraph in paragraphs:
+                if paragraph.strip():
+                    elements.append(Paragraph(paragraph.strip(), self.styles['body']))
+                    elements.append(Spacer(1, 0.1*inch))
+        else:
+            elements.append(Paragraph("No targeted improvement analysis available.", self.styles['body']))
         
         return elements
     

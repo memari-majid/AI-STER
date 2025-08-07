@@ -505,8 +505,8 @@ def show_detailed_evaluation_view(evaluation):
             'is_formative': True,  # TODO: Add formative/summative tracking
             'competency_scores': [],
             'total_items': len(items),
-            'meeting_expectations': sum(1 for score in scores.values() if score >= 3),
-            'areas_for_growth': sum(1 for score in scores.values() if score < 3)
+            'meeting_expectations': sum(1 for score in scores.values() if isinstance(score, int) and score >= 2),
+            'areas_for_growth': sum(1 for score in scores.values() if isinstance(score, int) and score < 2)
         }
         
         # Add competency scores
@@ -1041,52 +1041,52 @@ Be as detailed as possible - these notes will be used to generate evidence-based
     # Store observation notes in session state
     st.session_state.observation_notes = observation_notes
     
-    # STEP 4: AI Analysis and Justification Generation
-    st.subheader("🤖 Step 4: AI Analysis and Justification Generation")
+    # STEP 4: Score & Review Competencies (Merged Steps 4, 5, 6)
+    st.subheader("🎯 Step 4: Score & Review Competencies")
     if st.session_state.lesson_plan_analysis:
-        st.caption("AI analyzes your observation notes and lesson plan to generate evidence-based justifications")
+        st.caption("AI analyzes your observation notes and lesson plan, then you score and review each competency")
     else:
-        st.caption("AI analyzes your observation notes to generate evidence-based justifications")
-        st.info("📋 **Note:** No lesson plan provided - AI analysis will focus on observation notes only")
+        st.caption("AI analyzes your observation notes, then you score and review each competency")
     
-    # Check if observation notes are available
+    # Generate AI Analysis if not already done
     if observation_notes.strip():
         if openai_service.is_enabled():
-            col1, col2 = st.columns([2, 1])
-            with col1:
-                button_text = "🤖 Generate AI Analysis for All Competencies"
-                if not st.session_state.lesson_plan_analysis:
-                    button_text += " (Observation Notes Only)"
-                    
-                if st.button(button_text, type="primary", key="generate_ai_analysis"):
-                    with st.spinner("Analyzing observation notes and generating evidence-based justifications..."):
-                        try:
-                            # Get lesson plan context if available
-                            lesson_plan_context = None
-                            if st.session_state.lesson_plan_analysis:
-                                lesson_plan_context = f"Lesson Topic: {st.session_state.lesson_plan_analysis.get('lesson_topic', 'N/A')}\n"
-                                lesson_plan_context += f"Learning Objectives: {', '.join(st.session_state.lesson_plan_analysis.get('learning_objectives', []))}\n"
-                                lesson_plan_context += f"Lesson Structure: {st.session_state.lesson_plan_analysis.get('lesson_structure', 'N/A')}"
-                            
-                            # Generate AI analysis for all items
-                            ai_analyses = openai_service.generate_analysis_for_competencies(
-                                items,
-                                observation_notes,
-                                student_name,
-                                rubric_type,
-                                lesson_plan_context
-                            )
-                            
-                            # Store AI analyses in session state
-                            st.session_state.ai_analyses = ai_analyses
-                            success_message = f"✅ Generated AI analysis for {len(ai_analyses)} competencies!"
-                            if not st.session_state.lesson_plan_analysis:
-                                success_message += " (Based on observation notes only)"
-                            st.success(success_message)
-                            st.rerun()
-                            
-                        except Exception as e:
-                            st.error(f"Failed to generate AI analysis: {str(e)}")
+            if not st.session_state.get('ai_analyses'):
+                col1, col2 = st.columns([2, 1])
+                with col1:
+                    button_text = "🤖 Generate AI Analysis & Begin Scoring"
+                    if not st.session_state.lesson_plan_analysis:
+                        button_text += " (Observation Notes Only)"
+                        
+                    if st.button(button_text, type="primary", key="generate_ai_analysis"):
+                        with st.spinner("Analyzing observation notes and generating evidence-based justifications..."):
+                            try:
+                                # Get lesson plan context if available
+                                lesson_plan_context = None
+                                if st.session_state.lesson_plan_analysis:
+                                    lesson_plan_context = f"Lesson Topic: {st.session_state.lesson_plan_analysis.get('lesson_topic', 'N/A')}\n"
+                                    lesson_plan_context += f"Learning Objectives: {', '.join(st.session_state.lesson_plan_analysis.get('learning_objectives', []))}\n"
+                                    lesson_plan_context += f"Lesson Structure: {st.session_state.lesson_plan_analysis.get('lesson_structure', 'N/A')}"
+                                
+                                # Generate AI analysis for all items
+                                ai_analyses = openai_service.generate_analysis_for_competencies(
+                                    items,
+                                    observation_notes,
+                                    student_name,
+                                    rubric_type,
+                                    lesson_plan_context
+                                )
+                                
+                                # Store AI analyses in session state
+                                st.session_state.ai_analyses = ai_analyses
+                                success_message = f"✅ Generated AI analysis for {len(ai_analyses)} competencies!"
+                                if not st.session_state.lesson_plan_analysis:
+                                    success_message += " (Based on observation notes only)"
+                                st.success(success_message)
+                                st.rerun()
+                                
+                            except Exception as e:
+                                st.error(f"Failed to generate AI analysis: {str(e)}")
             
             with col2:
                 if st.session_state.get('ai_analyses'):
@@ -1108,12 +1108,22 @@ Be as detailed as possible - these notes will be used to generate evidence-based
         if not st.session_state.lesson_plan_analysis:
             st.warning("⚠️ **Important:** Without a lesson plan, detailed observation notes are crucial for quality AI analysis!")
     
-    # Show AI Analysis Results
-    if st.session_state.get('ai_analyses'):
-        st.subheader("📊 AI Analysis Results")
-        st.caption("Review the AI's evidence-based analysis before assigning scores")
+    # Score and Review Section
+    if st.session_state.get('ai_analyses') or not openai_service.is_enabled():
+        st.markdown("---")
+        st.markdown("### 📊 Score and Review Each Competency")
         
-        # Group items by competency area for better organization
+        # Check for missing scores
+        total_items = len(items)
+        scored_items = len([s for s in st.session_state.scores.values() if s is not None])
+        missing_scores = total_items - scored_items
+        
+        if missing_scores > 0:
+            st.warning(f"⚠️ **{missing_scores} out of {total_items} competencies still need scores.** Please score all competencies before saving the evaluation.")
+        else:
+            st.success(f"✅ **All {total_items} competencies have been scored!**")
+        
+        # Group items by competency area
         competency_groups = {}
         for item in items:
             area = item['competency_area']
@@ -1121,376 +1131,174 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 competency_groups[area] = []
             competency_groups[area].append(item)
         
+        # Display each competency area
         for area, area_items in competency_groups.items():
-            with st.expander(f"📋 {area} - AI Analysis", expanded=True):
+            with st.expander(f"📋 **{area}** ({len(area_items)} items)", expanded=True):
                 for item in area_items:
                     item_id = item['id']
+                    current_score = st.session_state.scores.get(item_id)
                     
-                    # No role indicator needed - all items are for supervisors
-                    st.markdown(f"**{item['code']}: {item['title']}**")
-                    st.markdown(f"*{item['context']}*")
+                    # Competency header
+                    st.markdown(f"### {item['code']}: {item['title']}")
+                    st.caption(f"{item['context']}")
                     
-                    # Always display something for each competency - either AI analysis or a placeholder
-                    if st.session_state.get('ai_analyses') and item_id in st.session_state.ai_analyses:
-                        ai_analysis = st.session_state.ai_analyses[item_id]
+                    # Create three columns for integrated interface
+                    col1, col2, col3 = st.columns([2, 2, 1])
+                    
+                    with col1:
+                        st.markdown("**📝 Evidence & Justification**")
                         
-                        # Check for warning indicators and display them prominently
-                        warning_displayed = False
-                        original_analysis = ai_analysis
+                        # Get AI analysis or current justification
+                        ai_analysis = ""
+                        if st.session_state.get('ai_analyses') and item_id in st.session_state.ai_analyses:
+                            ai_analysis = st.session_state.ai_analyses[item_id]
+                            # Clean warning patterns
+                            ai_analysis = ai_analysis.replace('[LIMITED_EVIDENCE]', '').replace('[NO_CONTEXT]', '').replace('[GENERIC]', '').strip()
                         
-                        # Check for various warning patterns
-                        if ai_analysis.startswith('[LIMITED_EVIDENCE]') or '[LIMITED_EVIDENCE]' in ai_analysis:
-                            st.error("⚠️ **Limited Evidence Available** - No specific observations found for this competency in the observation notes.")
-                            ai_analysis = ai_analysis.replace('[LIMITED_EVIDENCE]', '').strip()
-                            warning_displayed = True
-                        elif ai_analysis.startswith('[NO_CONTEXT]') or '[NO_CONTEXT]' in ai_analysis:
-                            st.error("⚠️ **No Relevant Context** - The observation notes do not contain information relevant to this competency.")
-                            ai_analysis = ai_analysis.replace('[NO_CONTEXT]', '').strip()
-                            warning_displayed = True
-                        elif ai_analysis.startswith('[GENERIC]') or '[GENERIC]' in ai_analysis:
-                            st.error("⚠️ **Generic Analysis** - Limited specific evidence was available for this competency.")
-                            ai_analysis = ai_analysis.replace('[GENERIC]', '').strip()
-                            warning_displayed = True
-                        elif 'no specific observations were recorded' in ai_analysis.lower():
-                            st.error("⚠️ **Limited Observations** - No specific observations were recorded for this competency area.")
-                            warning_displayed = True
-                        elif 'limited specific evidence' in ai_analysis.lower():
-                            st.error("⚠️ **Limited Evidence** - Limited specific evidence was found for this competency.")
-                            warning_displayed = True
-                        elif 'note:' in ai_analysis.lower() and 'observation' in ai_analysis.lower():
-                            st.error("⚠️ **Observation Note** - Additional observations may be needed for this competency.")
-                            warning_displayed = True
+                        current_justification = st.session_state.justifications.get(item_id, ai_analysis)
                         
-                        # Display cleaned analysis
-                        if ai_analysis.strip():
-                            st.info(f"**AI Analysis:** {ai_analysis}")
+                        # Editable text area for justification
+                        justification = st.text_area(
+                            "Edit justification",
+                            value=current_justification,
+                            height=120,
+                            placeholder="Enter evidence-based justification..." if not ai_analysis else "AI-generated analysis shown - edit as needed",
+                            key=f"justification_{item_id}",
+                            label_visibility="collapsed",
+                            help="Review and edit the AI-generated analysis or write your own justification"
+                        )
+                        
+                        # Update justification in session state
+                        if justification.strip():
+                            st.session_state.justifications[item_id] = justification
+                        elif item_id in st.session_state.justifications and not justification.strip():
+                            del st.session_state.justifications[item_id]
+                    
+                    with col2:
+                        st.markdown("**📊 Scoring Rubric**")
+                        
+                        # Show rubric levels for reference
+                        with st.container():
+                            for level in ['0', '1', '2', '3']:
+                                level_desc = item['levels'].get(level, 'No description')
+                                if current_score == int(level):
+                                    st.success(f"**Level {level} (Selected):** {level_desc[:100]}...")
+                                else:
+                                    st.caption(f"**Level {level}:** {level_desc[:100]}...")
+                    
+                    with col3:
+                        st.markdown("**🎯 Score**")
+                        
+                        def format_score_option(score):
+                            if score is None:
+                                return "Select..."
+                            else:
+                                return f"Level {score}"
+                        
+                        score = st.selectbox(
+                            f"Score for {item['code']}",
+                            options=[None, 0, 1, 2, 3],
+                            index=0 if current_score is None else current_score + 1,
+                            format_func=format_score_option,
+                            key=f"score_select_{item_id}",
+                            label_visibility="collapsed"
+                        )
+                        
+                        if score is not None:
+                            st.session_state.scores[item_id] = score
+                            # Auto-populate justification if empty and we have AI analysis
+                            if not st.session_state.justifications.get(item_id) and justification.strip():
+                                st.session_state.justifications[item_id] = justification
+                        
+                        # Show score status
+                        if score is not None:
+                            if score >= 2:
+                                st.success(f"✅ Level {score}")
+                            else:
+                                st.warning(f"🌱 Level {score}")
                         else:
-                            st.warning("No specific analysis available for this competency.")
+                            st.error("❌ Not scored")
                         
-                        # Allow editing of AI analysis
-                        edited_analysis = st.text_area(
-                            f"Edit AI Analysis for {item['code']}",
-                            value=ai_analysis,
-                            height=80,
-                            key=f"edit_analysis_{item_id}",
-                            help="Edit the AI analysis as needed based on your observations"
-                        )
-                        
-                        # Update session state with edited analysis
-                        if edited_analysis != ai_analysis:
-                            st.session_state.ai_analyses[item_id] = edited_analysis
+                        # Individual AI generation button (if needed)
+                        if openai_service.is_enabled() and not st.session_state.justifications.get(item_id, "").strip():
+                            if st.button("🤖", key=f"gen_{item_id}", help="Generate AI justification for this item"):
+                                with st.spinner("Generating..."):
+                                    try:
+                                        # Get lesson plan context if available
+                                        lesson_plan_context = None
+                                        if st.session_state.lesson_plan_analysis:
+                                            lesson_plan_context = f"Lesson Topic: {st.session_state.lesson_plan_analysis.get('lesson_topic', 'N/A')}"
+                                        
+                                        ai_justification = openai_service.generate_justification(
+                                            item, score if score is not None else 2, student_name, observation_notes, lesson_plan_context
+                                        )
+                                        st.session_state.justifications[item_id] = ai_justification
+                                        if 'ai_analyses' not in st.session_state:
+                                            st.session_state.ai_analyses = {}
+                                        st.session_state.ai_analyses[item_id] = ai_justification
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Error: {str(e)}")
                     
-                    elif st.session_state.get('ai_analyses'):
-                        # AI analysis was generated but this competency is missing - show warning
-                        st.error("⚠️ **Missing Analysis** - AI analysis was not generated for this competency. This may indicate limited relevant observations.")
-                        st.warning(f"No AI analysis available for {item['code']}. Consider adding specific observations for this competency area.")
-                        
-                        # Provide empty text area for manual input
-                        manual_analysis = st.text_area(
-                            f"Manual Analysis for {item['code']}",
-                            value="",
-                            height=80,
-                            placeholder="Add your own analysis based on observations...",
-                            key=f"manual_analysis_{item_id}",
-                            help="Enter your own analysis since AI analysis was not generated"
-                        )
-                        
-                        # Store manual analysis if provided
-                        if manual_analysis.strip():
-                            if 'ai_analyses' not in st.session_state:
-                                st.session_state.ai_analyses = {}
-                            st.session_state.ai_analyses[item_id] = manual_analysis
-                    
-                    else:
-                        # No AI analysis generated yet - show placeholder
-                        st.info(f"⏳ **Analysis Pending** - AI analysis not yet generated for {item['code']}.")
-                        st.write("Generate AI analysis above to see evidence-based insights for this competency.")
-                        
                     st.divider()
-    
-    # STEP 5: Informed Assessment Scoring
-    st.subheader("🎯 Step 5: Informed Assessment Scoring")
-    st.caption("Assign scores based on your observations and the AI analysis above")
-    
-    # Show guidance about using AI analysis
-    if st.session_state.get('ai_analyses'):
-        st.success("✅ AI analysis available! Use the evidence-based justifications above to inform your scoring decisions.")
-    else:
-        st.info("💡 Generate AI analysis first to get evidence-based justifications that will help inform your scoring.")
-    
-    st.markdown("**Score Each Competency (Level 0-3)**")
-    
-    # Check for missing scores and show warning (treat "not_observed" as valid)
-    total_items = len(items)
-    scored_items = len([s for s in st.session_state.scores.values() if s is not None])
-    missing_scores = total_items - scored_items
-    
-    if missing_scores > 0:
-        st.warning(f"⚠️ **{missing_scores} out of {total_items} competencies still need scores.** Please score all competencies before saving the evaluation.")
-    else:
-        st.success(f"✅ **All {total_items} competencies have been scored!**")
-    
-    total_score = 0
-    all_items_scored = True
-    
-    # Group items by competency area for better organization
-    competency_groups = {}
-    for item in items:
-        area = item['competency_area']
-        if area not in competency_groups:
-            competency_groups[area] = []
-        competency_groups[area].append(item)
-    
-    for area, area_items in competency_groups.items():
-        st.markdown(f"**{area}**")
         
-        for item in area_items:
-            item_id = item['id']
-            current_score = st.session_state.scores.get(item_id)
-            
-            # Create scoring interface for each item
-            col1, col2 = st.columns([3, 1])
-            
-            with col1:
-                # No role indicator needed - all items are for supervisors
-                st.markdown(f"*{item['code']}: {item['title']}*")
-                st.caption(f"{item['context']}")
-                
-                # Show AI analysis if available
-                if st.session_state.get('ai_analyses') and item_id in st.session_state.ai_analyses:
-                    with st.expander("🤖 View AI Analysis", expanded=False):
-                        ai_analysis = st.session_state.ai_analyses[item_id]
-                        
-                        # Check for and display warnings
-                        warning_displayed = False
-                        original_analysis = ai_analysis
-                        
-                        # Check for various warning patterns
-                        if ai_analysis.startswith('[LIMITED_EVIDENCE]') or '[LIMITED_EVIDENCE]' in ai_analysis:
-                            st.error("⚠️ **Limited Evidence Available** - No specific observations found for this competency.")
-                            ai_analysis = ai_analysis.replace('[LIMITED_EVIDENCE]', '').strip()
-                            warning_displayed = True
-                        elif ai_analysis.startswith('[NO_CONTEXT]') or '[NO_CONTEXT]' in ai_analysis:
-                            st.error("⚠️ **No Relevant Context** - The observation notes do not contain information relevant to this competency.")
-                            ai_analysis = ai_analysis.replace('[NO_CONTEXT]', '').strip()
-                            warning_displayed = True
-                        elif ai_analysis.startswith('[GENERIC]') or '[GENERIC]' in ai_analysis:
-                            st.error("⚠️ **Generic Analysis** - Limited specific evidence was available for this competency.")
-                            ai_analysis = ai_analysis.replace('[GENERIC]', '').strip()
-                            warning_displayed = True
-                        elif 'no specific observations were recorded' in ai_analysis.lower():
-                            st.error("⚠️ **Limited Observations** - No specific observations were recorded for this competency area.")
-                            warning_displayed = True
-                        elif 'limited specific evidence' in ai_analysis.lower():
-                            st.error("⚠️ **Limited Evidence** - Limited specific evidence was found for this competency.")
-                            warning_displayed = True
-                        elif 'note:' in ai_analysis.lower() and 'observation' in ai_analysis.lower():
-                            st.error("⚠️ **Observation Note** - Additional observations may be needed for this competency.")
-                            warning_displayed = True
-                        
-                        if ai_analysis.strip():
-                            st.write(ai_analysis)
-                        else:
-                            st.write("No specific analysis available.")
-                else:
-                    with st.expander("🤖 View AI Analysis", expanded=False):
-                        st.warning("AI analysis not yet generated. Generate AI analysis above to see insights.")
-            
-            with col2:
-                def format_score_option(score):
-                    if score is None:
-                        return "Select score..."
-                    elif score == "not_observed":
-                        return "Not Observed - Competency not demonstrated in this observation"
-                    else:
-                        return f"Level {score} - {get_level_name(score)}"
-                
-                score = st.selectbox(
-                    f"Score",
-                    options=[None, "not_observed", 0, 1, 2, 3],
-                    index=0 if current_score is None else (1 if current_score == "not_observed" else current_score + 2),
-                    format_func=format_score_option,
-                    key=f"score_select_{item_id}",
-                    help=f"Select score level for {item['code']} based on your observations and AI analysis"
-                )
-                
-                if score is not None:
-                    st.session_state.scores[item_id] = score
-                    # Use AI analysis as justification if available
-                    if st.session_state.get('ai_analyses') and item_id in st.session_state.ai_analyses:
-                        # Clean the analysis before using as justification
-                        clean_analysis = st.session_state.ai_analyses[item_id]
-                        # Remove all warning patterns
-                        clean_analysis = clean_analysis.replace('[LIMITED_EVIDENCE]', '').replace('[NO_CONTEXT]', '').replace('[GENERIC]', '').strip()
-                        # Remove common warning phrases
-                        warning_phrases = [
-                            '**NOTE: No specific observations were recorded for this competency area',
-                            'supervisor may wish to add additional details',
-                            'limited specific evidence was recorded',
-                            'Based on the available observation notes, limited specific evidence'
-                        ]
-                        for phrase in warning_phrases:
-                            if phrase.lower() in clean_analysis.lower():
-                                # Find and remove the sentence containing the warning
-                                sentences = clean_analysis.split('. ')
-                                clean_sentences = [s for s in sentences if phrase.lower() not in s.lower()]
-                                clean_analysis = '. '.join(clean_sentences).strip()
-                        
-                        if clean_analysis and not clean_analysis.endswith('.'):
-                            clean_analysis += '.'
-                        
-                        if clean_analysis.strip():
-                            st.session_state.justifications[item_id] = clean_analysis
-                    if isinstance(score, int):  # Only add numeric scores to total
-                        total_score += score
-                else:
-                    all_items_scored = False
-            
-            # Show selected score description (use actual selected score, not session state)
-            display_score = score if score is not None else current_score
-            if display_score is not None:
-                if display_score == "not_observed":
-                    st.info(f"**Not Observed:** This competency was not demonstrated during this observation session")
-                else:
-                    score_desc = item['levels'].get(str(display_score), 'No description available')
-                    st.info(f"**Level {display_score}:** {score_desc}")
+        # Score Summary
+        st.markdown("---")
+        st.subheader("📈 Scoring Summary")
+        
+        scored_items = len([s for s in st.session_state.scores.values() if s is not None])
+        level_2_plus = len([s for s in st.session_state.scores.values() if isinstance(s, int) and s >= 2])
+        level_1_count = len([s for s in st.session_state.scores.values() if s == 1])
+        level_0_count = len([s for s in st.session_state.scores.values() if s == 0])
+        critical_areas = level_0_count + level_1_count
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            if scored_items < len(items):
+                st.metric("Items Scored", f"{scored_items}/{len(items)}", delta=f"-{len(items) - scored_items} missing", delta_color="inverse")
             else:
-                # Show that this competency is not yet scored with warning
-                st.warning(f"⏸️ **Not yet scored** - {item['code']} requires a score level to complete the evaluation")
+                st.metric("Items Scored", f"{scored_items}/{len(items)}", delta="Complete ✅")
+        with col2:
+            if scored_items > 0:
+                st.metric("Meeting Standards", f"{level_2_plus}/{scored_items}", help="Level 2+ competencies")
+            else:
+                st.metric("Meeting Standards", "0/0")
+        with col3:
+            if critical_areas > 0:
+                st.metric("Growth Areas", critical_areas, delta="Need Level 2+", delta_color="inverse")
+            else:
+                st.metric("Growth Areas", 0, delta="All Level 2+ ✅")
+        with col4:
+            all_items_scored = scored_items == len(items)
+            meets_minimum = all_items_scored and critical_areas == 0
+            if meets_minimum:
+                st.metric("Status", "✅ Ready", help="All requirements met")
+            elif all_items_scored:
+                st.metric("Status", "🌱 Growing", delta=f"{critical_areas} areas", delta_color="inverse")
+            else:
+                st.metric("Status", "⏳ Incomplete")
         
-        st.divider()
-    
-    # Score Summary
-    scored_items = len([s for s in st.session_state.scores.values() if s is not None])
-    level_1_count = len([s for s in st.session_state.scores.values() if s == 1])
-    level_0_count = len([s for s in st.session_state.scores.values() if s == 0])
-    critical_areas = level_0_count + level_1_count
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        if scored_items < len(items):
-            st.metric("Items Scored", f"{scored_items}/{len(items)}", delta=f"-{len(items) - scored_items} missing", delta_color="inverse")
-        else:
-            st.metric("Items Scored", f"{scored_items}/{len(items)}", delta="Complete ✅")
-    with col2:
-        if critical_areas > 0:
-            st.metric("Areas for Improvement", critical_areas, delta="Need Level 2+", delta_color="inverse", help="Areas scoring Level 0-1 that must improve to Level 2+ to pass")
-        else:
-            st.metric("Areas for Improvement", 0, delta="All Level 2+ ✅", help="All competencies meeting minimum requirements")
-    with col3:
-        if scored_items > 0:
-            passing_items = len([s for s in st.session_state.scores.values() if isinstance(s, int) and s >= 2])
-            st.metric("Meeting Standards", f"{passing_items}/{scored_items}", help="Competencies at Level 2 or higher")
-        else:
-            st.metric("Meeting Standards", "0/0")
-    with col4:
-        all_items_scored = scored_items == len(items)
-        meets_minimum = all_items_scored and critical_areas == 0
-        if meets_minimum:
-            st.metric("Pass Requirements", "✅ Met", help="All competencies at Level 2+")
-        elif all_items_scored:
-            st.metric("Pass Requirements", "🌱 Growing", delta=f"{critical_areas} areas for growth", delta_color="inverse")
-        else:
-            st.metric("Pass Requirements", "⏳ Pending", help="Complete scoring to determine status")
-    
-    # Growth Areas Alert (Level 1 scores)
-    if scored_items > 0:
-        level_1_items = [(item_id, item) for item in items for item_id, score in st.session_state.scores.items() if item['id'] == item_id and score == 1]
-        level_0_items = [(item_id, item) for item in items for item_id, score in st.session_state.scores.items() if item['id'] == item_id and score == 0]
-        
-        if level_1_items or level_0_items:
-            st.subheader("🌟 Areas for Growth and Development")
-            st.caption("Supporting student teachers to achieve Level 2+ in all competencies. These areas offer opportunities for focused improvement.")
+        # Growth Areas Alert
+        if scored_items > 0 and critical_areas > 0:
+            st.markdown("---")
+            st.subheader("🌟 Areas for Growth")
+            
+            level_0_items = [item for item in items if st.session_state.scores.get(item['id']) == 0]
+            level_1_items = [item for item in items if st.session_state.scores.get(item['id']) == 1]
             
             if level_0_items:
-                st.info("**Level 0 - Emerging Skills (Priority for Development)**")
-                for item_id, item in level_0_items:
-                    st.write(f"• **{item['code']}**: {item['title']}")
+                st.error("**Level 0 - Priority Development Areas:**")
+                for item in level_0_items:
+                    st.write(f"• {item['code']}: {item['title']}")
             
             if level_1_items:
-                st.info("**Level 1 - Developing Competency (Almost There!)**")
-                for item_id, item in level_1_items:
-                    st.write(f"• **{item['code']}**: {item['title']}")
-            
-            st.info("💡 **Next Steps**: Use AI analysis below to get specific guidance on moving these areas from Level 1 to Level 2")
-            st.divider()
-        elif scored_items == len(items):
-            st.success("🎉 **Excellent Progress!** All competencies are at Level 2 or higher - student is meeting minimum standards.")
-            st.divider()
-    
-    # STEP 6: Review and Edit Justifications
-    st.subheader("✏️ Step 6: Review and Edit Justifications")
-    st.caption("Review and edit justifications for all competencies (scored and unscored)")
-    
-    # Group items by competency area for better organization
-    competency_groups = {}
-    for item in items:
-        area = item['competency_area']
-        if area not in competency_groups:
-            competency_groups[area] = []
-        competency_groups[area].append(item)
-    
-    for area, area_items in competency_groups.items():
-        st.markdown(f"**{area}**")
-        
-        for item in area_items:
-            item_id = item['id']
-            current_score = st.session_state.scores.get(item_id)
-            
-            # Show all competencies, indicate scoring status
-            if current_score is not None:
-                st.markdown(f"**{item['code']}: {item['title']}** (Level {current_score} ✅)")
-            else:
-                st.markdown(f"**{item['code']}: {item['title']}** (Not scored ⏸️)")
-            
-            # Justification text area for all items
-            current_justification = st.session_state.justifications.get(item_id, "")
-            justification = st.text_area(
-                f"Justification for {item['code']}",
-                value=current_justification,
-                height=100,
-                placeholder="Enter justification here... (AI-generated justifications appear automatically when you score items above)" if current_score is None else "Edit the justification as needed...",
-                key=f"edit_justification_{item_id}",
-                help="Edit the AI-generated justification or write your own"
-            )
-            
-            # Update session state
-            if justification.strip():
-                st.session_state.justifications[item_id] = justification
-            elif item_id in st.session_state.justifications and not justification.strip():
-                # Remove empty justifications
-                del st.session_state.justifications[item_id]
-            
-            # Individual AI generation as fallback (only for scored items or if requested)
-            col1, col2 = st.columns([2, 1])
-            with col1:
-                if openai_service.is_enabled() and not st.session_state.justifications.get(item_id, "").strip():
-                    if current_score is not None:
-                        if st.button(f"🤖 Generate Individual Justification", key=f"individual_ai_{item_id}"):
-                            with st.spinner(f"Generating justification for {item['code']}..."):
-                                try:
-                                    ai_justification = openai_service.generate_justification(
-                                        item, current_score, student_name, observation_notes
-                                    )
-                                    st.session_state.justifications[item_id] = ai_justification
-                                    st.success("Individual justification generated!")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"Failed to generate justification: {str(e)}")
-                    else:
-                        st.info("💡 Score this competency above to enable individual AI justification generation")
-            
-            with col2:
-                if current_score is not None:
-                    st.success(f"Scored: Level {current_score}")
-                else:
-                    st.warning("Not scored")
-            
-            st.divider()
-    
-    # STEP 7: Professional Dispositions (Field Evaluation Only)
+                st.warning("**Level 1 - Approaching Competency:**")
+                for item in level_1_items:
+                    st.write(f"• {item['code']}: {item['title']}")
+
+    # STEP 5: Professional Dispositions (Field Evaluation Only)  
     if rubric_type == "field_evaluation":
-        st.subheader("🌟 Step 7: Professional Dispositions (Supervisor Manual Assessment)")
+        st.subheader("🌟 Step 5: Professional Dispositions (Supervisor Manual Assessment)")
         st.caption("Supervisors evaluate dispositions based on observations across multiple interactions and timeframes, not limited to a single lesson.")
         
         # Add context about manual assessment
@@ -1596,6 +1404,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                         rubric_type
                     )
                     
+                    # Store analysis in session state
+                    st.session_state.targeted_improvement_analysis = analysis
+                    
                     st.success("**Targeted Performance Analysis:**")
                     st.info(analysis)
                     
@@ -1611,6 +1422,16 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     
                 except Exception as e:
                     st.error(f"AI analysis failed: {str(e)}")
+        
+        # Display existing analysis if available
+        elif st.session_state.get('targeted_improvement_analysis'):
+            st.success("**Targeted Performance Analysis:**")
+            st.info(st.session_state.targeted_improvement_analysis)
+            
+            # Allow regeneration
+            if st.button("🔄 Regenerate Analysis"):
+                st.session_state.targeted_improvement_analysis = None
+                st.rerun()
     
     # Save buttons
     st.subheader("Save Evaluation")
@@ -1635,6 +1456,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
         else:
             st.success("✅ **Evaluation is complete!** All competencies have been scored.")
     
+    # Calculate total score
+    total_score = sum(score for score in st.session_state.scores.values() if isinstance(score, int))
+    
     col1, col2 = st.columns(2)
     
     with col1:
@@ -1655,7 +1479,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'created_at': datetime.now().isoformat(),
                 'lesson_plan_provided': st.session_state.lesson_plan_analysis is not None,
                 'lesson_plan_method': input_method if 'input_method' in locals() else 'unknown',
-                'ai_analyses': st.session_state.get('ai_analyses', {})
+                'ai_analyses': st.session_state.get('ai_analyses', {}),
+                'targeted_improvement_analysis': st.session_state.get('targeted_improvement_analysis', '')
             }
             save_evaluation(evaluation)
             st.success("Evaluation saved as draft!")
@@ -1706,7 +1531,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'completed_at': datetime.now().isoformat(),
                 'lesson_plan_provided': st.session_state.lesson_plan_analysis is not None,
                 'lesson_plan_method': input_method if 'input_method' in locals() else 'unknown',
-                'ai_analyses': st.session_state.get('ai_analyses', {})
+                'ai_analyses': st.session_state.get('ai_analyses', {}),
+                'targeted_improvement_analysis': st.session_state.get('targeted_improvement_analysis', '')
             }
             save_evaluation(evaluation)
             
@@ -1716,107 +1542,133 @@ Be as detailed as possible - these notes will be used to generate evidence-based
             else:
                 st.success("🎉 Evaluation completed successfully!")
             
-            # Add PDF export button for all evaluations (regardless of status)
-            st.markdown("---")
-            st.subheader("📄 Download Your Evaluation Report")
-            col1_pdf, col2_pdf = st.columns(2)
             
-            with col1_pdf:
-                # Prepare data for PDF generation
-                pdf_data = {
-                        'rubric_type': rubric_type,
-                        'student_name': student_name,
-                        'evaluator_name': evaluator_name,
-                        'date': datetime.now().strftime('%Y-%m-%d'),
-                        'school': st.session_state.get('school_name', 'N/A'),
-                        'subject': st.session_state.get('subject_grade', 'N/A'),
-                        'is_formative': True,  # TODO: Add formative/summative selection
-                        'competency_scores': [],
-                        'total_items': len(items),
-                        'meeting_expectations': sum(1 for score in st.session_state.scores.values() if score >= 3),
-                        'areas_for_growth': sum(1 for score in st.session_state.scores.values() if score < 3)
+    # PDF Download Section - Always Available
+    st.markdown("---")
+    st.subheader("📄 Download Draft Report")
+    st.caption("Generate a PDF report at any stage of the evaluation process")
+    
+    col1_pdf, col2_pdf = st.columns(2)
+    
+    with col1_pdf:
+        # Check if there's any data to export
+        has_scores = len(st.session_state.scores) > 0
+        has_justifications = len(st.session_state.justifications) > 0
+        has_basic_info = student_name.strip() != "" and evaluator_name.strip() != ""
+        
+        if has_basic_info:
+            # Prepare data for PDF generation
+            pdf_data = {
+                'rubric_type': rubric_type,
+                'student_name': student_name,
+                'evaluator_name': evaluator_name,
+                'date': datetime.now().strftime('%Y-%m-%d'),
+                'school': st.session_state.get('school_name', 'N/A'),
+                'subject': st.session_state.get('subject_grade', 'N/A'),
+                'is_formative': True,
+                'competency_scores': [],
+                'total_items': len(items),
+                'meeting_expectations': sum(1 for score in st.session_state.scores.values() if isinstance(score, int) and score >= 2),
+                'areas_for_growth': sum(1 for score in st.session_state.scores.values() if isinstance(score, int) and score < 2),
+                'targeted_improvement_analysis': st.session_state.get('targeted_improvement_analysis', ''),
+                'status': 'draft'  # Mark as draft since it's always available
+            }
+            
+            # Add competency scores (including None values for incomplete items)
+            for item in items:
+                item_id = item['id']
+                score = st.session_state.scores.get(item_id, None)
+                pdf_data['competency_scores'].append({
+                    'competency': f"{item['code']}: {item['title']}",
+                    'score': score if score is not None else 'Not Scored',
+                    'justification': st.session_state.justifications.get(item_id, 'No justification provided')
+                })
+            
+            # Add dispositions for field evaluations
+            if rubric_type == 'field_evaluation' and st.session_state.disposition_scores:
+                pdf_data['dispositions'] = []
+                for disposition in dispositions:
+                    disp_id = disposition['id']
+                    score = st.session_state.disposition_scores.get(disp_id, None)
+                    pdf_data['dispositions'].append({
+                        'disposition': disposition['name'],
+                        'score': score if score is not None else 'Not Scored',
+                        'notes': st.session_state.disposition_comments.get(disp_id, '')
+                    })
+            
+            # Add AI analysis if available
+            ai_analyses = st.session_state.get('ai_analyses', {})
+            if ai_analyses:
+                # Collect all AI analyses
+                all_analyses = []
+                strengths = []
+                areas_for_growth = []
+                
+                for item in items:
+                    analysis = ai_analyses.get(item['id'])
+                    if analysis:
+                        item_name = f"{item['code']}: {item['title']}"
+                        all_analyses.append(f"{item_name}\n{analysis}")
+                        
+                        # Extract strengths and growth areas
+                        if any(word in analysis.lower() for word in ['strong', 'excellent', 'effective', 'well', 'good', 'demonstrates']):
+                            strengths.append(f"{item['code']}: {analysis[:150]}...")
+                        
+                        if any(word in analysis.lower() for word in ['improve', 'develop', 'consider', 'could', 'should', 'needs']):
+                            areas_for_growth.append(f"{item['code']}: {analysis[:150]}...")
+                
+                pdf_data['ai_analysis'] = {
+                    'strengths': strengths[:5],
+                    'areas_for_growth': areas_for_growth[:5],
+                    'recommendations': [],
+                    'full_analyses': all_analyses
                 }
-                
-                # Add competency scores
-                for item_key, score in st.session_state.scores.items():
-                    item = next((i for i in items if i.get('key', i.get('id')) == item_key), None)
-                    if item:
-                        pdf_data['competency_scores'].append({
-                                'competency': item['title'],
-                                'score': score,
-                                'justification': st.session_state.justifications.get(item_key, '')
-                        })
-                
-                # Add dispositions for field evaluations
-                if rubric_type == 'field_evaluation' and st.session_state.disposition_scores:
-                    pdf_data['dispositions'] = []
-                    for disp_key, score in st.session_state.disposition_scores.items():
-                        disp = next((d for d in dispositions if d['key'] == disp_key), None)
-                        if disp:
-                            pdf_data['dispositions'].append({
-                                    'disposition': disp['disposition'],
-                                    'score': score,
-                                    'notes': st.session_state.disposition_comments.get(disp_key, '')
-                            })
-                
-                # Add AI analysis if available
-                if hasattr(st.session_state, 'ai_analyses') and st.session_state.ai_analyses:
-                    # Collect all AI analyses
-                    all_analyses = []
-                    strengths = []
-                    areas_for_growth = []
-                    
-                    for item_id, analysis in st.session_state.ai_analyses.items():
-                        if analysis and isinstance(analysis, str):
-                            # Get the item name for context
-                            item = next((i for i in items if i.get('key', i.get('id')) == item_id), None)
-                            if item:
-                                item_name = f"{item['code']}: {item['title']}"
-                                # Add the analysis with context
-                                all_analyses.append(f"{item_name}\n{analysis}")
-                                
-                                # Extract strengths (look for positive indicators)
-                                if any(word in analysis.lower() for word in ['strong', 'excellent', 'effective', 'well', 'good', 'demonstrates']):
-                                    strengths.append(f"{item['code']}: {analysis[:150]}...")
-                                
-                                # Extract areas for growth (look for improvement indicators)
-                                if any(word in analysis.lower() for word in ['improve', 'develop', 'consider', 'could', 'should', 'needs']):
-                                    areas_for_growth.append(f"{item['code']}: {analysis[:150]}...")
-                    
-                    pdf_data['ai_analysis'] = {
-                        'strengths': strengths[:5],  # Limit to top 5
-                        'areas_for_growth': areas_for_growth[:5],  # Limit to top 5
-                        'recommendations': [],  # Could be extracted from overall analysis
-                        'full_analyses': all_analyses  # Include all analyses
-                    }
-                
-                # Generate PDF
-                try:
-                    pdf_bytes = pdf_service.generate_evaluation_pdf(pdf_data)
-                    
-                    # Create filename
-                    filename = f"{student_name.replace(' ', '_')}_{rubric_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                    
-                    st.download_button(
-                            label="📄 Download Evaluation Report (PDF)",
-                            data=pdf_bytes,
-                            file_name=filename,
-                            mime="application/pdf",
-                            help="Download the complete evaluation report as a PDF file"
-                    )
-                except Exception as e:
-                    st.error(f"Error generating PDF: {str(e)}")
             
-            with col2_pdf:
-                st.info("💡 **Tip**: Download the PDF report for your records or to share with the student teacher.")
-            
-            # Show a message about refreshing
-            st.info("🔄 To create another evaluation, refresh the page or click 'New Evaluation' in the sidebar.")
+            # Generate PDF
+            try:
+                pdf_bytes = pdf_service.generate_evaluation_pdf(pdf_data)
                 
-                # TODO: Add session clearing logic after user confirms they've downloaded the PDF
-                # for key in ['scores', 'justifications', 'disposition_scores', 'disposition_comments', 'ai_analyses']:
-                #     if key in st.session_state:
-                #         del st.session_state[key]
+                # Create filename with draft indicator
+                status_indicator = "DRAFT" if (len(st.session_state.scores) < len(items)) else "COMPLETE"
+                filename = f"{student_name.replace(' ', '_')}_{rubric_type}_{status_indicator}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                
+                st.download_button(
+                    label="📄 Download Current Report (PDF)",
+                    data=pdf_bytes,
+                    file_name=filename,
+                    mime="application/pdf",
+                    help="Download the evaluation report in its current state"
+                )
+                
+                # Show status information
+                if len(st.session_state.scores) < len(items):
+                    missing_count = len(items) - len(st.session_state.scores)
+                    st.info(f"ℹ️ This is a **DRAFT** report. {missing_count} competencies still need scores.")
+                else:
+                    st.success("✅ This report includes all competency scores.")
+                    
+            except Exception as e:
+                st.error(f"Error generating PDF: {str(e)}")
+        else:
+            st.warning("⚠️ Please fill in student name and evaluator name to enable PDF download.")
+    
+    with col2_pdf:
+        if has_basic_info:
+            st.info("💡 **Tip**: You can download a report at any stage. Draft reports will be clearly marked.")
+            
+            # Progress indicator
+            total_items = len(items)
+            scored_items = len([s for s in st.session_state.scores.values() if s is not None])
+            progress = scored_items / total_items if total_items > 0 else 0
+            
+            st.metric("Progress", f"{scored_items}/{total_items}", f"{progress:.0%}")
+            
+            if rubric_type == "field_evaluation":
+                total_dispositions = len(dispositions) 
+                scored_dispositions = len([s for s in st.session_state.disposition_scores.values() if s is not None])
+                st.metric("Dispositions", f"{scored_dispositions}/{total_dispositions}")
+        else:
+            st.info("Fill in the basic information above to enable PDF download.")
 
 def show_test_data():
     """Test data generation and management"""
