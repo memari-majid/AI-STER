@@ -116,21 +116,36 @@ def show_dashboard():
         else:
             st.metric("Success Rate", "N/A")
     
-    # Enhanced Metrics Row 2 - Context Information
-    if 'school_setting' in df.columns and 'subject_area' in df.columns:
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            unique_schools = df['school_name'].nunique() if 'school_name' in df.columns else 0
-            st.metric("Schools", unique_schools)
-        with col2:
-            unique_settings = df['school_setting'].nunique() if 'school_setting' in df.columns else 0
-            st.metric("School Types", unique_settings)
-        with col3:
-            unique_subjects = df['subject_area'].nunique() if 'subject_area' in df.columns else 0
-            st.metric("Subject Areas", unique_subjects)
-        with col4:
-            current_semester = df['semester'].mode()[0] if 'semester' in df.columns and len(df) > 0 else "N/A"
-            st.metric("Current Semester", current_semester)
+    # Enhanced Metrics Row 2 - Dashboard Feedback Implementation
+    st.markdown("---")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        # Evaluation Types breakdown
+        field_evals = len(df[df['rubric_type'] == 'field_evaluation']) if 'rubric_type' in df.columns else 0
+        ster_evals = len(df[df['rubric_type'] == 'ster']) if 'rubric_type' in df.columns else 0
+        st.metric("Field Evaluations", field_evals)
+        st.metric("STER Evaluations", ster_evals)
+    with col2:
+        # Subject Areas count
+        unique_subjects = df['subject_area'].nunique() if 'subject_area' in df.columns else 0
+        total_subjects = len(df['subject_area'].dropna()) if 'subject_area' in df.columns else 0
+        st.metric("Subject Areas", unique_subjects)
+        if total_subjects > 0:
+            st.caption(f"Total subject records: {total_subjects}")
+    with col3:
+        # Current Semester
+        current_semester = df['semester'].mode()[0] if 'semester' in df.columns and len(df) > 0 else "Spring 2025"
+        semester_count = len(df[df['semester'] == current_semester]) if 'semester' in df.columns else 0
+        st.metric("Current Semester", current_semester)
+        st.caption(f"Evaluations this semester: {semester_count}")
+    with col4:
+        # Department distribution
+        unique_departments = df['department'].nunique() if 'department' in df.columns else 0
+        st.metric("Departments", unique_departments)
+        if 'department' in df.columns:
+            dept_counts = df['department'].value_counts()
+            most_active = dept_counts.index[0] if len(dept_counts) > 0 else "N/A"
+            st.caption(f"Most active: {most_active}")
     
     # Enhanced Charts Section
     st.subheader("📈 Evaluation Analytics")
@@ -187,14 +202,20 @@ def show_dashboard():
             st.info("No school setting data available")
     
     with col2:
-        st.subheader("Grade Levels")
-        if 'grade_levels' in df.columns:
-            grade_counts = df['grade_levels'].value_counts()
-            st.bar_chart(grade_counts)
+        st.subheader("Departments")
+        if 'department' in df.columns:
+            dept_counts = df['department'].value_counts()
+            st.bar_chart(dept_counts)
+            
+            # Show department breakdown
+            with st.expander("Department Details"):
+                for dept, count in dept_counts.items():
+                    percentage = (count / len(df)) * 100
+                    st.write(f"**{dept}**: {count} evaluations ({percentage:.1f}%)")
         else:
-            st.info("No grade level data available")
+            st.info("No department data available")
     
-    # Competency Area Analysis
+    # Enhanced Competency Area Performance Analysis
     st.subheader("🎯 Competency Area Performance")
     
     completed_evals = [e for e in evaluations if e.get('status') == 'completed']
@@ -208,26 +229,87 @@ def show_dashboard():
             
             st.bar_chart(comp_df.set_index('Competency Area'))
             
-            # Show detailed breakdown
-            with st.expander("Detailed Competency Analysis"):
-                for area, avg_score in sorted(competency_analysis.items(), key=lambda x: x[1], reverse=True):
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.write(f"**{area}**")
-                    with col2:
-                        if avg_score >= 2.5:
-                            st.success(f"{avg_score:.2f}")
-                        elif avg_score >= 2.0:
-                            st.warning(f"{avg_score:.2f}")
-                        else:
-                            st.error(f"{avg_score:.2f}")
+            # Enhanced performance metrics
+            col1, col2, col3 = st.columns(3)
+            
+            strong_areas = [area for area, score in competency_analysis.items() if score >= 2.5]
+            meeting_areas = [area for area, score in competency_analysis.items() if 2.0 <= score < 2.5]
+            growth_areas = [area for area, score in competency_analysis.items() if score < 2.0]
+            
+            with col1:
+                st.metric("🟢 Strong Performance", len(strong_areas), help="Areas scoring 2.5+ on average")
+                if strong_areas:
+                    st.caption("Top areas: " + ", ".join(strong_areas[:2]))
+            
+            with col2:
+                st.metric("🟡 Meeting Standards", len(meeting_areas), help="Areas scoring 2.0-2.4 on average")
+                if meeting_areas:
+                    st.caption("Steady areas: " + ", ".join(meeting_areas[:2]))
+            
+            with col3:
+                st.metric("🔴 Needs Attention", len(growth_areas), delta=f"{-len(growth_areas) if growth_areas else 0}", delta_color="inverse", help="Areas scoring below 2.0")
+                if growth_areas:
+                    st.caption("Focus areas: " + ", ".join(growth_areas[:2]))
+            
+            # Enhanced detailed breakdown
+            with st.expander("📊 Detailed Competency Analysis", expanded=False):
+                st.markdown("**Performance by Evaluation Type:**")
+                
+                # Analyze by rubric type
+                field_evals = [e for e in completed_evals if e.get('rubric_type') == 'field_evaluation']
+                ster_evals = [e for e in completed_evals if e.get('rubric_type') == 'ster']
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if field_evals:
+                        st.markdown("**Field Evaluations:**")
+                        field_analysis = analyze_competency_performance(field_evals)
+                        for area, avg_score in sorted(field_analysis.items(), key=lambda x: x[1], reverse=True):
+                            if avg_score >= 2.5:
+                                st.success(f"{area}: {avg_score:.2f}")
+                            elif avg_score >= 2.0:
+                                st.warning(f"{area}: {avg_score:.2f}")
+                            else:
+                                st.error(f"{area}: {avg_score:.2f}")
+                    else:
+                        st.info("No field evaluation data")
+                
+                with col2:
+                    if ster_evals:
+                        st.markdown("**STER Evaluations:**")
+                        ster_analysis = analyze_competency_performance(ster_evals)
+                        for area, avg_score in sorted(ster_analysis.items(), key=lambda x: x[1], reverse=True):
+                            if avg_score >= 2.5:
+                                st.success(f"{area}: {avg_score:.2f}")
+                            elif avg_score >= 2.0:
+                                st.warning(f"{area}: {avg_score:.2f}")
+                            else:
+                                st.error(f"{area}: {avg_score:.2f}")
+                    else:
+                        st.info("No STER evaluation data")
+                
+                # Department analysis
+                if 'department' in df.columns:
+                    st.markdown("---")
+                    st.markdown("**Performance by Department:**")
+                    
+                    departments = df['department'].unique()
+                    for dept in departments:
+                        dept_evals = [e for e in completed_evals if e.get('department') == dept]
+                        if dept_evals:
+                            dept_analysis = analyze_competency_performance(dept_evals)
+                            if dept_analysis:
+                                avg_performance = sum(dept_analysis.values()) / len(dept_analysis)
+                                st.write(f"**{dept}**: {len(dept_evals)} evaluations, avg performance: {avg_performance:.2f}")
     else:
         st.info("No completed evaluations for competency analysis")
     
-    # Professional Dispositions Summary (Field Evaluations Only)
+    # Enhanced Professional Dispositions Summary (Field Evaluations Only)
     field_evals = [e for e in completed_evals if e.get('rubric_type') == 'field_evaluation']
     if field_evals:
-        st.subheader("🌟 Professional Dispositions Summary (Field Evaluations)")
+        st.subheader("🌟 Professional Dispositions Summary")
+        st.caption("Analysis of professional dispositions from field evaluations only")
         
         disposition_analysis = analyze_disposition_performance(field_evals)
         
@@ -237,14 +319,98 @@ def show_dashboard():
             
             st.bar_chart(disp_df.set_index('Disposition'))
             
-            # Alert for dispositions below requirement
-            failing_dispositions = [disp for disp, score in disposition_analysis.items() if score < 3.0]
-            if failing_dispositions:
-                st.error(f"⚠️ Dispositions below Level 3 requirement: {', '.join(failing_dispositions)}")
+            # Enhanced disposition metrics
+            col1, col2, col3, col4 = st.columns(4)
+            
+            excellent_dispositions = [disp for disp, score in disposition_analysis.items() if score >= 3.5]
+            meeting_dispositions = [disp for disp, score in disposition_analysis.items() if 3.0 <= score < 3.5]
+            concerning_dispositions = [disp for disp, score in disposition_analysis.items() if score < 3.0]
+            total_evaluations = len(field_evals)
+            
+            with col1:
+                st.metric("Field Evaluations", total_evaluations, help="Total field evaluations with disposition data")
+                
+            with col2:
+                st.metric("🟢 Excellent (3.5+)", len(excellent_dispositions), help="Dispositions scoring 3.5+ on average")
+                
+            with col3:
+                st.metric("🟡 Meeting (3.0+)", len(meeting_dispositions), help="Dispositions meeting 3.0+ requirement")
+                
+            with col4:
+                st.metric("🔴 Below Standard", len(concerning_dispositions), 
+                         delta=f"{-len(concerning_dispositions) if concerning_dispositions else 0}", 
+                         delta_color="inverse",
+                         help="Dispositions below 3.0 requirement")
+            
+            # Critical alerts and detailed breakdown
+            if concerning_dispositions:
+                st.error(f"⚠️ **Critical Alert**: {len(concerning_dispositions)} dispositions below Level 3 requirement")
+                st.markdown("**Dispositions requiring immediate attention:**")
+                for disp in concerning_dispositions:
+                    score = disposition_analysis[disp]
+                    st.write(f"🔴 **{disp}**: {score:.2f} (needs to reach 3.0+)")
+                
+                st.markdown("**📋 Action Items:**")
+                st.write("• Review student teacher performance in concerning disposition areas")
+                st.write("• Provide targeted professional development and support")
+                st.write("• Schedule additional observations focused on these dispositions")
+                st.write("• Document improvement plans and progress monitoring")
             else:
-                st.success("✅ All dispositions meeting requirements (Level 3+)")
+                st.success("✅ **All dispositions meeting requirements** (Level 3+)")
+                st.markdown("🎉 Strong professional disposition performance across all areas!")
+            
+            # Enhanced detailed analysis
+            with st.expander("📊 Detailed Disposition Analysis", expanded=False):
+                st.markdown("**Performance by Department:**")
+                
+                if 'department' in df.columns:
+                    departments = df['department'].unique()
+                    for dept in departments:
+                        dept_field_evals = [e for e in field_evals if e.get('department') == dept]
+                        if dept_field_evals:
+                            dept_disp_analysis = analyze_disposition_performance(dept_field_evals)
+                            if dept_disp_analysis:
+                                avg_dept_disp = sum(dept_disp_analysis.values()) / len(dept_disp_analysis)
+                                below_standard = [d for d, s in dept_disp_analysis.items() if s < 3.0]
+                                
+                                col1, col2 = st.columns([2, 1])
+                                with col1:
+                                    st.write(f"**{dept}** ({len(dept_field_evals)} evaluations)")
+                                    if below_standard:
+                                        st.write(f"⚠️ {len(below_standard)} disposition(s) below standard")
+                                with col2:
+                                    if avg_dept_disp >= 3.5:
+                                        st.success(f"Avg: {avg_dept_disp:.2f}")
+                                    elif avg_dept_disp >= 3.0:
+                                        st.warning(f"Avg: {avg_dept_disp:.2f}")
+                                    else:
+                                        st.error(f"Avg: {avg_dept_disp:.2f}")
+                
+                st.markdown("---")
+                st.markdown("**Individual Disposition Breakdown:**")
+                for disp, score in sorted(disposition_analysis.items(), key=lambda x: x[1], reverse=True):
+                    col1, col2, col3 = st.columns([3, 1, 1])
+                    with col1:
+                        st.write(f"**{disp}**")
+                    with col2:
+                        if score >= 3.5:
+                            st.success(f"{score:.2f}")
+                        elif score >= 3.0:
+                            st.warning(f"{score:.2f}")
+                        else:
+                            st.error(f"{score:.2f}")
+                    with col3:
+                        # Calculate how many students are below standard for this disposition
+                        below_count = sum(1 for eval in field_evals 
+                                        if eval.get('disposition_scores', {}).get(disp, 0) < 3)
+                        if below_count > 0:
+                            st.caption(f"{below_count} below 3.0")
+                        else:
+                            st.caption("All ≥ 3.0")
         else:
-            st.info("No field evaluations with disposition data")
+            st.info("No field evaluations with disposition data available")
+    else:
+        st.info("No field evaluations available for disposition analysis")
     
     # Enhanced Recent Evaluations Table
     st.subheader("📋 Recent Evaluations")
@@ -255,9 +421,9 @@ def show_dashboard():
     else:
         recent_df = df.head(10)
     
-    # Enhanced display columns
+    # Enhanced display columns with new dashboard fields
     display_columns = ['student_name', 'evaluator_name', 'school_name', 'subject_area', 
-                      'grade_levels', 'rubric_type', 'status', 'total_score']
+                      'department', 'semester', 'rubric_type', 'status', 'total_score']
     
     # Only include columns that exist
     available_columns = [col for col in display_columns if col in recent_df.columns]
@@ -268,13 +434,14 @@ def show_dashboard():
         display_df['created_at'] = pd.to_datetime(recent_df['created_at']).dt.strftime('%Y-%m-%d')
         available_columns.append('created_at')
     
-    # Enhanced column configuration
+    # Enhanced column configuration with new dashboard fields
     column_config = {
         "student_name": st.column_config.TextColumn("Student", width="medium"),
         "evaluator_name": st.column_config.TextColumn("Evaluator", width="medium"),
         "school_name": st.column_config.TextColumn("School", width="large"),
         "subject_area": st.column_config.TextColumn("Subject", width="medium"),
-        "grade_levels": st.column_config.TextColumn("Grades", width="small"),
+        "department": st.column_config.TextColumn("Department", width="small"),
+        "semester": st.column_config.TextColumn("Semester", width="small"),
         "rubric_type": st.column_config.TextColumn("Type", width="medium"),
         "status": st.column_config.TextColumn("Status", width="small"),
         "total_score": st.column_config.NumberColumn("Score", format="%d", width="small"),
@@ -783,10 +950,23 @@ def show_evaluation_form():
                     key="subject_area_override"
                 )
                 
+                department = st.selectbox(
+                    "Department *", 
+                    ["Elementary", "Secondary", "GRAD", "Special Ed"], 
+                    index=1, key="department_override"
+                )
+                
+                semester = st.selectbox(
+                    "Current Semester *", 
+                    ["Fall 2024", "Spring 2025", "Summer 2025", "Fall 2025"], 
+                    index=1, key="semester_override"
+                )
+                
                 grade_levels = st.text_input(
                     "Grade Levels",
                     value=analysis.get('grade_levels', ''),
-                    key="grade_levels_override"
+                    key="grade_levels_override",
+                    help="Optional: Specific grade levels"
                 )
                 
                 school_name = st.text_input(
@@ -814,6 +994,8 @@ def show_evaluation_form():
         st.session_state.extracted_info = {
             'student_name': student_name,
             'subject_area': subject_area or analysis.get('subject_area', ''),
+            'department': department,
+            'semester': semester,
             'grade_levels': grade_levels or analysis.get('grade_levels', ''),
             'school_name': school_name or analysis.get('school_name', ''),
             'class_size': class_size,
@@ -844,10 +1026,22 @@ def show_evaluation_form():
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            grade_levels = st.text_input("Grade Levels", key="grade_levels_manual")
+            department = st.selectbox("Department *", 
+                                    ["Elementary", "Secondary", "GRAD", "Special Ed"], 
+                                    index=1, key="department_manual")  # Default to Secondary
         with col2:
             school_name = st.text_input("School Name", key="school_name_manual")
         with col3:
+            semester = st.selectbox("Current Semester *", 
+                                  ["Fall 2024", "Spring 2025", "Summer 2025", "Fall 2025"], 
+                                  index=1, key="semester_manual")  # Default to Spring 2025
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            grade_levels = st.text_input("Grade Level(s)", key="grade_levels_manual", 
+                                       placeholder="e.g., 3rd-5th, 9th-12th",
+                                       help="Optional: Specific grade levels")
+        with col2:
             class_size = st.number_input("Class Size", min_value=1, max_value=40, value=20)
         
         # Visual reminder about lesson plan benefits
@@ -867,6 +1061,8 @@ def show_evaluation_form():
         st.session_state.extracted_info = {
             'student_name': student_name,
             'subject_area': subject_area,
+            'department': department,
+            'semester': semester,
             'grade_levels': grade_levels,
             'school_name': school_name,
             'class_size': class_size,
@@ -1494,6 +1690,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
     
     with col1:
         if st.button("💾 Save as Draft"):
+            # Get extracted info for additional fields
+            extracted_info = st.session_state.get('extracted_info', {})
+            
             evaluation = {
                 'id': str(uuid.uuid4()),
                 'student_name': student_name,
@@ -1511,7 +1710,14 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'lesson_plan_provided': st.session_state.lesson_plan_analysis is not None,
                 'lesson_plan_method': input_method if 'input_method' in locals() else 'unknown',
                 'ai_analyses': st.session_state.get('ai_analyses', {}),
-                'targeted_improvement_analysis': st.session_state.get('targeted_improvement_analysis', '')
+                'targeted_improvement_analysis': st.session_state.get('targeted_improvement_analysis', ''),
+                # Dashboard fields
+                'subject_area': extracted_info.get('subject_area', ''),
+                'department': extracted_info.get('department', 'Secondary'),
+                'semester': extracted_info.get('semester', 'Spring 2025'),
+                'grade_levels': extracted_info.get('grade_levels', ''),
+                'school_name': extracted_info.get('school_name', ''),
+                'class_size': extracted_info.get('class_size', 20)
             }
             save_evaluation(evaluation)
             st.success("Evaluation saved as draft!")
@@ -1545,6 +1751,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 st.info("The evaluation will be saved with a 'needs_improvement' status.")
             
             # Save evaluation regardless of validation errors
+            # Get extracted info for additional fields
+            extracted_info = st.session_state.get('extracted_info', {})
+            
             evaluation = {
                 'id': str(uuid.uuid4()),
                 'student_name': student_name,
@@ -1563,7 +1772,14 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'lesson_plan_provided': st.session_state.lesson_plan_analysis is not None,
                 'lesson_plan_method': input_method if 'input_method' in locals() else 'unknown',
                 'ai_analyses': st.session_state.get('ai_analyses', {}),
-                'targeted_improvement_analysis': st.session_state.get('targeted_improvement_analysis', '')
+                'targeted_improvement_analysis': st.session_state.get('targeted_improvement_analysis', ''),
+                # Dashboard fields
+                'subject_area': extracted_info.get('subject_area', ''),
+                'department': extracted_info.get('department', 'Secondary'),
+                'semester': extracted_info.get('semester', 'Spring 2025'),
+                'grade_levels': extracted_info.get('grade_levels', ''),
+                'school_name': extracted_info.get('school_name', ''),
+                'class_size': extracted_info.get('class_size', 20)
             }
             save_evaluation(evaluation)
             

@@ -309,6 +309,17 @@ def generate_synthetic_evaluations(
         from .utah_lesson_plans import generate_utah_aligned_lesson_plan
         lesson_plan = generate_utah_aligned_lesson_plan(student_name, subject_area, school['grade_levels'], school['name'], lesson_date)
         
+        # Map grade levels to departments
+        grade_level = school['grade_levels']
+        if 'K-' in grade_level or 'K-5' in grade_level or '1-' in grade_level or '2-' in grade_level or '3-' in grade_level:
+            department = "Elementary"
+        elif '6-' in grade_level or '7-' in grade_level or '8-' in grade_level or '9-' in grade_level or 'High' in grade_level:
+            department = "Secondary"
+        elif 'Special' in subject_area or 'SPED' in subject_area:
+            department = "Special Ed"
+        else:
+            department = random.choice(["Elementary", "Secondary", "GRAD", "Special Ed"])
+        
         evaluation = {
             'id': str(uuid.uuid4()),
             'student_name': student_name,
@@ -318,6 +329,7 @@ def generate_synthetic_evaluations(
             'grade_levels': school['grade_levels'],
             'school_setting': school['setting'],
             'subject_area': subject_area,
+            'department': department,  # NEW: Add department field
             'semester': semester,
             'rubric_type': eval_rubric_type,
             'scores': scores,
