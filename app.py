@@ -1192,13 +1192,23 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                         def format_score_option(score):
                             if score is None:
                                 return "Select..."
+                            elif score == "not_observed":
+                                return "Not Observed"
                             else:
                                 return f"Level {score}"
                         
+                        def get_score_index(current_score):
+                            if current_score is None:
+                                return 0
+                            elif current_score == "not_observed":
+                                return 1
+                            else:
+                                return current_score + 2  # Account for None and "not_observed"
+                        
                         score = st.selectbox(
                             f"Score for {item['code']}",
-                            options=[None, 0, 1, 2, 3],
-                            index=0 if current_score is None else current_score + 1,
+                            options=[None, "not_observed", 0, 1, 2, 3],
+                            index=get_score_index(current_score),
                             format_func=format_score_option,
                             key=f"score_select_{item_id}",
                             label_visibility="collapsed"
@@ -1212,9 +1222,11 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                         
                         # Show score status
                         if score is not None:
-                            if score >= 2:
+                            if score == "not_observed":
+                                st.info("👁️ Not Observed")
+                            elif isinstance(score, int) and score >= 2:
                                 st.success(f"✅ Level {score}")
-                            else:
+                            elif isinstance(score, int):
                                 st.warning(f"🌱 Level {score}")
                         else:
                             st.error("❌ Not scored")
@@ -1247,12 +1259,13 @@ Be as detailed as possible - these notes will be used to generate evidence-based
         st.subheader("📈 Scoring Summary")
         
         scored_items = len([s for s in st.session_state.scores.values() if s is not None])
+        not_observed_count = len([s for s in st.session_state.scores.values() if s == "not_observed"])
         level_2_plus = len([s for s in st.session_state.scores.values() if isinstance(s, int) and s >= 2])
         level_1_count = len([s for s in st.session_state.scores.values() if s == 1])
         level_0_count = len([s for s in st.session_state.scores.values() if s == 0])
         critical_areas = level_0_count + level_1_count
         
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
             if scored_items < len(items):
                 st.metric("Items Scored", f"{scored_items}/{len(items)}", delta=f"-{len(items) - scored_items} missing", delta_color="inverse")
@@ -1260,7 +1273,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 st.metric("Items Scored", f"{scored_items}/{len(items)}", delta="Complete ✅")
         with col2:
             if scored_items > 0:
-                st.metric("Meeting Standards", f"{level_2_plus}/{scored_items}", help="Level 2+ competencies")
+                actual_scores = scored_items - not_observed_count  # Exclude not_observed from denominator
+                st.metric("Meeting Standards", f"{level_2_plus}/{actual_scores}", help="Level 2+ competencies (excluding not observed)")
             else:
                 st.metric("Meeting Standards", "0/0")
         with col3:
@@ -1269,6 +1283,11 @@ Be as detailed as possible - these notes will be used to generate evidence-based
             else:
                 st.metric("Growth Areas", 0, delta="All Level 2+ ✅")
         with col4:
+            if not_observed_count > 0:
+                st.metric("Not Observed", not_observed_count, delta="Review needed", delta_color="off", help="Items marked as not observed during this evaluation")
+            else:
+                st.metric("Not Observed", 0, delta="All observed ✅")
+        with col5:
             all_items_scored = scored_items == len(items)
             meets_minimum = all_items_scored and critical_areas == 0
             if meets_minimum:
@@ -1277,6 +1296,18 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 st.metric("Status", "🌱 Growing", delta=f"{critical_areas} areas", delta_color="inverse")
             else:
                 st.metric("Status", "⏳ Incomplete")
+        
+        # Not Observed Items Warning
+        if not_observed_count > 0:
+            st.warning(f"⚠️ **{not_observed_count} competencies marked as 'Not Observed'** - These items were not demonstrated during this observation session. Consider scheduling additional observations to evaluate these competencies if they are required for completion.")
+            
+            # Show which items are not observed
+            not_observed_items = [item for item in items if st.session_state.scores.get(item['id']) == "not_observed"]
+            if not_observed_items:
+                st.markdown("**Items marked as 'Not Observed':**")
+                for item in not_observed_items:
+                    st.write(f"• **{item['code']}**: {item['title']}")
+                st.info("💡 **Tip**: Consider if these competencies can be evaluated in future observations or through other assessment methods.")
         
         # Growth Areas Alert
         if scored_items > 0 and critical_areas > 0:
@@ -1541,6 +1572,105 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 st.caption("The student teacher requires additional support in the identified areas.")
             else:
                 st.success("🎉 Evaluation completed successfully!")
+            
+            # Quick PDF Download for Completed Evaluation
+            st.markdown("---")
+            st.subheader("📄 Download Completed Evaluation Report")
+            col1_quick, col2_quick = st.columns(2)
+            
+            with col1_quick:
+                # Prepare data for PDF generation
+                pdf_data = {
+                    'rubric_type': rubric_type,
+                    'student_name': student_name,
+                    'evaluator_name': evaluator_name,
+                    'date': datetime.now().strftime('%Y-%m-%d'),
+                    'school': st.session_state.get('school_name', 'N/A'),
+                    'subject': st.session_state.get('subject_grade', 'N/A'),
+                    'is_formative': True,
+                    'competency_scores': [],
+                    'total_items': len(items),
+                    'meeting_expectations': sum(1 for score in st.session_state.scores.values() if isinstance(score, int) and score >= 2),
+                    'areas_for_growth': sum(1 for score in st.session_state.scores.values() if isinstance(score, int) and score < 2),
+                    'targeted_improvement_analysis': st.session_state.get('targeted_improvement_analysis', ''),
+                    'status': 'needs_improvement' if errors else 'completed'
+                }
+                
+                # Add competency scores
+                for item in items:
+                    item_id = item['id']
+                    score = st.session_state.scores.get(item_id, None)
+                    pdf_data['competency_scores'].append({
+                        'competency': f"{item['code']}: {item['title']}",
+                        'score': score if score is not None else 'Not Scored',
+                        'justification': st.session_state.justifications.get(item_id, 'No justification provided')
+                    })
+                
+                # Add dispositions for field evaluations
+                if rubric_type == 'field_evaluation' and st.session_state.disposition_scores:
+                    pdf_data['dispositions'] = []
+                    for disposition in dispositions:
+                        disp_id = disposition['id']
+                        score = st.session_state.disposition_scores.get(disp_id, None)
+                        pdf_data['dispositions'].append({
+                            'disposition': disposition['name'],
+                            'score': score if score is not None else 'Not Scored',
+                            'notes': st.session_state.disposition_comments.get(disp_id, '')
+                        })
+                
+                # Add AI analysis if available
+                ai_analyses = st.session_state.get('ai_analyses', {})
+                if ai_analyses:
+                    all_analyses = []
+                    strengths = []
+                    areas_for_growth = []
+                    
+                    for item in items:
+                        analysis = ai_analyses.get(item['id'])
+                        if analysis:
+                            item_name = f"{item['code']}: {item['title']}"
+                            all_analyses.append(f"{item_name}\n{analysis}")
+                            
+                            if any(word in analysis.lower() for word in ['strong', 'excellent', 'effective', 'well', 'good', 'demonstrates']):
+                                strengths.append(f"{item['code']}: {analysis[:150]}...")
+                            
+                            if any(word in analysis.lower() for word in ['improve', 'develop', 'consider', 'could', 'should', 'needs']):
+                                areas_for_growth.append(f"{item['code']}: {analysis[:150]}...")
+                    
+                    pdf_data['ai_analysis'] = {
+                        'strengths': strengths[:5],
+                        'areas_for_growth': areas_for_growth[:5],
+                        'recommendations': [],
+                        'full_analyses': all_analyses
+                    }
+                
+                # Generate PDF
+                try:
+                    pdf_bytes = pdf_service.generate_evaluation_pdf(pdf_data)
+                    
+                    # Create filename
+                    status_text = "NEEDS_IMPROVEMENT" if errors else "COMPLETED"
+                    filename = f"{student_name.replace(' ', '_')}_{rubric_type}_{status_text}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    
+                    st.download_button(
+                        label="📄 Download Final Report (PDF)",
+                        data=pdf_bytes,
+                        file_name=filename,
+                        mime="application/pdf",
+                        help="Download the completed evaluation report",
+                        type="primary"
+                    )
+                    
+                except Exception as e:
+                    st.error(f"Error generating PDF: {str(e)}")
+            
+            with col2_quick:
+                if errors:
+                    st.info("📋 **Report Status:** Needs Improvement\nThis report includes identified areas requiring additional support.")
+                else:
+                    st.success("📋 **Report Status:** Complete\nThis report shows a fully completed evaluation.")
+                
+                st.info("💡 **Tip:** You can also use the 'Download Draft Report' section below for additional options.")
             
             
     # PDF Download Section - Always Available
