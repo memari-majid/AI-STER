@@ -224,11 +224,12 @@ def show_dashboard():
     else:
         st.info("No completed evaluations for competency analysis")
     
-    # Professional Dispositions Summary
-    st.subheader("🌟 Professional Dispositions Summary")
-    
-    if completed_evals:
-        disposition_analysis = analyze_disposition_performance(completed_evals)
+    # Professional Dispositions Summary (Field Evaluations Only)
+    field_evals = [e for e in completed_evals if e.get('rubric_type') == 'field_evaluation']
+    if field_evals:
+        st.subheader("🌟 Professional Dispositions Summary (Field Evaluations)")
+        
+        disposition_analysis = analyze_disposition_performance(field_evals)
         
         if disposition_analysis:
             disp_df = pd.DataFrame(list(disposition_analysis.items()), columns=['Disposition', 'Average Score'])
@@ -242,8 +243,8 @@ def show_dashboard():
                 st.error(f"⚠️ Dispositions below Level 3 requirement: {', '.join(failing_dispositions)}")
             else:
                 st.success("✅ All dispositions meeting requirements (Level 3+)")
-    else:
-        st.info("No completed evaluations for disposition analysis")
+        else:
+            st.info("No field evaluations with disposition data")
     
     # Enhanced Recent Evaluations Table
     st.subheader("📋 Recent Evaluations")
@@ -923,6 +924,7 @@ def show_evaluation_form():
             - 8 Core Competency Items
             - 6 Professional Dispositions (Level 3+ required)
             - Focus on 3-week field experience assessment
+            - Competencies must score Level 2+, Dispositions must score Level 3+
             """)
         else:  # STER evaluation
             st.markdown("### STER Evaluation Rubric")
@@ -964,6 +966,18 @@ def show_evaluation_form():
     # Get rubric items based on evaluation type
     if rubric_type == "field_evaluation":
         items = get_field_evaluation_items()
+        
+        # Display evaluation information  
+        st.info(f"📋 **Field Evaluation (3-week)** - You will evaluate {len(items)} competencies")
+        st.caption("Items based on classroom observation during field experience.")
+        
+        # Show the breakdown of competencies
+        st.markdown("""
+        **Competency Areas (8 items total):**
+        - **Learners and Learning**: LL3, LL5 (2 items)
+        - **Instructional Clarity**: IC1/IC2 (1 item)
+        - **Classroom Climate**: CC2, CC3, CC4, CC6, CC8 (5 items)
+        """)
     else:  # STER evaluation
         # Get STER items filtered for supervisors (19 competencies)
         all_ster_items = get_ster_items()
@@ -971,7 +985,7 @@ def show_evaluation_form():
         
         # Display evaluation information
         st.info(f"📋 **Supervisor STER Evaluation** - You will evaluate {len(items)} competencies")
-        st.caption("Items based on classroom observation and lesson planning. Note: IC1/IC2 and IC5/IC6 are evaluated together as single items.")
+        st.caption("Items based on classroom observation and lesson planning.")
         
         # Show the breakdown of competencies
         st.markdown("""
@@ -1650,6 +1664,7 @@ Be as detailed as possible - these notes will be used to generate evidence-based
         if st.button("✅ Complete Evaluation"):
             # Validation
             if rubric_type == "field_evaluation":
+                # For Field Evaluation, validate with dispositions
                 errors = validate_evaluation(
                     st.session_state.scores,
                     st.session_state.justifications,
