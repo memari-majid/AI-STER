@@ -333,7 +333,7 @@ class PDFService:
         elements = []
         
         # Add section header
-        elements.append(Paragraph("Targeted Improvement Analysis", self.styles['section_heading']))
+        elements.append(Paragraph("Targeted Improvement Analysis", self.styles['SectionHeader']))
         elements.append(Spacer(1, 0.2*inch))
         
         # Add the analysis text
@@ -343,10 +343,10 @@ class PDFService:
             paragraphs = analysis_text.split('\n\n')
             for paragraph in paragraphs:
                 if paragraph.strip():
-                    elements.append(Paragraph(paragraph.strip(), self.styles['body']))
+                    elements.append(Paragraph(paragraph.strip(), self.styles['Normal']))
                     elements.append(Spacer(1, 0.1*inch))
         else:
-            elements.append(Paragraph("No targeted improvement analysis available.", self.styles['body']))
+            elements.append(Paragraph("No targeted improvement analysis available.", self.styles['Normal']))
         
         return elements
     
