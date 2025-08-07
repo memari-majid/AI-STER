@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import our modules
-from data.rubrics import get_field_evaluation_items, get_ster_items, get_professional_dispositions
+from data.rubrics import get_field_evaluation_items, get_ster_items, get_professional_dispositions, filter_items_by_evaluator_role
 from data.synthetic import generate_synthetic_evaluations
 from services.openai_service import OpenAIService
 from services.pdf_service import PDFService
@@ -341,7 +341,7 @@ def show_dashboard():
 
 def analyze_competency_performance(evaluations):
     """Analyze performance by competency area"""
-    from data.rubrics import get_field_evaluation_items, get_ster_items
+    from data.rubrics import get_field_evaluation_items, get_ster_items, filter_items_by_evaluator_role
     
     competency_scores = {}
     competency_counts = {}
@@ -351,7 +351,12 @@ def analyze_competency_performance(evaluations):
         scores = evaluation.get('scores', {})
         
         # Get appropriate rubric items
-        items = get_field_evaluation_items() if rubric_type == 'field_evaluation' else get_ster_items()
+        if rubric_type == 'field_evaluation':
+            items = get_field_evaluation_items()
+        else:
+            # Get STER items filtered for supervisors
+            all_ster_items = get_ster_items()
+            items = filter_items_by_evaluator_role(all_ster_items, 'supervisor')
         
         for item in items:
             item_id = item['id']
@@ -406,7 +411,7 @@ def analyze_disposition_performance(evaluations):
 
 def show_detailed_evaluation_view(evaluation):
     """Show detailed view of a specific evaluation"""
-    from data.rubrics import get_field_evaluation_items, get_ster_items, get_professional_dispositions
+    from data.rubrics import get_field_evaluation_items, get_ster_items, get_professional_dispositions, filter_items_by_evaluator_role
     
     # Basic information
     col1, col2, col3 = st.columns(3)
@@ -422,7 +427,12 @@ def show_detailed_evaluation_view(evaluation):
     
     # Assessment Items Detail
     rubric_type = evaluation['rubric_type']
-    items = get_field_evaluation_items() if rubric_type == 'field_evaluation' else get_ster_items()
+    if rubric_type == 'field_evaluation':
+        items = get_field_evaluation_items()
+    else:
+        # Get STER items filtered for supervisors
+        all_ster_items = get_ster_items()
+        items = filter_items_by_evaluator_role(all_ster_items, 'supervisor')
     scores = evaluation.get('scores', {})
     justifications = evaluation.get('justifications', {})
     
@@ -955,14 +965,21 @@ def show_evaluation_form():
     if rubric_type == "field_evaluation":
         items = get_field_evaluation_items()
     else:  # STER evaluation
-        # Get all STER items (no filtering needed since only supervisors exist)
-        items = get_ster_items()
+        # Get STER items filtered for supervisors (19 competencies)
+        all_ster_items = get_ster_items()
+        items = filter_items_by_evaluator_role(all_ster_items, 'supervisor')
         
         # Display evaluation information
         st.info(f"📋 **Supervisor STER Evaluation** - You will evaluate {len(items)} competencies")
-        st.caption("All items based on classroom observation and lesson planning")
+        st.caption("Items based on classroom observation and lesson planning. Note: IC1/IC2 and IC5/IC6 are evaluated together as single items.")
         
-        # Remove role indicator legend since we only have supervisors now
+        # Show the breakdown of competencies
+        st.markdown("""
+        **Competency Areas (19 items total):**
+        - **Learners and Learning**: LL2-LL7 (6 items)
+        - **Instructional Clarity**: IC1/IC2, IC3, IC4, IC5/IC6, IC7 (5 items)
+        - **Instructional Practice**: IP1-IP8 (8 items)
+        """)
 
     
     # Check if we have minimum required information
