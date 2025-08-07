@@ -898,19 +898,19 @@ def show_evaluation_form():
     with st.expander("📖 **View Official Rubric**", expanded=False):
         if rubric_type == "field_evaluation":
             st.markdown("### Field Evaluation Rubric")
-            st.caption("Official USBE STER standards applied to field evaluation context")
+            st.caption("Official 3-week Field Formative Evaluation Rubric")
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.markdown("[📄 View Online (PDF)](https://github.com/memari-majid/AI-STER/blob/main/docs/STER%20Rubric.pdf)")
+                st.markdown("[📄 View Online (PDF)](https://github.com/memari-majid/AI-STER/blob/main/docs/Field_Evaluation_Rubric.pdf)")
             with col2:
                 # Add download button
                 try:
-                    with open("docs/STER Rubric.pdf", "rb") as pdf_file:
+                    with open("docs/Field_Evaluation_Rubric.pdf", "rb") as pdf_file:
                         st.download_button(
                             label="⬇️ Download PDF",
                             data=pdf_file.read(),
-                            file_name="STER_Rubric.pdf",
+                            file_name="Field_Evaluation_Rubric.pdf",
                             mime="application/pdf"
                         )
                 except FileNotFoundError:
