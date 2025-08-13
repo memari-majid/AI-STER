@@ -858,12 +858,33 @@ def show_evaluation_form():
                     try:
                         from docx import Document
                         
-                        # Extract text from Word document
+                        # Extract text from Word document with enhanced processing
                         doc = Document(uploaded_file)
                         lesson_plan_text = ""
+                        
+                        # Extract text from paragraphs
                         for paragraph in doc.paragraphs:
                             if paragraph.text.strip():
                                 lesson_plan_text += paragraph.text + "\n"
+                        
+                        # Extract text from tables
+                        for table in doc.tables:
+                            for row in table.rows:
+                                for cell in row.cells:
+                                    if cell.text.strip():
+                                        lesson_plan_text += cell.text + " "
+                                lesson_plan_text += "\n"
+                        
+                        # Extract text from headers and footers
+                        for section in doc.sections:
+                            if hasattr(section, 'header') and section.header:
+                                for paragraph in section.header.paragraphs:
+                                    if paragraph.text.strip():
+                                        lesson_plan_text += paragraph.text + "\n"
+                            if hasattr(section, 'footer') and section.footer:
+                                for paragraph in section.footer.paragraphs:
+                                    if paragraph.text.strip():
+                                        lesson_plan_text += paragraph.text + "\n"
                         
                         if lesson_plan_text.strip():
                             st.success(f"✅ Word document '{uploaded_file.name}' processed successfully!")
@@ -892,12 +913,44 @@ def show_evaluation_form():
                             placeholder="Copy and paste your lesson plan content here..."
                         )
                     except Exception as e:
-                        st.error(f"❌ Error processing Word document: {str(e)}")
-                        lesson_plan_text = st.text_area(
-                            "Paste lesson plan content:",
-                            height=200,
-                            placeholder="Copy and paste your lesson plan content here..."
-                        )
+                        st.warning(f"⚠️ Standard processing failed: {str(e)}")
+                        
+                        # Try alternative extraction method for corrupted files
+                        st.info("🔧 Trying alternative extraction method for corrupted/problematic files...")
+                        try:
+                            import docx2txt
+                            uploaded_file.seek(0)  # Reset file pointer
+                            lesson_plan_text = docx2txt.process(uploaded_file)
+                            
+                            if lesson_plan_text and lesson_plan_text.strip():
+                                st.success(f"✅ Alternative method successfully extracted text from '{uploaded_file.name}'!")
+                                # Show preview
+                                with st.expander("📄 Preview extracted content"):
+                                    st.text_area(
+                                        "Extracted Lesson Plan Content",
+                                        value=lesson_plan_text,
+                                        height=150,
+                                        disabled=True,
+                                        key="lesson_plan_docx2txt_preview"
+                                    )
+                            else:
+                                raise Exception("No text could be extracted")
+                                
+                        except Exception as e2:
+                            st.error(f"❌ Both extraction methods failed: {str(e2)}")
+                            st.info("💡 **Troubleshooting tips for corrupted files:**")
+                            st.markdown("""
+                            - **Font Issues**: Try opening in Word and saving as new .docx file
+                            - **Google Docs Method**: Upload to Google Drive → Open with Google Docs → Copy text
+                            - **Online Converters**: Try SmallPDF, Zamzar, or CloudConvert
+                            - **Document Repair**: In Word, use File → Open → Open and Repair
+                            - **Manual Option**: Use the text area below as fallback
+                            """)
+                            lesson_plan_text = st.text_area(
+                                "Paste lesson plan content:",
+                                height=200,
+                                placeholder="Copy and paste your lesson plan content here..."
+                            )
                         
                 elif uploaded_file.type == "application/pdf" or file_extension == 'pdf':
                     # Handle PDF files with automatic text extraction
@@ -1467,12 +1520,33 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     try:
                         from docx import Document
                         
-                        # Extract text from Word document
+                        # Extract text from Word document with enhanced processing
                         doc = Document(uploaded_file)
                         file_content = ""
+                        
+                        # Extract text from paragraphs
                         for paragraph in doc.paragraphs:
                             if paragraph.text.strip():
                                 file_content += paragraph.text + "\n"
+                        
+                        # Extract text from tables
+                        for table in doc.tables:
+                            for row in table.rows:
+                                for cell in row.cells:
+                                    if cell.text.strip():
+                                        file_content += cell.text + " "
+                                file_content += "\n"
+                        
+                        # Extract text from headers and footers
+                        for section in doc.sections:
+                            if hasattr(section, 'header') and section.header:
+                                for paragraph in section.header.paragraphs:
+                                    if paragraph.text.strip():
+                                        file_content += paragraph.text + "\n"
+                            if hasattr(section, 'footer') and section.footer:
+                                for paragraph in section.footer.paragraphs:
+                                    if paragraph.text.strip():
+                                        file_content += paragraph.text + "\n"
                         
                         if file_content.strip():
                             st.success(f"✅ Word document '{uploaded_file.name}' processed successfully!")
@@ -1523,15 +1597,70 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                         st.error("❌ Word document processing library not available. Please install: pip install python-docx")
                         observation_notes = st.session_state.observation_notes
                     except Exception as e:
-                        st.error(f"❌ Error processing Word document: {str(e)}")
-                        # Fallback to manual entry
-                        observation_notes = st.text_area(
-                            "Paste observation notes content:",
-                            value=st.session_state.observation_notes,
-                            height=200,
-                            placeholder="Copy and paste your observation notes from the Word document here...",
-                            key="docx_error_fallback_text_area"
-                        )
+                        st.warning(f"⚠️ Standard processing failed: {str(e)}")
+                        
+                        # Try alternative extraction method for corrupted files
+                        st.info("🔧 Trying alternative extraction method for corrupted/problematic files...")
+                        try:
+                            import docx2txt
+                            uploaded_file.seek(0)  # Reset file pointer
+                            file_content = docx2txt.process(uploaded_file)
+                            
+                            if file_content and file_content.strip():
+                                st.success(f"✅ Alternative method successfully extracted text from '{uploaded_file.name}'!")
+                                
+                                # Preview uploaded content
+                                with st.expander("📄 Preview extracted content", expanded=True):
+                                    st.text_area(
+                                        "Extracted Text Preview",
+                                        value=file_content,
+                                        height=200,
+                                        disabled=True,
+                                        key="docx2txt_preview"
+                                    )
+                                
+                                # Options to use uploaded content
+                                col1, col2 = st.columns([2, 1])
+                                with col1:
+                                    if st.button("📋 Use These Notes", type="primary", key="use_docx2txt_notes"):
+                                        st.session_state.observation_notes = file_content
+                                        observation_notes = file_content
+                                        st.success("📝 Extracted notes have been applied!")
+                                        st.rerun()
+                                
+                                with col2:
+                                    if st.button("➕ Append to Current", key="append_docx2txt_notes"):
+                                        current_notes = st.session_state.observation_notes
+                                        separator = "\n\n--- Extracted Word Document Notes ---\n\n" if current_notes.strip() else ""
+                                        combined_notes = current_notes + separator + file_content
+                                        st.session_state.observation_notes = combined_notes
+                                        observation_notes = combined_notes
+                                        st.success("📝 Extracted notes appended successfully!")
+                                        st.rerun()
+                                
+                                # Use current session state for display
+                                observation_notes = st.session_state.observation_notes
+                            else:
+                                raise Exception("No text could be extracted")
+                                
+                        except Exception as e2:
+                            st.error(f"❌ Both extraction methods failed: {str(e2)}")
+                            st.info("💡 **Troubleshooting tips for corrupted files:**")
+                            st.markdown("""
+                            - **Font Issues**: Try opening in Word and saving as new .docx file
+                            - **Google Docs Method**: Upload to Google Drive → Open with Google Docs → Copy text
+                            - **Online Converters**: Try SmallPDF, Zamzar, or CloudConvert
+                            - **Document Repair**: In Word, use File → Open → Open and Repair
+                            - **Manual Option**: Use the text area below as fallback
+                            """)
+                            # Fallback to manual entry
+                            observation_notes = st.text_area(
+                                "Paste observation notes content:",
+                                value=st.session_state.observation_notes,
+                                height=200,
+                                placeholder="Copy and paste your observation notes from the Word document here...",
+                                key="docx_error_fallback_text_area"
+                            )
                     
                 else:
                     st.error(f"❌ Unsupported file type: {file_extension}")

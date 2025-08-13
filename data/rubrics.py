@@ -683,20 +683,8 @@ def filter_items_by_evaluator_role(items, evaluator_role):
     return filtered_items
 
 def get_professional_dispositions():
-    """Get professional dispositions for evaluation"""
+    """Get professional dispositions for evaluation - Only dispositions 2 and 6"""
     return [
-        {
-            'id': 'self_efficacy',
-            'name': 'Self-Efficacy',
-            'description': 'Recognizes that intelligence, talents, and abilities can be developed through intentional effort, persistence, and input from others.',
-            'criteria': [
-                'Recognizes personal strengths and uses them to professional advantage',
-                'Recognizes limitations, is willing to change, and works to develop solutions on own before asking for support',
-                'Shows intellectual curiosity and demonstrates professional initiative by creating learning opportunities for self',
-                'Reflects on and models professional growth for others',
-                'Understands that productive struggle is part of the learning process and demonstrates resilience'
-            ]
-        },
         {
             'id': 'high_learning_expectations',
             'name': 'High Learning Expectations for Each Student',
@@ -707,41 +695,6 @@ def get_professional_dispositions():
                 'Routinely gathers instructional materials from multiple sources and seeks additional content knowledge when necessary to ensure learning objectives are met',
                 'Utilizes effective instructional techniques that include and engage all learners',
                 'Aligns educational technology with instructional goals to enhance student learning'
-            ]
-        },
-        {
-            'id': 'ethical_professional',
-            'name': 'Ethical/Professional',
-            'description': 'Values professional conduct and ethics and respects students, families, communities, and colleagues.',
-            'criteria': [
-                'Demonstrates an understanding and follows appropriate education laws, ethics, and standards; follows program and university policies',
-                'Demonstrates professionalism by exhibiting punctual attendance, completing tasks on time, and responding promptly and professionally in all communications',
-                'Establishes and maintains appropriate relationships with peers, faculty, staff, and others (including students)',
-                'Productively collaborates in academic and professional settings and keeps personal and professional confidences with colleagues'
-            ]
-        },
-        {
-            'id': 'reflective_practitioner',
-            'name': 'Reflective Practitioner',
-            'description': 'Values a personal commitment to continuous growth and professional learning by fostering self-reflection and acting on feedback.',
-            'criteria': [
-                'Actively seeks and is willing to apply supportive and corrective feedback from others to make positive change',
-                'Receptive to new ideas and techniques',
-                'Critically analyzes and reflects on own learning and teaching and makes changes',
-                'Uses critical reflection to seek out, analyze, and apply current research to improve teaching practice'
-            ]
-        },
-        {
-            'id': 'emotionally_intelligent',
-            'name': 'Emotionally Intelligent',
-            'description': 'Exhibits awareness, control, and expression of one\'s emotions in multiple contexts to navigate interpersonal relationships in academic and professional settings.',
-            'criteria': [
-                'Demonstrates appropriate professionalism and self-regulation and maintains professional composure',
-                'Remains accountable and responsible for own emotions and behaviors',
-                'Advocates for the well-being of self and others',
-                'Seeks positive outcomes to tough situations through perseverance and appropriate support',
-                'Listens actively to the opinions of others and demonstrates respect to others\' viewpoints even when not in agreement',
-                'Demonstrates empathy, compassion, and social awareness'
             ]
         },
         {
