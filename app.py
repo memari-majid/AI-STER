@@ -843,31 +843,118 @@ def show_evaluation_form():
         )
     
         if uploaded_file is not None:
-            # Read file content based on type
+            # Read file content based on type with automatic processing
+            file_extension = uploaded_file.name.lower().split('.')[-1]
+            
             try:
-                if uploaded_file.type == "text/plain":
+                if uploaded_file.type == "text/plain" or file_extension == 'txt':
+                    # Handle text files
                     lesson_plan_text = str(uploaded_file.read(), "utf-8")
+                    st.success(f"✅ Text file '{uploaded_file.name}' processed successfully!")
+                    
                 elif uploaded_file.type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
-                                          "application/msword"]:
-                    st.info("Word document uploaded. Please copy and paste the content below for analysis.")
-                    lesson_plan_text = st.text_area(
-                        "Paste lesson plan content:",
-                        height=200,
-                        placeholder="Copy and paste your lesson plan content here..."
-                    )
-                elif uploaded_file.type == "application/pdf":
-                    st.info("PDF uploaded. Please copy and paste the content below for analysis.")
-                    lesson_plan_text = st.text_area(
-                        "Paste lesson plan content:",
-                        height=200,
-                        placeholder="Copy and paste your lesson plan content here..."
-                    )
+                                          "application/msword"] or file_extension == 'docx':
+                    # Handle DOCX files with automatic text extraction
+                    try:
+                        from docx import Document
+                        
+                        # Extract text from Word document
+                        doc = Document(uploaded_file)
+                        lesson_plan_text = ""
+                        for paragraph in doc.paragraphs:
+                            if paragraph.text.strip():
+                                lesson_plan_text += paragraph.text + "\n"
+                        
+                        if lesson_plan_text.strip():
+                            st.success(f"✅ Word document '{uploaded_file.name}' processed successfully!")
+                            # Show preview
+                            with st.expander("📄 Preview extracted content"):
+                                st.text_area(
+                                    "Extracted Lesson Plan Content",
+                                    value=lesson_plan_text,
+                                    height=150,
+                                    disabled=True,
+                                    key="lesson_plan_docx_preview"
+                                )
+                        else:
+                            st.warning("⚠️ No text could be extracted from this Word document.")
+                            lesson_plan_text = st.text_area(
+                                "Paste lesson plan content:",
+                                height=200,
+                                placeholder="Copy and paste your lesson plan content here..."
+                            )
+                            
+                    except ImportError:
+                        st.error("❌ Word document processing library not available.")
+                        lesson_plan_text = st.text_area(
+                            "Paste lesson plan content:",
+                            height=200,
+                            placeholder="Copy and paste your lesson plan content here..."
+                        )
+                    except Exception as e:
+                        st.error(f"❌ Error processing Word document: {str(e)}")
+                        lesson_plan_text = st.text_area(
+                            "Paste lesson plan content:",
+                            height=200,
+                            placeholder="Copy and paste your lesson plan content here..."
+                        )
+                        
+                elif uploaded_file.type == "application/pdf" or file_extension == 'pdf':
+                    # Handle PDF files with automatic text extraction
+                    try:
+                        import pdfplumber
+                        
+                        # Extract text using pdfplumber
+                        with pdfplumber.open(uploaded_file) as pdf:
+                            lesson_plan_text = ""
+                            for page in pdf.pages:
+                                text = page.extract_text()
+                                if text:
+                                    lesson_plan_text += text + "\n"
+                        
+                        if lesson_plan_text.strip():
+                            st.success(f"✅ PDF '{uploaded_file.name}' processed successfully!")
+                            # Show preview
+                            with st.expander("📄 Preview extracted content"):
+                                st.text_area(
+                                    "Extracted Lesson Plan Content",
+                                    value=lesson_plan_text,
+                                    height=150,
+                                    disabled=True,
+                                    key="lesson_plan_pdf_preview"
+                                )
+                        else:
+                            st.warning("⚠️ No text could be extracted from this PDF.")
+                            lesson_plan_text = st.text_area(
+                                "Paste lesson plan content:",
+                                height=200,
+                                placeholder="Copy and paste your lesson plan content here..."
+                            )
+                            
+                    except ImportError:
+                        st.error("❌ PDF processing libraries not available.")
+                        lesson_plan_text = st.text_area(
+                            "Paste lesson plan content:",
+                            height=200,
+                            placeholder="Copy and paste your lesson plan content here..."
+                        )
+                    except Exception as e:
+                        st.error(f"❌ Error processing PDF: {str(e)}")
+                        lesson_plan_text = st.text_area(
+                            "Paste lesson plan content:",
+                            height=200,
+                            placeholder="Copy and paste your lesson plan content here..."
+                        )
+                        
                 else:
+                    # Unknown file type - fallback to manual entry
+                    st.warning(f"⚠️ File type not recognized. Please paste the content manually.")
                     lesson_plan_text = st.text_area(
                         "Paste lesson plan content:",
                         height=200,
                         placeholder="Copy and paste your lesson plan content here..."
                     )
+                    
             except Exception as e:
                 st.error(f"Error reading file: {str(e)}")
                 lesson_plan_text = st.text_area(
@@ -1215,11 +1302,30 @@ def show_evaluation_form():
     st.subheader("📝 Step 3: Classroom Observation Notes")
     st.caption("Record your detailed observations of the student teacher's performance during the lesson")
     
-    observation_notes = st.text_area(
-        "Detailed Observation Notes",
-        value=st.session_state.observation_notes,
-        height=200,
-        placeholder="""Record specific observations about the student teacher's performance:
+    # Input method selection
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        input_method = st.radio(
+            "Choose input method:",
+            ["✏️ Type/Paste Text", "📤 Upload File"],
+            horizontal=True,
+            key="observation_input_method"
+        )
+    
+    with col2:
+        if input_method == "✏️ Type/Paste Text":
+            st.info("💡 Type observations directly")
+        else:
+            st.info("📄 Upload notes file")
+    
+    observation_notes = ""
+    
+    if input_method == "✏️ Type/Paste Text":
+        observation_notes = st.text_area(
+            "Detailed Observation Notes",
+            value=st.session_state.observation_notes,
+            height=200,
+            placeholder="""Record specific observations about the student teacher's performance:
 
 • How did they introduce the lesson and engage students?
 • What teaching strategies and methods were used?
@@ -1230,9 +1336,226 @@ def show_evaluation_form():
 • Any specific examples of strengths or areas for improvement?
 
 Be as detailed as possible - these notes will be used to generate evidence-based justifications for each competency area.""",
-        help="Detailed observations will help generate more accurate AI justifications",
-        key="observation_text_area"
-    )
+            help="Detailed observations will help generate more accurate AI justifications",
+            key="observation_text_area"
+        )
+    
+    elif input_method == "📤 Upload File":
+        uploaded_file = st.file_uploader(
+            "Upload Observation Notes File",
+            type=['txt', 'pdf', 'docx'],
+            help="Upload your observation notes file. Supported formats: Text (.txt), PDF (.pdf), Word (.docx)",
+            key="observation_file_uploader"
+        )
+        
+        if uploaded_file is not None:
+            # Process the uploaded file
+            file_extension = uploaded_file.name.lower().split('.')[-1]
+            
+            try:
+                if file_extension == 'txt':
+                    # Handle text files
+                    file_content = uploaded_file.read().decode('utf-8')
+                    st.success(f"✅ File '{uploaded_file.name}' uploaded successfully!")
+                    
+                    # Preview uploaded content
+                    with st.expander("📄 Preview uploaded content", expanded=True):
+                        st.text_area(
+                            "File Content Preview",
+                            value=file_content,
+                            height=200,
+                            disabled=True,
+                            key="file_preview"
+                        )
+                    
+                    # Options to use uploaded content
+                    col1, col2 = st.columns([2, 1])
+                    with col1:
+                        if st.button("📋 Use These Notes", type="primary", key="use_uploaded_notes"):
+                            st.session_state.observation_notes = file_content
+                            observation_notes = file_content
+                            st.success("📝 Uploaded notes have been applied!")
+                            st.rerun()
+                    
+                    with col2:
+                        if st.button("➕ Append to Current", key="append_uploaded_notes"):
+                            current_notes = st.session_state.observation_notes
+                            separator = "\n\n--- Uploaded Notes ---\n\n" if current_notes.strip() else ""
+                            combined_notes = current_notes + separator + file_content
+                            st.session_state.observation_notes = combined_notes
+                            observation_notes = combined_notes
+                            st.success("📝 Notes appended successfully!")
+                            st.rerun()
+                    
+                    # Use current session state for display
+                    observation_notes = st.session_state.observation_notes
+                    
+                elif file_extension == 'pdf':
+                    # Handle PDF files with automatic text extraction
+                    try:
+                        import pdfplumber
+                        
+                        # Extract text using pdfplumber
+                        with pdfplumber.open(uploaded_file) as pdf:
+                            file_content = ""
+                            for page in pdf.pages:
+                                text = page.extract_text()
+                                if text:
+                                    file_content += text + "\n"
+                        
+                        if file_content.strip():
+                            st.success(f"✅ PDF '{uploaded_file.name}' processed successfully!")
+                            
+                            # Preview uploaded content
+                            with st.expander("📄 Preview extracted content", expanded=True):
+                                st.text_area(
+                                    "Extracted Text Preview",
+                                    value=file_content,
+                                    height=200,
+                                    disabled=True,
+                                    key="pdf_preview"
+                                )
+                            
+                            # Options to use uploaded content
+                            col1, col2 = st.columns([2, 1])
+                            with col1:
+                                if st.button("📋 Use These Notes", type="primary", key="use_pdf_notes"):
+                                    st.session_state.observation_notes = file_content
+                                    observation_notes = file_content
+                                    st.success("📝 PDF notes have been applied!")
+                                    st.rerun()
+                            
+                            with col2:
+                                if st.button("➕ Append to Current", key="append_pdf_notes"):
+                                    current_notes = st.session_state.observation_notes
+                                    separator = "\n\n--- Uploaded PDF Notes ---\n\n" if current_notes.strip() else ""
+                                    combined_notes = current_notes + separator + file_content
+                                    st.session_state.observation_notes = combined_notes
+                                    observation_notes = combined_notes
+                                    st.success("📝 PDF notes appended successfully!")
+                                    st.rerun()
+                            
+                            # Use current session state for display
+                            observation_notes = st.session_state.observation_notes
+                        else:
+                            st.warning("⚠️ No text could be extracted from this PDF. Please try copying and pasting the content manually.")
+                            # Fallback to manual entry
+                            observation_notes = st.text_area(
+                                "Paste observation notes content:",
+                                value=st.session_state.observation_notes,
+                                height=200,
+                                placeholder="Copy and paste your observation notes from the PDF here...",
+                                key="pdf_fallback_text_area"
+                            )
+                            
+                    except ImportError:
+                        st.error("❌ PDF processing libraries not available. Please install: pip install pdfplumber")
+                        observation_notes = st.session_state.observation_notes
+                    except Exception as e:
+                        st.error(f"❌ Error processing PDF: {str(e)}")
+                        # Fallback to manual entry
+                        observation_notes = st.text_area(
+                            "Paste observation notes content:",
+                            value=st.session_state.observation_notes,
+                            height=200,
+                            placeholder="Copy and paste your observation notes from the PDF here...",
+                            key="pdf_error_fallback_text_area"
+                        )
+                    
+                elif file_extension == 'docx':
+                    # Handle DOCX files with automatic text extraction
+                    try:
+                        from docx import Document
+                        
+                        # Extract text from Word document
+                        doc = Document(uploaded_file)
+                        file_content = ""
+                        for paragraph in doc.paragraphs:
+                            if paragraph.text.strip():
+                                file_content += paragraph.text + "\n"
+                        
+                        if file_content.strip():
+                            st.success(f"✅ Word document '{uploaded_file.name}' processed successfully!")
+                            
+                            # Preview uploaded content
+                            with st.expander("📄 Preview extracted content", expanded=True):
+                                st.text_area(
+                                    "Extracted Text Preview",
+                                    value=file_content,
+                                    height=200,
+                                    disabled=True,
+                                    key="docx_preview"
+                                )
+                            
+                            # Options to use uploaded content
+                            col1, col2 = st.columns([2, 1])
+                            with col1:
+                                if st.button("📋 Use These Notes", type="primary", key="use_docx_notes"):
+                                    st.session_state.observation_notes = file_content
+                                    observation_notes = file_content
+                                    st.success("📝 Word document notes have been applied!")
+                                    st.rerun()
+                            
+                            with col2:
+                                if st.button("➕ Append to Current", key="append_docx_notes"):
+                                    current_notes = st.session_state.observation_notes
+                                    separator = "\n\n--- Uploaded Word Document Notes ---\n\n" if current_notes.strip() else ""
+                                    combined_notes = current_notes + separator + file_content
+                                    st.session_state.observation_notes = combined_notes
+                                    observation_notes = combined_notes
+                                    st.success("📝 Word document notes appended successfully!")
+                                    st.rerun()
+                            
+                            # Use current session state for display
+                            observation_notes = st.session_state.observation_notes
+                        else:
+                            st.warning("⚠️ No text could be extracted from this Word document. Please try copying and pasting the content manually.")
+                            # Fallback to manual entry
+                            observation_notes = st.text_area(
+                                "Paste observation notes content:",
+                                value=st.session_state.observation_notes,
+                                height=200,
+                                placeholder="Copy and paste your observation notes from the Word document here...",
+                                key="docx_fallback_text_area"
+                            )
+                            
+                    except ImportError:
+                        st.error("❌ Word document processing library not available. Please install: pip install python-docx")
+                        observation_notes = st.session_state.observation_notes
+                    except Exception as e:
+                        st.error(f"❌ Error processing Word document: {str(e)}")
+                        # Fallback to manual entry
+                        observation_notes = st.text_area(
+                            "Paste observation notes content:",
+                            value=st.session_state.observation_notes,
+                            height=200,
+                            placeholder="Copy and paste your observation notes from the Word document here...",
+                            key="docx_error_fallback_text_area"
+                        )
+                    
+                else:
+                    st.error(f"❌ Unsupported file type: {file_extension}")
+                    observation_notes = st.session_state.observation_notes
+                    
+            except UnicodeDecodeError:
+                st.error("❌ Error reading file. Please ensure it's a valid text file with UTF-8 encoding.")
+                observation_notes = st.session_state.observation_notes
+            except Exception as e:
+                st.error(f"❌ Error processing file: {str(e)}")
+                observation_notes = st.session_state.observation_notes
+        else:
+            # No file uploaded yet, show current session state
+            observation_notes = st.session_state.observation_notes
+            if observation_notes:
+                st.info("📝 Using previously entered observation notes")
+                with st.expander("📄 Current observation notes"):
+                    st.text_area(
+                        "Current Notes",
+                        value=observation_notes,
+                        height=150,
+                        disabled=True,
+                        key="current_notes_preview"
+                    )
     
     # Store observation notes in session state
     st.session_state.observation_notes = observation_notes
