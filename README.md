@@ -42,7 +42,7 @@
 - **Smart Justifications**: One-click AI-generated evaluation justifications
 - **Evaluation Analysis**: Comprehensive feedback and improvement recommendations
 - **Context-Aware Responses**: Professional, evidence-based AI assistance
-- **Cost-Efficient**: Uses OpenAI GPT-4o-mini (~$0.30 per 100 evaluations)
+- **Cost-Efficient**: Uses OpenAI GPT-5-nano (~$0.12 per 100 evaluations)
 
 ### 📊 **Analytics & Management**
 - **Interactive Dashboard**: Real-time evaluation metrics and visualizations
@@ -142,14 +142,14 @@ See [📖 Deployment Guide](docs/STREAMLIT_CLOUD_DEPLOYMENT.md) for step-by-step
 # Required for AI features
 OPENAI_API_KEY=your_openai_api_key_here
 
-# Optional: Model selection (default: gpt-4o-mini)  
-OPENAI_MODEL=gpt-4o-mini
+# Optional: Model selection (default: gpt-5-nano)  
+OPENAI_MODEL=gpt-5-nano
 ```
 
 ### **Cost Estimation**
-- **Justification Generation**: ~$0.001 per evaluation
-- **Complete AI Analysis**: ~$0.002 per evaluation
-- **100 Full Evaluations**: ~$0.30 total cost
+- **Justification Generation**: ~$0.0008 per evaluation
+- **Complete AI Analysis**: ~$0.0012 per evaluation  
+- **100 Full Evaluations**: ~$0.12 total cost
 
 ## 🏗 **Project Structure**
 
