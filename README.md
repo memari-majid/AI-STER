@@ -103,8 +103,11 @@ See [📖 Deployment Guide](docs/STREAMLIT_CLOUD_DEPLOYMENT.md) for step-by-step
 
 | Document | Description |
 |----------|-------------|
+| [📚 Documentation Hub](docs/README.md) | Complete documentation index and navigation |
 | [🚀 Deployment Guide](docs/STREAMLIT_CLOUD_DEPLOYMENT.md) | Step-by-step Streamlit Cloud deployment |
-| [⚙️ Advanced Deployment](docs/DEPLOYMENT.md) | Railway, Docker, and self-hosting options |
+| [⚙️ Advanced Deployment](docs/DEPLOYMENT_GUIDE.md) | Railway, Docker, and self-hosting options |
+| [🏗️ Technical Architecture](docs/technical_architecture.md) | System design and architecture |
+| [🛣️ Development Roadmap](docs/development_roadmap.md) | Feature roadmap and development phases |
 | [🔧 Environment Setup](docs/env_template.txt) | Environment variables template |
 | [🤝 Contributing](CONTRIBUTING.md) | How to contribute to the project |
 | [📋 Changelog](CHANGELOG.md) | Version history and updates |
@@ -157,22 +160,32 @@ ai-ster/
 ├── README.md                       # This file
 ├── CONTRIBUTING.md                 # Contribution guidelines
 ├── CHANGELOG.md                    # Version history
+├── EVALUATION_WORKFLOW.md          # Complete evaluation process guide
+├── CLIENT_REQUIREMENTS_PUBLIC.md   # Public requirements specification
 ├── .gitignore                      # Git ignore rules
 ├── data/                           # Data modules
 │   ├── __init__.py
 │   ├── rubrics.py                  # STER & Field evaluation rubrics
-│   └── synthetic.py                # Test data generation
+│   ├── synthetic.py                # Test data generation
+│   └── samples/                    # Example data and templates
+│       └── examples/               # Synthetic examples for demonstration
 ├── services/                       # External services
 │   ├── __init__.py
-│   └── openai_service.py           # AI integration
+│   ├── openai_service.py           # AI integration
+│   └── pdf_service.py              # PDF generation for reports
 ├── utils/                          # Utility modules
 │   ├── __init__.py
 │   ├── storage.py                  # Data persistence
 │   └── validation.py               # Evaluation validation
 └── docs/                           # Documentation
-    ├── DEPLOYMENT.md               # Advanced deployment guide
+    ├── README.md                   # Documentation index
+    ├── DEPLOYMENT_GUIDE.md         # Advanced deployment options
     ├── STREAMLIT_CLOUD_DEPLOYMENT.md  # Streamlit Cloud guide
-    └── env_template.txt            # Environment template
+    ├── technical_architecture.md   # System architecture
+    ├── development_roadmap.md      # Feature roadmap
+    ├── IMPLEMENTATION_PLAN.md      # Development planning
+    ├── env_template.txt            # Environment template
+    └── *.pdf                       # Official evaluation rubrics
 ```
 
 ## 🤝 **Contributing**

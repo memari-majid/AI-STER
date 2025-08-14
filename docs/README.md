@@ -1,100 +1,61 @@
-# 📖 AI-STER Documentation
+# 📚 AI-STER Documentation
 
-Welcome to the AI-STER documentation! This directory contains essential rubrics and standards for the AI-powered Student Teaching Evaluation Rubric System.
+This directory contains comprehensive documentation for the AI-STER project, organized for different audiences and use cases.
 
-## 📚 **Documentation Structure**
+## 📖 User Documentation
 
-### 🎯 **Core Planning & Development**
-These documents are maintained in the root directory for easy access:
+### Getting Started
+- **[../README.md](../README.md)** - Main project overview and quick start guide
+- **[env_template.txt](env_template.txt)** - Environment variables template for setup
 
-| Document | Description | Location |
-|----------|-------------|----------|
-| [📋 Implementation Plan](../IMPLEMENTATION_PLAN.md) | Current development phases and tasks | Root |
-| [🗺️ Development Roadmap](../development_roadmap.md) | 16-week project timeline | Root |
-| [🏗️ Technical Architecture](../technical_architecture.md) | System design and infrastructure | Root |
-| [🔄 Evaluation Workflow](../EVALUATION_WORKFLOW.md) | Complete AI-powered evaluation process | Root |
-| [🚀 Deployment Guide](../DEPLOYMENT_GUIDE.md) | All deployment options (local to cloud) | Root |
+### Deployment Guides
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Comprehensive deployment options (Railway, Docker, self-hosting)
+- **[STREAMLIT_CLOUD_DEPLOYMENT.md](STREAMLIT_CLOUD_DEPLOYMENT.md)** - Step-by-step Streamlit Cloud deployment
 
-### 📋 **Rubrics & Standards** (This Directory)
+## 🔧 Technical Documentation
 
-| Document | Description | Purpose |
-|----------|-------------|----------|
-| [📊 STER CT&US FINAL 3.md](STER%20CT&US%20FINAL%203.md) | Official USBE evaluation rubric standards | Core reference |
-| [📝 Field Evaluations.md](Field%20Evaluations.md) | Field experience evaluation requirements | Educational standards |
-| [🌍 env_template.txt](env_template.txt) | Environment configuration template | Setup reference |
+### System Architecture
+- **[technical_architecture.md](technical_architecture.md)** - Complete system architecture and technical design
+- **[development_roadmap.md](development_roadmap.md)** - Development phases and feature roadmap
 
-### 🗄️ **Archived Documents**
-Historical and superseded documents have been moved to `/archive/` to reduce confusion while preserving project history.
+### Implementation Details
+- **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** - Detailed implementation planning and phases
+- **[Meeting_Notes_2024.md](Meeting_Notes_2024.md)** - Public project development summary
 
-## 🎯 **Quick Navigation**
+## 📋 Educational Standards
 
-### **For Developers**
-1. Start with [Implementation Plan](../IMPLEMENTATION_PLAN.md) for current tasks
-2. Review [Technical Architecture](../technical_architecture.md) for system design
-3. Follow [Deployment Guide](../DEPLOYMENT_GUIDE.md) for deployment options
+### Evaluation Rubrics
+- **[Field_Evaluation_Rubric.pdf](Field_Evaluation_Rubric.pdf)** - Official 3-week field evaluation rubric
+- **[STER Rubric.pdf](STER Rubric.pdf)** - Complete Student Teaching Evaluation Rubric
+- **[Field Evaluations.md](Field Evaluations.md)** - Field evaluation documentation
+- **[STER CT&US FINAL 3.md](STER CT&US FINAL 3.md)** - STER implementation details
 
-### **For Educators**
-1. Review [STER CT&US FINAL 3.md](STER%20CT&US%20FINAL%203.md) for USBE standards
-2. Check [Field Evaluations.md](Field%20Evaluations.md) for field requirements
-3. Understand [Evaluation Workflow](../EVALUATION_WORKFLOW.md) for the process
+## 🔗 Quick Links
 
-### **For Project Managers**
-1. Track progress in [Development Roadmap](../development_roadmap.md)
-2. Review [Client Feedback](../Client%20and%20Subject%20Matter%20Expert%20Feedback.md)
-3. Monitor [Implementation Plan](../IMPLEMENTATION_PLAN.md) for status
+| Document Type | Primary Audience | Key Information |
+|---------------|------------------|-----------------|
+| [Main README](../README.md) | Everyone | Project overview, features, quick start |
+| [Deployment Guide](DEPLOYMENT_GUIDE.md) | DevOps/IT | Advanced deployment options |
+| [Technical Architecture](technical_architecture.md) | Developers | System design and components |
+| [Development Roadmap](development_roadmap.md) | Product Managers | Feature planning and phases |
+| [Field Evaluation Rubric](Field_Evaluation_Rubric.pdf) | Educators | Official evaluation standards |
 
-## 🏗 **Current Project Status**
+## 🎯 Navigation by Role
 
-### **Phase 1: Core Functionality (In Progress)**
-- ✅ Basic evaluation system implemented
-- 🔄 AI justification workflow being updated
-- ⏳ Disposition comment boxes pending
-- ⏳ Rubric quick-access pending
+### **Educators/Supervisors**
+Start with the [Main README](../README.md) for overview, then check the evaluation rubrics for compliance information.
 
-### **Upcoming Phases**
-- **Phase 2**: Evaluation Management (Weeks 5-8)
-- **Phase 3**: Data Infrastructure (Weeks 9-12)
-- **Phase 4**: System Integration (Weeks 13-16)
+### **Developers**
+Review [Technical Architecture](technical_architecture.md) and [Development Roadmap](development_roadmap.md) for system understanding.
 
-## 🔧 **Key Components**
+### **System Administrators**
+Focus on [Deployment Guide](DEPLOYMENT_GUIDE.md) and [Streamlit Cloud Guide](STREAMLIT_CLOUD_DEPLOYMENT.md).
 
-### **Evaluation System**
-- **Field Evaluations**: 8 assessment items for 3-week experiences
-- **STER Evaluations**: Comprehensive formative and summative tracking system (35 total items)
-  - **Supervisor Items**: 19 competencies (LL2-LL7, IC1/IC2, IC3, IC4, IC5/IC6, IC7, IP1-IP8)
-  - **Cooperating Teacher Items**: 16 competencies (LL1, CC1-CC8, PR1-PR7)
-  - **Combined Competencies**: IC1/IC2 and IC5/IC6 evaluated as single items
-  - **Role-Based Access**: Cream rows (cooperating teachers) vs white rows (supervisors)
-  - **Progress Tracking**: Automatic monitoring of student evaluation completion
-  - **Smart Selection**: Completed evaluations grayed out to prevent errors
-- **Professional Dispositions**: 6 USBE-required dispositions
-- **AI Integration**: Evidence extraction and analysis
-
-### **Workflow Overview**
-1. **Observation**: Supervisor documents classroom observation
-2. **AI Analysis**: System extracts evidence from lesson plans and notes
-3. **Review**: Supervisor reviews AI-generated justifications
-4. **Scoring**: Informed scoring based on observations + AI insights
-5. **Finalization**: Complete with dispositions and validation
-
-## 🎓 **USBE Compliance**
-
-AI-STER implements Utah State Board of Education standards (July 2024):
-- All required assessment items and competency areas
-- Proper scoring levels (2+ for items, 3+ for dispositions)
-- Evidence-based justifications for all scores
-- Professional disposition tracking and feedback
-
-## 🆘 **Getting Help**
-
-| Need | Resource |
-|------|----------|
-| **Current Tasks** | [Implementation Plan](../IMPLEMENTATION_PLAN.md) |
-| **System Design** | [Technical Architecture](../technical_architecture.md) |
-| **Deployment Help** | [Deployment Guide](../DEPLOYMENT_GUIDE.md) |
-| **Process Questions** | [Evaluation Workflow](../EVALUATION_WORKFLOW.md) |
-| **Requirements** | [Client Feedback](../Client%20and%20Subject%20Matter%20Expert%20Feedback.md) |
+### **Project Managers**
+Check [Development Roadmap](development_roadmap.md) and [Implementation Plan](IMPLEMENTATION_PLAN.md) for project planning.
 
 ---
 
-**📍 You are here**: `/docs/` - Return to [main README](../README.md) for project overview 
+**💡 Tip**: Start with the [Main README](../README.md) if you're new to AI-STER, then dive into specific documentation based on your role and needs.
+
+*Last Updated: January 2025*

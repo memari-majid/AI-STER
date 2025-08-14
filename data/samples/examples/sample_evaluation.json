@@ -1,0 +1,88 @@
+{
+  "evaluation_id": "eval_2024_001",
+  "timestamp": "2024-01-15T14:30:00Z",
+  "student_name": "Sample Student Teacher",
+  "evaluator_name": "Dr. Sample Supervisor",
+  "school_name": "Example Elementary School",
+  "grade_level": "5th Grade",
+  "subject_area": "Mathematics",
+  "rubric_type": "field_evaluation",
+  "lesson_topic": "Place Value and Powers of 10",
+  "observation_date": "2024-01-15",
+  "is_formative": true,
+  "scores": {
+    "LL3": {
+      "score": 2,
+      "justification": "The student teacher effectively implemented classroom norms that encouraged positive relationships. Students were respectful to both the teacher and each other during group work activities. The teacher used positive language and established clear expectations for collaboration."
+    },
+    "LL5": {
+      "score": 3,
+      "justification": "Clear expectations were communicated at the beginning of the lesson, including procedures for using manipulatives and working in pairs. The teacher used positive behavior interventions, praising specific behaviors and providing gentle redirections. Students demonstrated ownership of their behavior by self-monitoring during group work."
+    },
+    "IC1_IC2": {
+      "score": 2,
+      "justification": "The lesson was well-aligned to Utah Core Standards 5.NBT.1 and 5.NBT.2. Learning intentions were clearly stated and success criteria were shared with students. The teacher demonstrated understanding of the standards by connecting place value concepts to real-world applications."
+    },
+    "CC2": {
+      "score": 2,
+      "justification": "The classroom environment promoted mutual respect among students. The teacher modeled respectful communication and students followed suit. During pair work, students listened to each other's ideas and built upon them constructively."
+    },
+    "CC3": {
+      "score": 2,
+      "justification": "While the teacher established clear guidelines for the lesson activities, there was limited evidence of students being involved in establishing these guidelines. The teacher did refer to previously established classroom rules that students had helped create."
+    },
+    "CC4": {
+      "score": 3,
+      "justification": "The teacher proactively addressed both physical and emotional safety. When one student became frustrated with a math problem, the teacher immediately provided support and reassurance. The classroom setup ensured safe movement during activities."
+    },
+    "CC6": {
+      "score": 2,
+      "justification": "The classroom was strategically organized with materials easily accessible and clear pathways for movement. The teacher had prepared place value charts and manipulatives in advance, and the seating arrangement supported both individual and group work."
+    },
+    "CC8": {
+      "score": 2,
+      "justification": "Students felt safe to participate and share their thinking during the lesson. The teacher created an encouraging environment where mistakes were treated as learning opportunities. Several students volunteered to share their problem-solving strategies."
+    }
+  },
+  "disposition_scores": {
+    "high_learning_expectations": {
+      "score": 3,
+      "comment": "The student teacher consistently demonstrates high expectations for all students. Provides differentiated challenges for advanced learners while supporting struggling students with additional scaffolds. Uses asset-based language when describing student capabilities."
+    },
+    "educational_equity": {
+      "score": 2,
+      "comment": "Shows awareness of different learning styles and provides multiple ways for students to access content. Could further develop strategies for incorporating students' cultural backgrounds into lesson content. Ensures all students have equal opportunities to participate."
+    }
+  },
+  "observation_notes": "The student teacher demonstrated strong classroom management and clear communication throughout the 45-minute mathematics lesson. The lesson was well-structured with clear transitions between activities. Students were engaged and on-task throughout most of the lesson. The teacher effectively used questioning to check for understanding and provided appropriate wait time. When students struggled with concepts, the teacher provided additional examples and support. The use of manipulatives helped students visualize place value relationships. Overall, this was a well-executed lesson that met the stated learning objectives.",
+  "overall_performance": {
+    "total_score": 18,
+    "max_possible": 24,
+    "percentage": 75.0,
+    "level_summary": {
+      "level_3": 2,
+      "level_2": 6,
+      "level_1": 0,
+      "level_0": 0
+    }
+  },
+  "ai_analysis": {
+    "strengths": [
+      "Strong classroom management and clear communication",
+      "Effective use of manipulatives to support learning",
+      "Positive and encouraging classroom environment",
+      "Well-structured lesson with clear objectives"
+    ],
+    "areas_for_growth": [
+      "Increase student involvement in establishing behavioral guidelines",
+      "Further develop strategies for incorporating cultural diversity",
+      "Continue building on strong foundation with more advanced differentiation"
+    ],
+    "recommendations": [
+      "Consider having students help create classroom norms for future lessons",
+      "Explore ways to connect mathematical concepts to students' cultural experiences",
+      "Develop additional challenge activities for early finishers"
+    ]
+  },
+  "notes": "This is a synthetic evaluation created for demonstration purposes in the AI-STER system. It showcases typical evaluation data structure and AI analysis capabilities."
+}
