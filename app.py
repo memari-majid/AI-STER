@@ -2683,7 +2683,7 @@ def show_settings():
     current_model = openai_service.model if openai_service else os.getenv('OPENAI_MODEL', 'gpt-5-nano')
     
     # Create model options with current model first
-    model_options = ["gpt-5-nano", "gpt-5-mini", "gpt-5", "gpt-4o", "gpt-4o-mini"]
+    model_options = ["gpt-5-nano", "gpt-5-mini", "gpt-5"]
     if current_model in model_options:
         model_options.remove(current_model)
         model_options.insert(0, current_model)
