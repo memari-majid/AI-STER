@@ -3,7 +3,7 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org/)
 [![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg?style=for-the-badge)]()
 
 **A comprehensive, AI-enhanced evaluation system for student teachers, fully compliant with Utah State Board of Education (USBE) standards.**
 
@@ -238,15 +238,20 @@ AI-STER is fully compliant with Utah State Board of Education standards (July 20
 ### **vs. Custom Development**
 - ✅ **Ready Now**: Deploy in minutes, not months
 - ✅ **Proven Solution**: Based on actual USBE requirements
-- ✅ **Open Source**: Customize and extend as needed
-- ✅ **Community Driven**: Collaborative improvement
+- ✅ **Educational Licensed**: Designed specifically for educational institutions
+- ✅ **UVU Developed**: Built by education professionals for education professionals
 
-## 📄 **License**
+## 📄 **License & Copyright**
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**Copyright © 2025 Utah Valley University School of Education. All Rights Reserved.**
+
+This software is proprietary and confidential property of Utah Valley University School of Education. Licensed for educational use only within accredited educational institutions for student teacher evaluation and assessment. See the [LICENSE](LICENSE) file for complete terms and conditions.
+
+**For licensing inquiries**: education@uvu.edu
 
 ## 🙏 **Acknowledgments**
 
+- **Utah Valley University School of Education** for development and support
 - **Utah State Board of Education** for comprehensive evaluation standards
 - **Streamlit Team** for the amazing web framework
 - **OpenAI** for powerful AI capabilities

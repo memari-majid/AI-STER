@@ -1,5 +1,11 @@
 """
 OpenAI service for AI-powered evaluation features
+
+Copyright © 2025 Utah Valley University School of Education
+All Rights Reserved.
+
+This software is proprietary and confidential property of Utah Valley University
+School of Education. Licensed for educational use only.
 """
 
 import os

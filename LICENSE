@@ -1,68 +1,104 @@
-MIT License
+PROPRIETARY SOFTWARE LICENSE
 
-Copyright (c) 2025 AI-STER Contributors
+Copyright (c) 2025 Utah Valley University School of Education
+All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+IMPORTANT: READ CAREFULLY BEFORE USING THIS SOFTWARE
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This software and associated documentation files (the "Software") are the 
+proprietary and confidential property of Utah Valley University School of 
+Education ("UVU School of Education"). The Software is protected by copyright 
+law and international treaty provisions.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+LICENSE GRANT
+
+Subject to the terms and conditions of this license, UVU School of Education 
+grants you a limited, non-exclusive, non-transferable license to use the 
+Software solely for educational purposes within accredited educational 
+institutions for student teacher evaluation and assessment.
+
+RESTRICTIONS
+
+You may NOT:
+- Copy, modify, or create derivative works of the Software
+- Distribute, sell, lease, sublicense, or transfer the Software
+- Reverse engineer, decompile, or disassemble the Software
+- Remove or alter any copyright notices or proprietary markings
+- Use the Software for commercial purposes without explicit written permission
+- Share or redistribute the Software outside of authorized educational use
+
+EDUCATIONAL USE ONLY
+
+This Software is designed specifically for educational purposes, including 
+student teacher evaluations, educational assessment, and academic research 
+within the context of teacher preparation programs. Any use outside of these 
+authorized educational purposes requires explicit written permission from 
+UVU School of Education.
+
+UTAH STATE BOARD OF EDUCATION (USBE) COMPLIANCE
+
+This software implements evaluation rubrics and standards based on Utah State
+Board of Education requirements. While every effort has been made to ensure 
+compliance, users are responsible for verifying that their use of this 
+software meets current regulatory requirements and institutional policies.
+
+DATA PRIVACY AND SECURITY
+
+Users are responsible for:
+- Ensuring compliance with data privacy regulations (FERPA, COPPA, etc.)
+- Managing API keys and access credentials securely
+- Understanding the data handling practices of any integrated AI services
+- Obtaining necessary permissions for AI-assisted evaluation content
+- Maintaining the confidentiality of student and evaluation data
+
+OWNERSHIP
+
+Utah Valley University School of Education retains all right, title, and 
+interest in and to the Software, including all intellectual property rights 
+therein. This license does not grant you any rights to UVU trademarks, 
+service marks, or logos.
+
+NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL 
+UVU SCHOOL OF EDUCATION BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, 
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+LIMITATION OF LIABILITY
+
+UVU SCHOOL OF EDUCATION'S TOTAL LIABILITY ARISING OUT OF OR RELATED TO THIS 
+LICENSE SHALL NOT EXCEED THE AMOUNT PAID FOR THE SOFTWARE. IN NO EVENT SHALL 
+UVU SCHOOL OF EDUCATION BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, 
+CONSEQUENTIAL, OR PUNITIVE DAMAGES.
+
+TERMINATION
+
+This license is effective until terminated. UVU School of Education may 
+terminate this license at any time if you breach any term of this agreement. 
+Upon termination, you must cease all use of the Software and destroy all 
+copies in your possession.
+
+CONTACT INFORMATION
+
+For licensing inquiries, permissions, or questions about this license:
+
+Utah Valley University School of Education
+Department of Education
+800 W University Pkwy
+Orem, UT 84058
+
+Email: education@uvu.edu
+Phone: (801) 863-8000
+
+ACKNOWLEDGMENT
+
+By using this Software, you acknowledge that you have read this license, 
+understand it, and agree to be bound by its terms and conditions.
 
 ---
 
-## Additional Information
-
-### Educational Use Notice
-
-AI-STER is designed specifically for educational purposes, including but not
-limited to student teacher evaluations, educational assessment, and academic
-research. While this software is provided under the MIT License allowing 
-commercial use, we encourage institutions and organizations to consider the
-educational mission and community benefit when using this software.
-
-### Utah State Board of Education (USBE) Compliance
-
-This software implements evaluation rubrics and standards based on Utah State
-Board of Education requirements (July 2024). While every effort has been made
-to ensure compliance, users are responsible for verifying that their use of
-this software meets current regulatory requirements and institutional policies.
-
-### AI and Data Privacy
-
-This software may integrate with third-party AI services (such as OpenAI).
-Users are responsible for:
-- Ensuring compliance with data privacy regulations (FERPA, etc.)
-- Managing API keys and access credentials securely
-- Understanding the data handling practices of integrated AI services
-- Obtaining necessary permissions for AI-assisted evaluation content
-
-### Contributing
-
-Contributions to this project are welcomed and encouraged. By contributing,
-you agree that your contributions will be licensed under the same MIT License
-that covers the project. For more information, see CONTRIBUTING.md.
-
-### Attribution
-
-If you use AI-STER in academic research, publications, or institutional 
-implementations, we appreciate (but do not require) attribution in the form
-of citations or acknowledgments.
-
-### Support and Warranty Disclaimer
-
-This software is provided as-is, without warranty of any kind. The maintainers
-and contributors are not responsible for any issues, damages, or compliance
-failures that may arise from the use of this software. Users should thoroughly
-test and validate the software for their specific use cases and requirements. 
+Last Updated: January 2025
+Utah Valley University School of Education
