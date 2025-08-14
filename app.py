@@ -1,3 +1,20 @@
+#!/usr/bin/env python3
+"""
+AI-STER: AI-Powered Student Teaching Evaluation System
+
+Copyright © 2025 Utah Valley University School of Education
+All Rights Reserved.
+
+This software is proprietary and confidential property of Utah Valley University
+School of Education. Licensed for educational use only within accredited 
+educational institutions for student teacher evaluation and assessment.
+
+For licensing inquiries: education@uvu.edu
+
+IMPORTANT: This software is protected by copyright law. Unauthorized copying,
+distribution, or modification is strictly prohibited.
+"""
+
 import streamlit as st
 import pandas as pd
 import json

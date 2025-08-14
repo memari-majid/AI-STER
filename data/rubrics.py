@@ -1,5 +1,12 @@
 """
 Rubric data for AI-STER evaluation system
+
+Copyright © 2025 Utah Valley University School of Education
+All Rights Reserved.
+
+This software is proprietary and confidential property of Utah Valley University
+School of Education. Licensed for educational use only.
+
 Converted from markdown files to structured Python data
 """
 
