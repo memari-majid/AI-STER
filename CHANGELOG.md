@@ -78,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Real-time validation and scoring requirements
 
 - **AI-Powered Features**
-  - OpenAI GPT-4o-mini integration for cost-efficient AI assistance
+  - OpenAI GPT-5-nano integration for ultra cost-efficient AI assistance
   - AI-generated evaluation justifications
   - Comprehensive evaluation analysis and feedback
   - Context-aware AI responses based on assessment items
@@ -130,7 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Startup Time**: < 3 seconds local, < 30 seconds cloud deployment
 - **AI Response Time**: 2-5 seconds for justification generation
 - **Data Processing**: Handles 1000+ evaluations efficiently
-- **Cost Efficiency**: ~$0.30 per 100 AI-enhanced evaluations
+- **Cost Efficiency**: ~$0.12 per 100 AI-enhanced evaluations
 
 ### Security
 - Environment variable management for API keys

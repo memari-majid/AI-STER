@@ -2630,7 +2630,7 @@ def show_settings():
     st.subheader("🤖 AI Configuration")
     
     # Show current model status
-    current_model_display = openai_service.model if openai_service else os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
+    current_model_display = openai_service.model if openai_service else os.getenv('OPENAI_MODEL', 'gpt-5-nano')
     st.info(f"🎯 Currently using model: **{current_model_display}**")
     
     # Initialize session state for API key
@@ -2680,10 +2680,10 @@ def show_settings():
         st.caption("💡 **Note**: API key is saved for this session only. Set OPENAI_API_KEY environment variable for permanent storage.")
     
     # Get current model from OpenAI service
-    current_model = openai_service.model if openai_service else os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
+    current_model = openai_service.model if openai_service else os.getenv('OPENAI_MODEL', 'gpt-5-nano')
     
     # Create model options with current model first
-    model_options = ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]
+    model_options = ["gpt-5-nano", "gpt-5-mini", "gpt-5", "gpt-4o", "gpt-4o-mini"]
     if current_model in model_options:
         model_options.remove(current_model)
         model_options.insert(0, current_model)
