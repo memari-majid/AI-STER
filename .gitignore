@@ -22,6 +22,10 @@ streamlit.log
 # Data storage (will be recreated)
 data_storage/
 
+# Backup files
+*_backup.py
+*.backup
+
 # IDE
 .vscode/
 .idea/
@@ -34,3 +38,8 @@ Thumbs.db
 
 # Logs
 *.log ai-ster-env/
+
+# Private documentation (contains sensitive client information)
+docs/Meeting_Notes_AI-STER_PRIVATE.md
+*_PRIVATE.md
+*PRIVATE*
