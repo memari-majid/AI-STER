@@ -84,8 +84,8 @@ class OpenAIService:
                         "content": prompt
                     }
                 ],
-                max_completion_tokens=800,
-                temperature=0.1  # Low temperature for consistent extraction
+                max_completion_tokens=800
+                # Note: Using default temperature (1) for model compatibility
             )
             
             # Parse the JSON response
@@ -231,8 +231,8 @@ JSON Response:"""
                         "content": prompt
                     }
                 ],
-                max_completion_tokens=300,
-                temperature=0.7
+                max_completion_tokens=300
+                # Note: Using default temperature (1) for model compatibility
             )
             
             ai_response = response.choices[0].message.content.strip()
@@ -284,8 +284,8 @@ JSON Response:"""
                         "content": prompt
                     }
                 ],
-                max_completion_tokens=400,
-                temperature=0.6
+                max_completion_tokens=400
+                # Note: Using default temperature (1) for model compatibility
             )
             
             return response.choices[0].message.content.strip()
@@ -424,8 +424,8 @@ FORMAT: Provide clear, actionable analysis that helps supervisors guide students
                         "content": prompt
                     }
                 ],
-                max_completion_tokens=2000,  # Increased for multiple justifications
-                temperature=0.6
+                max_completion_tokens=2000  # Increased for multiple justifications
+                # Note: Using default temperature (1) for model compatibility
             )
             
             response_text = response.choices[0].message.content.strip()
@@ -597,8 +597,8 @@ JSON Response:"""
                         "content": prompt
                     }
                 ],
-                max_completion_tokens=2500,  # Increased for comprehensive analysis
-                temperature=0.6
+                max_completion_tokens=2500  # Increased for comprehensive analysis
+                # Note: Using default temperature (1) for model compatibility
             )
             
             response_text = response.choices[0].message.content.strip()
