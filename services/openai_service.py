@@ -91,18 +91,40 @@ class OpenAIService:
             # Parse the JSON response
             response_text = response.choices[0].message.content.strip()
             
-            # Extract JSON from response (in case there's extra text)
-            start_idx = response_text.find('{')
-            end_idx = response_text.rfind('}') + 1
+            # Try multiple approaches to extract JSON
+            extracted_info = None
             
-            if start_idx != -1 and end_idx != -1:
-                json_text = response_text[start_idx:end_idx]
-                extracted_info = json.loads(json_text)
+            # Method 1: Try to parse the entire response as JSON
+            try:
+                extracted_info = json.loads(response_text)
+            except json.JSONDecodeError:
+                # Method 2: Extract JSON from response (in case there's extra text)
+                start_idx = response_text.find('{')
+                end_idx = response_text.rfind('}') + 1
                 
+                if start_idx != -1 and end_idx != -1:
+                    json_text = response_text[start_idx:end_idx]
+                    try:
+                        extracted_info = json.loads(json_text)
+                    except json.JSONDecodeError:
+                        # Method 3: Try to find JSON between ```json blocks
+                        json_start = response_text.find('```json')
+                        if json_start != -1:
+                            json_start += 7  # Move past '```json'
+                            json_end = response_text.find('```', json_start)
+                            if json_end != -1:
+                                json_text = response_text[json_start:json_end].strip()
+                                try:
+                                    extracted_info = json.loads(json_text)
+                                except json.JSONDecodeError:
+                                    pass
+            
+            if extracted_info:
                 # Validate and clean the extracted information
                 return self._validate_lesson_plan_extraction(extracted_info)
             else:
-                raise Exception("Could not parse JSON from AI response")
+                # Provide debugging information
+                raise Exception(f"Could not parse JSON from AI response. Response was: {response_text[:500]}...")
         
         except json.JSONDecodeError as e:
             raise Exception(f"Failed to parse AI response as JSON: {str(e)}")
@@ -112,7 +134,7 @@ class OpenAIService:
     def _build_lesson_plan_analysis_prompt(self, lesson_plan_text: str) -> str:
         """Build prompt for lesson plan analysis"""
         
-        prompt = f"""Analyze the following lesson plan and extract key information. Return ONLY a valid JSON object with the extracted data.
+        prompt = f"""Analyze the following lesson plan and extract key information. You must respond with ONLY a valid JSON object, nothing else.
 
 LESSON PLAN TEXT:
 {lesson_plan_text}
@@ -138,16 +160,17 @@ Extract the following information and return it as a JSON object:
     "confidence_score": 0.95
 }}
 
-IMPORTANT INSTRUCTIONS:
+CRITICAL REQUIREMENTS:
 1. If information is not found or unclear, use null for that field
 2. For grade_levels, extract the specific grade(s) mentioned (e.g., "3rd Grade", "6-8", "K-5")
 3. For lesson_date, convert to YYYY-MM-DD format if possible, otherwise keep as written
 4. Be very careful to extract the actual teacher name, not example names
 5. For total_students, look for class size information
 6. confidence_score should reflect how clear and complete the information is (0.0-1.0)
-7. Return ONLY the JSON object, no additional text
+7. Your response must be ONLY valid JSON - no explanations, no markdown, no additional text
+8. Start your response with {{ and end with }}
 
-JSON Response:"""
+Respond with the JSON object now:"""
         
         return prompt
     
