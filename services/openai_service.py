@@ -658,7 +658,14 @@ JSON Response:"""
         Returns:
             Dictionary mapping item IDs to generated analysis text
         """
+        print("🔍 DEBUG: generate_analysis_for_competencies called!")
+        print(f"🔍 OpenAI enabled: {self.is_enabled()}")
+        print(f"🔍 Items count: {len(items)}")
+        print(f"🔍 Observation notes length: {len(observation_notes)}")
+        print("=" * 80)
+        
         if not self.is_enabled():
+            print("❌ OpenAI service is not configured - returning early")
             raise Exception("OpenAI service is not configured")
         
         prompt = self._build_analysis_prompt_for_competencies(
@@ -674,6 +681,7 @@ JSON Response:"""
         print("=" * 40)
         
         try:
+            print("🔍 Making OpenAI API call...")
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -689,6 +697,7 @@ JSON Response:"""
                 max_completion_tokens=2500  # Increased for comprehensive analysis
                 # Note: Using default temperature (1) for model compatibility
             )
+            print("✅ OpenAI API call successful!")
             
             response_text = response.choices[0].message.content.strip()
             
@@ -771,6 +780,11 @@ JSON Response:"""
                 return self._extract_analyses_from_text(response_text, items)
         
         except Exception as e:
+            print(f"❌ ERROR in generate_analysis_for_competencies: {str(e)}")
+            print(f"❌ Error type: {type(e).__name__}")
+            import traceback
+            print(f"❌ Full traceback: {traceback.format_exc()}")
+            
             # Only in case of complete failure, provide informative fallback
             fallback_analyses = {}
             for item in items:
