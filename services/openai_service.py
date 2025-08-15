@@ -93,11 +93,14 @@ class OpenAIService:
             
             # Try multiple approaches to extract JSON
             extracted_info = None
+            parsing_errors = []
             
             # Method 1: Try to parse the entire response as JSON
             try:
                 extracted_info = json.loads(response_text)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                parsing_errors.append(f"Method 1 (full response): {str(e)}")
+                
                 # Method 2: Extract JSON from response (in case there's extra text)
                 start_idx = response_text.find('{')
                 end_idx = response_text.rfind('}') + 1
@@ -106,7 +109,9 @@ class OpenAIService:
                     json_text = response_text[start_idx:end_idx]
                     try:
                         extracted_info = json.loads(json_text)
-                    except json.JSONDecodeError:
+                    except json.JSONDecodeError as e:
+                        parsing_errors.append(f"Method 2 (extract braces): {str(e)}")
+                        
                         # Method 3: Try to find JSON between ```json blocks
                         json_start = response_text.find('```json')
                         if json_start != -1:
@@ -116,15 +121,68 @@ class OpenAIService:
                                 json_text = response_text[json_start:json_end].strip()
                                 try:
                                     extracted_info = json.loads(json_text)
-                                except json.JSONDecodeError:
-                                    pass
+                                except json.JSONDecodeError as e:
+                                    parsing_errors.append(f"Method 3 (markdown): {str(e)}")
+                        
+                        # Method 4: Try to find JSON between ``` blocks (without json)
+                        if not extracted_info:
+                            json_start = response_text.find('```')
+                            if json_start != -1:
+                                json_start += 3  # Move past '```'
+                                # Skip any language identifier line
+                                newline = response_text.find('\n', json_start)
+                                if newline != -1:
+                                    json_start = newline + 1
+                                json_end = response_text.find('```', json_start)
+                                if json_end != -1:
+                                    json_text = response_text[json_start:json_end].strip()
+                                    try:
+                                        extracted_info = json.loads(json_text)
+                                    except json.JSONDecodeError as e:
+                                        parsing_errors.append(f"Method 4 (generic markdown): {str(e)}")
+                        
+                        # Method 5: Try to clean and fix common JSON issues
+                        if not extracted_info and start_idx != -1 and end_idx != -1:
+                            json_text = response_text[start_idx:end_idx]
+                            # Fix common issues
+                            json_text = json_text.replace('\n', ' ')  # Remove newlines
+                            json_text = json_text.replace('\t', ' ')  # Remove tabs
+                            json_text = ' '.join(json_text.split())   # Normalize whitespace
+                            try:
+                                extracted_info = json.loads(json_text)
+                            except json.JSONDecodeError as e:
+                                parsing_errors.append(f"Method 5 (cleaned): {str(e)}")
             
             if extracted_info:
                 # Validate and clean the extracted information
                 return self._validate_lesson_plan_extraction(extracted_info)
             else:
-                # Provide debugging information
-                raise Exception(f"Could not parse JSON from AI response. Response was: {response_text[:500]}...")
+                # Create a fallback response if all parsing fails
+                fallback_response = {
+                    "teacher_name": None,
+                    "lesson_date": None,
+                    "subject_area": None,
+                    "grade_levels": None,
+                    "school_name": None,
+                    "lesson_topic": None,
+                    "class_period": None,
+                    "duration": None,
+                    "total_students": None,
+                    "utah_core_standards": None,
+                    "learning_objectives": [],
+                    "materials": [],
+                    "assessment_methods": [],
+                    "lesson_structure": "AI parsing failed - manual review required",
+                    "notes": f"JSON parsing failed. AI Response: {response_text[:200]}...",
+                    "confidence_score": 0.0
+                }
+                
+                # Log detailed error for debugging
+                error_details = f"All JSON parsing methods failed. Errors: {'; '.join(parsing_errors)}. Full response: {response_text}"
+                print(f"DEBUG: {error_details}")
+                
+                # Return fallback instead of raising exception
+                return self._validate_lesson_plan_extraction(fallback_response)
         
         except json.JSONDecodeError as e:
             raise Exception(f"Failed to parse AI response as JSON: {str(e)}")
