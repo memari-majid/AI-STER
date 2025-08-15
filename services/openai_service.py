@@ -658,30 +658,18 @@ JSON Response:"""
         Returns:
             Dictionary mapping item IDs to generated analysis text
         """
-        print("🔍 DEBUG: generate_analysis_for_competencies called!")
-        print(f"🔍 OpenAI enabled: {self.is_enabled()}")
-        print(f"🔍 Items count: {len(items)}")
-        print(f"🔍 Observation notes length: {len(observation_notes)}")
-        print("=" * 80)
+
         
         if not self.is_enabled():
-            print("❌ OpenAI service is not configured - returning early")
             raise Exception("OpenAI service is not configured")
         
         prompt = self._build_analysis_prompt_for_competencies(
             items, observation_notes, student_name, rubric_type, lesson_plan_context
         )
         
-        # Debug: Log the prompt being sent
-        print(f"DEBUG - Prompt being sent:")
-        print(f"Items count: {len(items)}")
-        print(f"Observation notes length: {len(observation_notes)} characters")
-        print(f"Prompt length: {len(prompt)} characters")
-        print(f"First 300 chars of prompt: {prompt[:300]}...")
-        print("=" * 40)
+
         
         try:
-            print("🔍 Making OpenAI API call...")
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -697,16 +685,10 @@ JSON Response:"""
                 max_completion_tokens=2500  # Increased for comprehensive analysis
                 # Note: Using default temperature (1) for model compatibility
             )
-            print("✅ OpenAI API call successful!")
             
             response_text = response.choices[0].message.content.strip()
             
-            # Debug: Log the raw AI response
-            print(f"DEBUG - Raw AI Response for competency analysis:")
-            print(f"Model: {self.model}")
-            print(f"Response length: {len(response_text)} characters")
-            print(f"Response preview: {response_text[:500]}...")
-            print("=" * 80)
+
             
             # Use robust JSON parsing (same as lesson plan analysis)
             extracted_analyses = None
@@ -772,19 +754,12 @@ JSON Response:"""
                 
                 return validated_analyses
             else:
-                # Log detailed error for debugging
-                error_details = f"All JSON parsing methods failed. Errors: {'; '.join(parsing_errors)}. Response: {response_text[:300]}..."
-                print(f"DEBUG (competency analysis): {error_details}")
+
                 
                 # Fallback to text extraction
                 return self._extract_analyses_from_text(response_text, items)
         
         except Exception as e:
-            print(f"❌ ERROR in generate_analysis_for_competencies: {str(e)}")
-            print(f"❌ Error type: {type(e).__name__}")
-            import traceback
-            print(f"❌ Full traceback: {traceback.format_exc()}")
-            
             # Only in case of complete failure, provide informative fallback
             fallback_analyses = {}
             for item in items:
