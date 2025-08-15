@@ -84,7 +84,7 @@ class OpenAIService:
                         "content": prompt
                     }
                 ],
-                max_tokens=800,
+                max_completion_tokens=800,
                 temperature=0.1  # Low temperature for consistent extraction
             )
             
@@ -231,7 +231,7 @@ JSON Response:"""
                         "content": prompt
                     }
                 ],
-                max_tokens=300,
+                max_completion_tokens=300,
                 temperature=0.7
             )
             
@@ -284,7 +284,7 @@ JSON Response:"""
                         "content": prompt
                     }
                 ],
-                max_tokens=400,
+                max_completion_tokens=400,
                 temperature=0.6
             )
             
@@ -424,7 +424,7 @@ FORMAT: Provide clear, actionable analysis that helps supervisors guide students
                         "content": prompt
                     }
                 ],
-                max_tokens=2000,  # Increased for multiple justifications
+                max_completion_tokens=2000,  # Increased for multiple justifications
                 temperature=0.6
             )
             
@@ -597,7 +597,7 @@ JSON Response:"""
                         "content": prompt
                     }
                 ],
-                max_tokens=2500,  # Increased for comprehensive analysis
+                max_completion_tokens=2500,  # Increased for comprehensive analysis
                 temperature=0.6
             )
             
