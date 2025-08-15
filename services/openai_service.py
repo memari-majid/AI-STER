@@ -684,33 +684,75 @@ JSON Response:"""
             
             response_text = response.choices[0].message.content.strip()
             
-            # Parse the JSON response
-            start_idx = response_text.find('{')
-            end_idx = response_text.rfind('}') + 1
+            # Use robust JSON parsing (same as lesson plan analysis)
+            extracted_analyses = None
+            parsing_errors = []
             
-            if start_idx != -1 and end_idx != -1:
-                json_text = response_text[start_idx:end_idx]
-                try:
-                    analyses = json.loads(json_text)
-                    
-                    # Validate that we have analyses for all items
-                    validated_analyses = {}
-                    for item in items:
-                        item_id = item['id']
-                        if item_id in analyses and analyses[item_id].strip():
-                            # Use AI-generated analysis if available and not empty
-                            validated_analyses[item_id] = analyses[item_id]
-                        else:
-                            # Only add limited evidence warning for items that are actually missing
-                            validated_analyses[item_id] = f"Based on the provided observation notes, specific evidence for {item['code']} - {item['title']} was not clearly documented. Consider adding specific observations related to {item['competency_area'].lower()} during the evaluation process."
-                    
-                    return validated_analyses
-                    
-                except json.JSONDecodeError:
-                    # JSON parsing failed - try to extract individual analyses from text
-                    return self._extract_analyses_from_text(response_text, items)
+            # Method 1: Try to parse the entire response as JSON
+            try:
+                extracted_analyses = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                parsing_errors.append(f"Method 1 (full response): {str(e)}")
+                
+                # Method 2: Extract JSON from response (in case there's extra text)
+                start_idx = response_text.find('{')
+                end_idx = response_text.rfind('}') + 1
+                
+                if start_idx != -1 and end_idx != -1:
+                    json_text = response_text[start_idx:end_idx]
+                    try:
+                        extracted_analyses = json.loads(json_text)
+                    except json.JSONDecodeError as e:
+                        parsing_errors.append(f"Method 2 (extract braces): {str(e)}")
+                        
+                        # Method 3: Try to find JSON between ```json blocks
+                        json_start = response_text.find('```json')
+                        if json_start != -1:
+                            json_start += 7  # Move past '```json'
+                            json_end = response_text.find('```', json_start)
+                            if json_end != -1:
+                                json_text = response_text[json_start:json_end].strip()
+                                try:
+                                    extracted_analyses = json.loads(json_text)
+                                except json.JSONDecodeError as e:
+                                    parsing_errors.append(f"Method 3 (markdown): {str(e)}")
+                        
+                        # Method 4: Try to find JSON between ``` blocks (without json)
+                        if not extracted_analyses:
+                            json_start = response_text.find('```')
+                            if json_start != -1:
+                                json_start += 3  # Move past '```'
+                                # Skip any language identifier line
+                                newline = response_text.find('\n', json_start)
+                                if newline != -1:
+                                    json_start = newline + 1
+                                json_end = response_text.find('```', json_start)
+                                if json_end != -1:
+                                    json_text = response_text[json_start:json_end].strip()
+                                    try:
+                                        extracted_analyses = json.loads(json_text)
+                                    except json.JSONDecodeError as e:
+                                        parsing_errors.append(f"Method 4 (generic markdown): {str(e)}")
+            
+            if extracted_analyses:
+                # Validate that we have analyses for all items
+                validated_analyses = {}
+                for item in items:
+                    item_id = item['id']
+                    if item_id in extracted_analyses and extracted_analyses[item_id].strip():
+                        # Use AI-generated analysis if available and not empty
+                        validated_analyses[item_id] = extracted_analyses[item_id]
+                    else:
+                        # Only add limited evidence warning for items that are actually missing
+                        validated_analyses[item_id] = f"Based on the provided observation notes, specific evidence for {item['code']} - {item['title']} was not clearly documented. Consider adding specific observations related to {item['competency_area'].lower()} during the evaluation process."
+                
+                return validated_analyses
             else:
-                # No JSON found - try to extract analyses from text
+                # Log detailed error for debugging
+                error_details = f"All JSON parsing methods failed. Errors: {'; '.join(parsing_errors)}. Response: {response_text[:300]}..."
+                print(f"DEBUG (competency analysis): {error_details}")
+                
+                # Fallback to text extraction
                 return self._extract_analyses_from_text(response_text, items)
         
         except Exception as e:
@@ -811,7 +853,7 @@ JSON Response:"""
         if lesson_plan_context:
             lesson_plan_section = f"\nLESSON PLAN CONTEXT:\n{lesson_plan_context}\n"
         
-        prompt = f"""Analyze classroom observation notes to extract evidence for each competency area in a student teaching evaluation.
+        prompt = f"""Analyze classroom observation notes to extract evidence for each competency area in a student teaching evaluation. You must respond with ONLY a valid JSON object, nothing else.
 
 STUDENT: {student_name}
 EVALUATION TYPE: {rubric_type.replace('_', ' ').title()}
@@ -822,24 +864,28 @@ SUPERVISOR'S OBSERVATION NOTES:
 COMPETENCY AREAS TO ANALYZE:
 {items_text}
 
-INSTRUCTIONS:
+ANALYSIS REQUIREMENTS:
 1. For EACH competency listed above, extract relevant evidence from the observation notes
 2. Provide objective analysis of what was observed without assigning scores
 3. Reference specific behaviors, examples, and incidents from the observation notes
 4. Each analysis should be 2-4 sentences and include specific examples when available
-5. If no specific evidence is available for a competency, write a brief note indicating this
+5. If no specific evidence is available for a competency, write "Limited evidence in observation notes for this competency area. Additional targeted observations recommended."
 6. Focus on observable evidence that could support scoring decisions
 7. Maintain a professional, objective tone
 
-CRITICAL: You MUST return a valid JSON object with the exact item IDs as keys and analyses as values.
+CRITICAL JSON FORMAT REQUIREMENTS:
+- You MUST return a valid JSON object with the exact item IDs as keys and analyses as values
+- Your response must be ONLY valid JSON - no explanations, no markdown, no additional text
+- Start your response with {{ and end with }}
+- Use the exact item IDs provided (e.g., "LL1", "IC2", etc.)
 
 Example format:
 {{
-    "LL1": "The student teacher demonstrated strong parent communication skills by...",
-    "LL2": "Observation notes indicate limited specific evidence for this competency...",
-    "IC1": "Clear alignment with Utah Core Standards was evident when the teacher..."
+    "LL1": "The student teacher demonstrated strong parent communication skills by sending weekly progress updates to families and promptly responding to parent questions via email during the observation period.",
+    "LL2": "Limited evidence in observation notes for this competency area. Additional targeted observations recommended.",
+    "IC1": "Clear alignment with Utah Core Standards was evident when the teacher explicitly referenced 3rd grade math standards during the lesson introduction and connected activities to specific learning objectives."
 }}
 
-Return ONLY the JSON object, no additional text:"""
+Respond with the JSON object now:"""
         
         return prompt 
