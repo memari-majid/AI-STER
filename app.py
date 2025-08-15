@@ -1835,6 +1835,12 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                             ai_analysis = st.session_state.ai_analyses[item_id]
                             # Clean warning patterns
                             ai_analysis = ai_analysis.replace('[LIMITED_EVIDENCE]', '').replace('[NO_CONTEXT]', '').replace('[GENERIC]', '').strip()
+                            st.write(f"🔍 DEBUG: Found AI analysis for {item_id}: {ai_analysis[:100]}...")
+                        else:
+                            st.write(f"🔍 DEBUG: No AI analysis found for {item_id}")
+                            if st.session_state.get('ai_analyses'):
+                                available_keys = list(st.session_state.ai_analyses.keys())[:5]
+                                st.write(f"🔍 Available keys: {available_keys}")
                         
                         current_justification = st.session_state.justifications.get(item_id, ai_analysis)
                         
