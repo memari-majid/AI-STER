@@ -26,7 +26,7 @@ class OpenAIService:
     def __init__(self):
         """Initialize OpenAI service"""
         self.client = None
-        self.model = os.getenv('OPENAI_MODEL', 'gpt-5-nano')
+        self.model = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
         self._initialize_client()
     
     def _initialize_client(self):
@@ -683,6 +683,13 @@ JSON Response:"""
             )
             
             response_text = response.choices[0].message.content.strip()
+            
+            # Debug: Log the raw AI response
+            print(f"DEBUG - Raw AI Response for competency analysis:")
+            print(f"Model: {self.model}")
+            print(f"Response length: {len(response_text)} characters")
+            print(f"Response preview: {response_text[:500]}...")
+            print("=" * 80)
             
             # Use robust JSON parsing (same as lesson plan analysis)
             extracted_analyses = None
