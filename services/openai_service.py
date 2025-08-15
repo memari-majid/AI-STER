@@ -665,6 +665,14 @@ JSON Response:"""
             items, observation_notes, student_name, rubric_type, lesson_plan_context
         )
         
+        # Debug: Log the prompt being sent
+        print(f"DEBUG - Prompt being sent:")
+        print(f"Items count: {len(items)}")
+        print(f"Observation notes length: {len(observation_notes)} characters")
+        print(f"Prompt length: {len(prompt)} characters")
+        print(f"First 300 chars of prompt: {prompt[:300]}...")
+        print("=" * 40)
+        
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -860,39 +868,21 @@ JSON Response:"""
         if lesson_plan_context:
             lesson_plan_section = f"\nLESSON PLAN CONTEXT:\n{lesson_plan_context}\n"
         
-        prompt = f"""Analyze classroom observation notes to extract evidence for each competency area in a student teaching evaluation. You must respond with ONLY a valid JSON object, nothing else.
+        prompt = f"""You are analyzing classroom observation notes for teaching competencies. Return ONLY a JSON object.
 
-STUDENT: {student_name}
-EVALUATION TYPE: {rubric_type.replace('_', ' ').title()}
-{lesson_plan_section}
-SUPERVISOR'S OBSERVATION NOTES:
+OBSERVATION NOTES:
 {observation_notes}
 
-COMPETENCY AREAS TO ANALYZE:
+COMPETENCIES TO ANALYZE:
 {items_text}
 
-ANALYSIS REQUIREMENTS:
-1. For EACH competency listed above, extract relevant evidence from the observation notes
-2. Provide objective analysis of what was observed without assigning scores
-3. Reference specific behaviors, examples, and incidents from the observation notes
-4. Each analysis should be 2-4 sentences and include specific examples when available
-5. If no specific evidence is available for a competency, write "Limited evidence in observation notes for this competency area. Additional targeted observations recommended."
-6. Focus on observable evidence that could support scoring decisions
-7. Maintain a professional, objective tone
+For each competency ID, provide a brief analysis based on the observation notes. If no evidence is found, state "No specific evidence found in observation notes."
 
-CRITICAL JSON FORMAT REQUIREMENTS:
-- You MUST return a valid JSON object with the exact item IDs as keys and analyses as values
-- Your response must be ONLY valid JSON - no explanations, no markdown, no additional text
-- Start your response with {{ and end with }}
-- Use the exact item IDs provided (e.g., "LL1", "IC2", etc.)
-
-Example format:
+Return ONLY this JSON format:
 {{
-    "LL1": "The student teacher demonstrated strong parent communication skills by sending weekly progress updates to families and promptly responding to parent questions via email during the observation period.",
-    "LL2": "Limited evidence in observation notes for this competency area. Additional targeted observations recommended.",
-    "IC1": "Clear alignment with Utah Core Standards was evident when the teacher explicitly referenced 3rd grade math standards during the lesson introduction and connected activities to specific learning objectives."
+    "COMPETENCY_ID": "analysis text here"
 }}
 
-Respond with the JSON object now:"""
+JSON response:"""
         
         return prompt 
