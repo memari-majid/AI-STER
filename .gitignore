@@ -37,7 +37,10 @@ data_storage/
 Thumbs.db
 
 # Logs
-*.log ai-ster-env/
+*.log
+
+# Virtual environments (specific)
+ai-ster-env/
 
 # Private documentation (contains sensitive client information)
 docs/Meeting_Notes_AI-STER_PRIVATE.md
