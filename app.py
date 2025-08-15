@@ -1717,6 +1717,7 @@ Be as detailed as possible - these notes will be used to generate evidence-based
     if observation_notes.strip():
         if openai_service.is_enabled():
             if not st.session_state.get('ai_analyses'):
+                st.write("🔍 DEBUG: No existing AI analyses found, will generate new ones")
                 col1, col2 = st.columns([2, 1])
                 with col1:
                     button_text = "🤖 Generate AI Analysis & Begin Scoring"
@@ -1734,6 +1735,11 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                                     lesson_plan_context += f"Lesson Structure: {st.session_state.lesson_plan_analysis.get('lesson_structure', 'N/A')}"
                                 
                                 # Generate AI analysis for all items
+                                st.write("🔍 DEBUG: About to call generate_analysis_for_competencies")
+                                st.write(f"🔍 Items count: {len(items)}")
+                                st.write(f"🔍 Observation notes length: {len(observation_notes)}")
+                                st.write(f"🔍 OpenAI service enabled: {openai_service.is_enabled()}")
+                                
                                 ai_analyses = openai_service.generate_analysis_for_competencies(
                                     items,
                                     observation_notes,
@@ -1741,6 +1747,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                                     rubric_type,
                                     lesson_plan_context
                                 )
+                                
+                                st.write(f"🔍 DEBUG: Function returned {len(ai_analyses)} analyses")
+                                st.write(f"🔍 First analysis preview: {list(ai_analyses.values())[0][:100] if ai_analyses else 'None'}...")
                                 
                                 # Store AI analyses in session state
                                 st.session_state.ai_analyses = ai_analyses
@@ -1757,6 +1766,13 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 if st.session_state.get('ai_analyses'):
                     st.success("✅ AI Analysis Complete")
                     st.metric("Competencies Analyzed", len(st.session_state.ai_analyses))
+                    
+                    # Debug: Show what's in the stored analyses
+                    st.write("🔍 DEBUG: Current AI analyses preview:")
+                    for i, (key, value) in enumerate(list(st.session_state.ai_analyses.items())[:3]):
+                        st.write(f"🔍 {key}: {value[:100]}...")
+                        if i >= 2:
+                            break
                     if st.button("🔄 Regenerate Analysis", key="regenerate_analysis"):
                         st.session_state.ai_analyses = {}
                         st.rerun()
