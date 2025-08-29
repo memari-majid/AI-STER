@@ -2768,17 +2768,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                                 # Generate AI version PDF using existing PDF service
                                 ai_pdf_bytes = pdf_service.generate_ai_version_pdf(ai_version_data)
                                 
-                                downloaded = st.download_button(
-                                    label="💾 Save AI Version (PDF)",
-                                    data=ai_pdf_bytes,
-                                    file_name=f"AI_Original_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                                    mime="application/pdf",
-                                    key="save_ai_version_download",
-                                    help="Download the AI-generated content as a PDF before making modifications"
-                                )
-                                
-                                if downloaded:
-                                    # Store AI data in session state
+                                # Store AI data in session state BEFORE the download button
+                                if not st.session_state.get('ai_version_saved', False):
                                     st.session_state.ai_original_data = {
                                         'justifications': st.session_state.get('justifications', {}).copy(),
                                         'ai_analyses': st.session_state.get('ai_analyses', {}).copy(),
@@ -2788,7 +2779,15 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                                         'saved_at': datetime.now().isoformat()
                                     }
                                     st.session_state.ai_version_saved = True
-                                    st.rerun()
+                                
+                                st.download_button(
+                                    label="💾 Save AI Version (PDF)",
+                                    data=ai_pdf_bytes,
+                                    file_name=f"AI_Original_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                                    mime="application/pdf",
+                                    key="save_ai_version_download",
+                                    help="Download the AI-generated content as a PDF before making modifications"
+                                )
                             except Exception as e:
                                 st.error(f"Error generating AI version PDF: {str(e)}")
                                 # Fallback to JSON if PDF fails
