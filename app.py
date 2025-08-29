@@ -1465,6 +1465,10 @@ def show_evaluation_form():
         st.session_state.ai_analyses = {}
     if 'current_evaluation_id' not in st.session_state:
         st.session_state.current_evaluation_id = None
+    if 'ai_version_saved' not in st.session_state:
+        st.session_state.ai_version_saved = False
+    if 'ai_original_data' not in st.session_state:
+        st.session_state.ai_original_data = None
     
     # STEP 3: Classroom Observation Notes
     st.subheader("📝 Step 3: Classroom Observation Notes")
@@ -1842,6 +1846,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                                 
                                 # Store AI analyses in session state
                                 st.session_state.ai_analyses = ai_analyses
+                                # Also store as justifications for the save functionality
+                                for item_id, analysis in ai_analyses.items():
+                                    st.session_state.justifications[item_id] = analysis
                                 success_message = f"✅ Generated AI analysis for {len(ai_analyses)} competencies!"
                                 if not st.session_state.lesson_plan_analysis:
                                     success_message += " (Based on observation notes only)"
@@ -1856,32 +1863,31 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     st.success("✅ AI Analysis Complete")
                     st.metric("Competencies Analyzed", len(st.session_state.ai_analyses))
                     
+                    # Debug info
+                    st.caption(f"Debug: ai_version_saved = {st.session_state.get('ai_version_saved', False)}")
+                    
                     # Save AI Original Version button
-                    if 'current_evaluation_id' in st.session_state and st.session_state.current_evaluation_id:
-                        eval_data = get_evaluation_by_id(st.session_state.current_evaluation_id)
-                        has_ai_original = eval_data.get('has_ai_original', False) if eval_data else False
-                        
-                        if not has_ai_original:
-                            if st.button("💾 Save AI Version", key="save_ai_version", 
-                                       help="Save the current AI-generated content before making any modifications (for research purposes)"):
-                                # Prepare AI data to save
-                                ai_data = {
-                                    'justifications': st.session_state.get('justifications', {}),
-                                    'ai_analyses': st.session_state.get('ai_analyses', {}),
-                                    'scores': st.session_state.get('scores', {}),
-                                    'observation_notes': st.session_state.get('observation_notes', '')
-                                }
-                                
-                                if save_ai_original(st.session_state.current_evaluation_id, ai_data):
-                                    st.success("✅ AI version saved for research comparison!")
-                                    st.rerun()
-                                else:
-                                    st.error("Failed to save AI version")
-                        else:
-                            st.info("📌 AI original version already saved")
+                    if not st.session_state.get('ai_version_saved', False):
+                        if st.button("💾 Save AI Version", key="save_ai_version", 
+                                   help="Save the current AI-generated content before making any modifications (for research purposes)"):
+                            # Store AI data in session state
+                            st.session_state.ai_original_data = {
+                                'justifications': st.session_state.get('justifications', {}).copy(),
+                                'ai_analyses': st.session_state.get('ai_analyses', {}).copy(),
+                                'scores': st.session_state.get('scores', {}).copy(),
+                                'observation_notes': st.session_state.get('observation_notes', ''),
+                                'saved_at': datetime.now().isoformat()
+                            }
+                            st.session_state.ai_version_saved = True
+                            st.success("✅ AI version saved! It will be preserved when you save the evaluation.")
+                            st.rerun()
+                    else:
+                        st.info("📌 AI original version saved")
                     
                     if st.button("🔄 Regenerate Analysis", key="regenerate_analysis"):
                         st.session_state.ai_analyses = {}
+                        st.session_state.ai_version_saved = False
+                        st.session_state.ai_original_data = None
                         st.rerun()
                 else:
                     # Show lesson plan status
@@ -2315,6 +2321,13 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'school_name': extracted_info.get('school_name', ''),
                 'class_size': extracted_info.get('class_size', 20)
             }
+            
+            # Add AI original data if saved
+            if st.session_state.get('ai_version_saved', False) and st.session_state.get('ai_original_data'):
+                evaluation['ai_original'] = st.session_state.ai_original_data
+                evaluation['has_ai_original'] = True
+                evaluation['ai_original_saved_at'] = st.session_state.ai_original_data.get('saved_at')
+            
             save_evaluation(evaluation)
             st.success("Evaluation saved as draft!")
     
@@ -2381,6 +2394,13 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'school_name': extracted_info.get('school_name', ''),
                 'class_size': extracted_info.get('class_size', 20)
             }
+            
+            # Add AI original data if saved
+            if st.session_state.get('ai_version_saved', False) and st.session_state.get('ai_original_data'):
+                evaluation['ai_original'] = st.session_state.ai_original_data
+                evaluation['has_ai_original'] = True
+                evaluation['ai_original_saved_at'] = st.session_state.ai_original_data.get('saved_at')
+            
             save_evaluation(evaluation)
             
             if errors:
