@@ -767,6 +767,127 @@ def show_detailed_evaluation_view(evaluation):
     
     with col2_export:
         st.info("💡 **Tip**: Download the PDF report for archival or distribution purposes.")
+    
+    # AI Performance Evaluation Comparison View
+    if st.session_state.get('show_ai_comparison', False):
+        st.markdown("---")
+        st.subheader("🤖 AI Performance Evaluation - Comparison Report")
+        st.caption("Showing AI-generated content vs. Supervisor revisions")
+        
+        # Close button
+        if st.button("✖️ Close Comparison", key="close_comparison"):
+            st.session_state.show_ai_comparison = False
+            st.rerun()
+        
+        if st.session_state.get('ai_original_data'):
+            ai_data = st.session_state.ai_original_data
+            current_data = {
+                'justifications': st.session_state.get('justifications', {}),
+                'scores': st.session_state.get('scores', {}),
+                'observation_notes': st.session_state.get('observation_notes', '')
+            }
+            
+            # Summary metrics
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                ai_saved_time = ai_data.get('saved_at', 'Unknown')
+                st.metric("AI Version Saved", ai_saved_time[:19] if len(ai_saved_time) > 19 else ai_saved_time)
+            with col2:
+                total_items = len(items)
+                st.metric("Total Competencies", total_items)
+            with col3:
+                modified_count = sum(1 for item_id in ai_data.get('justifications', {})
+                                   if ai_data['justifications'].get(item_id, '') != current_data['justifications'].get(item_id, ''))
+                st.metric("Modified Justifications", modified_count)
+            with col4:
+                score_changes = sum(1 for item_id in ai_data.get('scores', {})
+                                  if ai_data['scores'].get(item_id) != current_data['scores'].get(item_id))
+                st.metric("Score Changes", score_changes)
+            
+            # Detailed comparison for each competency
+            st.markdown("### 📋 Competency-by-Competency Comparison")
+            
+            for item in items:
+                item_id = item['id']
+                ai_justification = ai_data.get('justifications', {}).get(item_id, '')
+                current_justification = current_data['justifications'].get(item_id, '')
+                ai_score = ai_data.get('scores', {}).get(item_id)
+                current_score = current_data['scores'].get(item_id)
+                
+                # Check if there are differences
+                has_changes = (ai_justification != current_justification) or (ai_score != current_score)
+                
+                with st.expander(f"{item['name']} {'🔄' if has_changes else '✓'}", expanded=has_changes):
+                    # Score comparison
+                    if ai_score is not None or current_score is not None:
+                        score_col1, score_col2 = st.columns(2)
+                        with score_col1:
+                            st.markdown("**AI Score:**")
+                            if ai_score is not None:
+                                st.write(f"Level {ai_score}")
+                            else:
+                                st.write("Not scored")
+                        with score_col2:
+                            st.markdown("**Final Score:**")
+                            if current_score is not None:
+                                st.write(f"Level {current_score}")
+                                if ai_score is not None and ai_score != current_score:
+                                    change = current_score - ai_score
+                                    st.caption(f"{'↑' if change > 0 else '↓'} {abs(change)} level{'s' if abs(change) > 1 else ''}")
+                            else:
+                                st.write("Not scored")
+                    
+                    # Justification comparison
+                    st.markdown("---")
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("**🤖 AI-Generated Justification:**")
+                        if ai_justification:
+                            st.text_area(f"AI: {item_id}", ai_justification, height=200, disabled=True, key=f"ai_just_{item_id}")
+                        else:
+                            st.info("No AI justification generated")
+                    
+                    with col2:
+                        st.markdown("**👨‍🏫 Supervisor Final Version:**")
+                        if current_justification:
+                            st.text_area(f"Final: {item_id}", current_justification, height=200, disabled=True, key=f"final_just_{item_id}")
+                        else:
+                            st.info("No justification provided")
+                    
+                    # Highlight differences
+                    if has_changes and ai_justification and current_justification:
+                        st.caption("💡 Supervisor made modifications to this competency")
+            
+            # Export comparison data
+            st.markdown("### 📊 Export Comparison Data")
+            comparison_data = {
+                'evaluation_info': {
+                    'student_name': student_name,
+                    'evaluator_name': evaluator_name,
+                    'evaluation_date': evaluation_date.isoformat() if 'evaluation_date' in locals() else datetime.now().isoformat(),
+                    'rubric_type': rubric_type
+                },
+                'ai_original': ai_data,
+                'supervisor_final': current_data,
+                'comparison_summary': {
+                    'total_competencies': len(items),
+                    'modified_justifications': modified_count,
+                    'score_changes': score_changes,
+                    'ai_version_saved_at': ai_data.get('saved_at', 'Unknown')
+                },
+                'export_timestamp': datetime.now().isoformat()
+            }
+            
+            comparison_json = json.dumps(comparison_data, indent=2)
+            
+            st.download_button(
+                "📥 Download Comparison Data (JSON)",
+                comparison_json,
+                f"ai_comparison_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                "application/json",
+                help="Download the complete comparison data for research analysis"
+            )
 
 def show_research_comparison():
     """Research comparison view for AI vs Supervisor modifications"""
@@ -1268,6 +1389,31 @@ def show_evaluation_form():
         else:
             st.caption("Enter evaluation information manually")
         
+        # Add synthetic data button
+        if st.button("🧪 Fill with Test Data", key="fill_synthetic_data", 
+                    help="Auto-fill form with synthetic data for testing"):
+            import random
+            from data.sample_observation_notes import get_sample_observation_notes
+            
+            # Generate synthetic names
+            student_first_names = ["Sarah", "Michael", "Jessica", "David", "Emily", "John", "Amanda", "Robert"]
+            student_last_names = ["Johnson", "Smith", "Williams", "Brown", "Davis", "Miller", "Wilson", "Moore"]
+            
+            supervisor_first_names = ["Dr. Patricia", "Dr. James", "Dr. Linda", "Dr. William", "Dr. Susan", "Dr. Richard"]
+            supervisor_last_names = ["Anderson", "Thompson", "Martinez", "Taylor", "Clark", "Rodriguez", "Lewis", "Walker"]
+            
+            # Set synthetic data in session state
+            st.session_state.student_name = f"{random.choice(student_first_names)} {random.choice(student_last_names)}"
+            st.session_state.evaluator_name = f"{random.choice(supervisor_first_names)} {random.choice(supervisor_last_names)}"
+            st.session_state.subject_area_manual = random.choice(["Mathematics", "Science", "English Language Arts", "Social Studies"])
+            st.session_state.school_name_manual = random.choice(["Lincoln Elementary", "Washington Middle School", "Jefferson High School", "Roosevelt Academy"])
+            st.session_state.grade_levels_manual = random.choice(["3rd Grade", "4th Grade", "5th Grade", "6th Grade", "7th Grade", "8th Grade"])
+            st.session_state.class_size_manual = random.randint(18, 28)
+            st.session_state.observation_notes = get_sample_observation_notes()
+            
+            st.success("✅ Test data filled! Observation notes have been pre-populated.")
+            st.rerun()
+        
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -1469,6 +1615,8 @@ def show_evaluation_form():
         st.session_state.ai_version_saved = False
     if 'ai_original_data' not in st.session_state:
         st.session_state.ai_original_data = None
+    if 'show_ai_comparison' not in st.session_state:
+        st.session_state.show_ai_comparison = False
     
     # STEP 3: Classroom Observation Notes
     st.subheader("📝 Step 3: Classroom Observation Notes")
@@ -1862,9 +2010,6 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 if st.session_state.get('ai_analyses'):
                     st.success("✅ AI Analysis Complete")
                     st.metric("Competencies Analyzed", len(st.session_state.ai_analyses))
-                    
-                    # Debug info
-                    st.caption(f"Debug: ai_version_saved = {st.session_state.get('ai_version_saved', False)}")
                     
                     # Save AI Original Version button
                     if not st.session_state.get('ai_version_saved', False):
@@ -2598,13 +2743,28 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 status_indicator = "DRAFT" if (len(st.session_state.scores) < len(items)) else "COMPLETE"
                 filename = f"{student_name.replace(' ', '_')}_{rubric_type}_{status_indicator}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 
-                st.download_button(
-                    label="📄 Download Current Report (PDF)",
-                    data=pdf_bytes,
-                    file_name=filename,
-                    mime="application/pdf",
-                    help="Download the evaluation report in its current state"
-                )
+                col_dl1, col_dl2 = st.columns(2)
+                
+                with col_dl1:
+                    st.download_button(
+                        label="📄 Download Current Report (PDF)",
+                        data=pdf_bytes,
+                        file_name=filename,
+                        mime="application/pdf",
+                        help="Download the evaluation report in its current state"
+                    )
+                
+                with col_dl2:
+                    # AI Performance Evaluation button - shows comparison
+                    if st.session_state.get('ai_version_saved', False) and st.session_state.get('ai_original_data'):
+                        if st.button("🤖 AI Performance Evaluation", key="ai_performance_eval",
+                                   help="View comparison between AI-generated and supervisor-revised feedback"):
+                            st.session_state.show_ai_comparison = True
+                            st.rerun()
+                    else:
+                        st.button("🤖 AI Performance Evaluation", key="ai_performance_eval_disabled",
+                                 disabled=True,
+                                 help="Save AI version first to enable comparison")
                 
                 # Show status information
                 if len(st.session_state.scores) < len(items):
