@@ -1,0 +1,52 @@
+[Unit]
+Description=AI-STER Student Teaching Evaluation System with Ngrok
+Documentation=https://github.com/memari-majid/AI-STER
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=%i
+Group=%i
+WorkingDirectory=%h/Downloads/AI-STER
+
+# Environment setup
+Environment="PATH=/home/%i/.local/bin:%h/Downloads/AI-STER/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="HOME=/home/%i"
+Environment="PYTHONUNBUFFERED=1"
+
+# Pre-start checks
+ExecStartPre=/bin/bash -c 'if [ ! -f %h/Downloads/AI-STER/venv/bin/activate ]; then echo "Virtual environment not found"; exit 1; fi'
+ExecStartPre=/bin/bash -c 'if ! command -v ngrok &> /dev/null && [ ! -f /home/%i/.local/bin/ngrok ]; then echo "Ngrok not installed"; exit 1; fi'
+
+# Start command with domain
+ExecStart=%h/Downloads/AI-STER/deploy/start_with_ngrok.sh --detached --domain aister.ngrok.app
+
+# Stop command
+ExecStop=%h/Downloads/AI-STER/deploy/stop_deployment.sh
+
+# Process management
+Restart=always
+RestartSec=10
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Security hardening (optional - uncomment as needed)
+# NoNewPrivileges=true
+# PrivateTmp=true
+# ProtectSystem=strict
+# ProtectHome=read-only
+# ReadWritePaths=%h/Downloads/AI-STER/data_storage /home/%i/.ai-ster
+
+# Resource limits (optional - adjust as needed)
+# MemoryLimit=1G
+# CPUQuota=80%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-ster-ngrok
+
+[Install]
+WantedBy=multi-user.target

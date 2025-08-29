@@ -1,0 +1,165 @@
+# Ngrok Configuration Template for AI-STER
+# Copy this file to ~/.config/ngrok/ngrok.yml and customize
+
+version: "2"
+
+# Your authtoken from https://dashboard.ngrok.com/auth
+# REQUIRED: Replace with your actual authtoken
+authtoken: YOUR_AUTHTOKEN_HERE
+
+# Region configuration (optional)
+# Options: us (default), eu, ap, au, sa, jp, in
+# Choose the closest region for better latency
+region: us
+
+# Web interface configuration
+web_addr: 127.0.0.1:4040
+
+# Tunnel definitions
+tunnels:
+  # Main AI-STER tunnel
+  ai-ster:
+    proto: http
+    addr: 8501
+    inspect: true
+    
+    # Basic auth (optional - adds extra security layer)
+    # auth: "username:password"
+    
+    # Custom subdomain (requires paid plan)
+    # subdomain: my-ai-ster
+    
+    # Custom domain (requires paid plan)
+    # hostname: ai-ster.example.com
+    
+    # Request headers to add
+    host_header: "localhost:8501"
+    
+    # Websocket support (required for Streamlit)
+    bind_tls: true
+
+  # Development tunnel with different settings (optional)
+  ai-ster-dev:
+    proto: http
+    addr: 8502
+    inspect: true
+    # subdomain: ai-ster-dev
+
+# Global tunnel configuration
+console_ui: true
+console_ui_color: transparent
+log_level: info
+log_format: term
+
+# Update check
+update_check: true
+update_channel: stable
+
+# ===========================================
+# ADVANCED CONFIGURATION (Paid Plans Only)
+# ===========================================
+
+# IP Restrictions (Pro plan and above)
+# ip_restriction:
+#   # Allow specific IPs/CIDRs
+#   allow_cidrs:
+#     - 1.2.3.4/32           # Single IP
+#     - 10.0.0.0/8           # Private network
+#     - 192.168.1.0/24       # Local subnet
+#   
+#   # Deny all others (implicit when allow_cidrs is set)
+#   # Or explicitly deny specific ranges
+#   deny_cidrs:
+#     - 0.0.0.0/0            # Deny all (use with allow_cidrs)
+
+# OAuth Configuration (Business plan)
+# oauth:
+#   provider: google
+#   client_id: YOUR_OAUTH_CLIENT_ID
+#   client_secret: YOUR_OAUTH_CLIENT_SECRET
+#   scopes:
+#     - email
+#     - profile
+#   allowed_emails:
+#     - user@example.com
+#   allowed_domains:
+#     - example.com
+
+# Webhook Verification (Pro plan and above)
+# webhook_verification:
+#   provider: slack
+#   secret: YOUR_WEBHOOK_SECRET
+
+# Circuit Breaker (Business plan)
+# circuit_breaker:
+#   error_threshold_percentage: 50
+#   trigger_threshold: 20
+#   duration: 60s
+
+# Compression
+# compression: true
+
+# Request/Response Modification (Business plan)
+# request_header_add:
+#   X-Custom-Header: "AI-STER"
+# response_header_add:
+#   X-Powered-By: "AI-STER"
+# request_header_remove:
+#   - User-Agent
+# response_header_remove:
+#   - Server
+
+# Traffic Policy (Enterprise)
+# traffic_policy:
+#   - name: "rate-limit"
+#     expressions:
+#       - "req.ClientIP in ['1.2.3.4', '5.6.7.8']"
+#     actions:
+#       - type: "rate-limit"
+#         config:
+#           capacity: 100
+#           rate: "10/m"
+#           bucket_key: "req.ClientIP"
+
+# ===========================================
+# USAGE EXAMPLES
+# ===========================================
+
+# 1. Basic usage (after copying and configuring):
+#    ngrok start ai-ster
+
+# 2. Start specific tunnel:
+#    ngrok start ai-ster
+
+# 3. Start all tunnels:
+#    ngrok start --all
+
+# 4. Override configuration:
+#    ngrok http 8501 --subdomain=my-custom-subdomain
+
+# ===========================================
+# NOTES
+# ===========================================
+
+# - Free plan limitations:
+#   * Random subdomain (changes on restart)
+#   * 1 online tunnel at a time
+#   * 40 connections per minute
+#   * 4 tunnels per agent
+
+# - Basic plan ($8/month):
+#   * 1 reserved subdomain
+#   * 1 online tunnel at a time
+#   * 60 connections per minute
+
+# - Pro plan ($20/month):
+#   * 2 reserved subdomains
+#   * 2 online tunnels
+#   * IP restrictions
+#   * 120 connections per minute
+
+# - Business plan (custom pricing):
+#   * Unlimited tunnels
+#   * Custom domains
+#   * SSO/SAML
+#   * SLA support
