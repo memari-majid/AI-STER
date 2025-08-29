@@ -3477,7 +3477,7 @@ def show_settings():
     
     # Initialize session state for API key
     if 'api_key' not in st.session_state:
-        st.session_state.api_key = os.getenv('OPENAI_API_KEY', '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')
+        st.session_state.api_key = os.getenv('OPENAI_API_KEY', '')
     
     # Check current API key status
     current_key = os.getenv('OPENAI_API_KEY', '') or st.session_state.api_key
