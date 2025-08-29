@@ -67,6 +67,41 @@ class PDFService:
             textColor=colors.HexColor('#1f4e79')
         ))
         
+        # Competency header style
+        self.styles.add(ParagraphStyle(
+            name='CompetencyHeader',
+            parent=self.styles['Heading3'],
+            fontSize=14,
+            fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#2e5c8a'),
+            spaceBefore=12,
+            spaceAfter=6
+        ))
+        
+        # Justification style
+        self.styles.add(ParagraphStyle(
+            name='JustificationStyle',
+            parent=self.styles['Normal'],
+            fontSize=11,
+            leading=14,
+            alignment=TA_JUSTIFY,
+            spaceAfter=12
+        ))
+        
+        # Bold style
+        self.styles.add(ParagraphStyle(
+            name='CustomBold',
+            parent=self.styles['Normal'],
+            fontName='Helvetica-Bold'
+        ))
+        
+        # Italic style
+        self.styles.add(ParagraphStyle(
+            name='CustomItalic',
+            parent=self.styles['Normal'],
+            fontName='Helvetica-Oblique'
+        ))
+        
     def generate_evaluation_pdf(self, evaluation_data: Dict[str, Any]) -> bytes:
         """
         Generate a PDF report from evaluation data
@@ -389,5 +424,234 @@ class PDFService:
                 textColor=colors.grey
             )
         ))
+        
+        return elements
+    
+    def generate_ai_version_pdf(self, data: Dict[str, Any]) -> bytes:
+        """
+        Generate a PDF report for AI-generated original version
+        
+        Args:
+            data: Dictionary containing AI-generated evaluation information
+            
+        Returns:
+            PDF file as bytes
+        """
+        # Create PDF buffer
+        buffer = io.BytesIO()
+        
+        # Create the PDF document
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=letter,
+            rightMargin=72,
+            leftMargin=72,
+            topMargin=72,
+            bottomMargin=72
+        )
+        
+        # Build the content
+        elements = []
+        
+        # Add title
+        elements.append(Paragraph("AI-STER: AI-Generated Original Version", self.styles['CustomTitle']))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Add warning/notice
+        notice_style = ParagraphStyle(
+            name='Notice',
+            parent=self.styles['Normal'],
+            fontSize=12,
+            textColor=colors.HexColor('#d9534f'),
+            alignment=TA_CENTER,
+            spaceAfter=20
+        )
+        notice_text = "This document contains the original AI-generated content before any supervisor modifications"
+        elements.append(Paragraph(notice_text, notice_style))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Add metadata section
+        elements.extend(self._create_ai_version_header(data))
+        
+        # Add generation summary
+        elements.extend(self._create_ai_generation_summary(data))
+        
+        # Add observation notes section
+        if data.get('observation_notes'):
+            elements.append(PageBreak())
+            elements.extend(self._create_observation_notes_section(data))
+        
+        # Add competency analyses
+        elements.append(PageBreak())
+        elements.extend(self._create_ai_competency_analyses(data))
+        
+        # Add footer
+        elements.append(Spacer(1, 0.5*inch))
+        elements.extend(self._create_ai_version_footer(data))
+        
+        # Build PDF
+        doc.build(elements)
+        
+        # Get PDF value
+        buffer.seek(0)
+        return buffer.getvalue()
+    
+    def _create_ai_version_header(self, data: Dict[str, Any]) -> list:
+        """Create the AI version PDF header section"""
+        elements = []
+        
+        # Metadata table
+        metadata = [
+            ['Student Teacher:', data.get('student_name', 'N/A')],
+            ['Evaluator:', data.get('evaluator_name', 'N/A')],
+            ['Evaluation Type:', data.get('rubric_type', 'STER').replace('_', ' ').title()],
+            ['Date Generated:', data.get('date', datetime.now().strftime('%Y-%m-%d'))],
+            ['Time Generated:', data.get('time_generated', datetime.now().strftime('%H:%M:%S'))],
+            ['School/Site:', data.get('school', 'N/A')],
+            ['Subject Area:', data.get('subject', 'N/A')],
+            ['Grade Levels:', data.get('grade_levels', 'N/A')],
+            ['Class Size:', str(data.get('class_size', 'N/A'))]
+        ]
+        
+        metadata_table = Table(metadata, colWidths=[2.5*inch, 4*inch])
+        metadata_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 11),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        
+        elements.append(metadata_table)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        return elements
+    
+    def _create_ai_generation_summary(self, data: Dict[str, Any]) -> list:
+        """Create AI generation summary section"""
+        elements = []
+        
+        elements.append(Paragraph("AI Analysis Summary", self.styles['SectionHeader']))
+        
+        # Summary box
+        summary_data = [
+            ['Total Competencies Analyzed:', str(data.get('competencies_analyzed', 0))],
+            ['AI Model:', 'GPT-5-nano (Cost-optimized)'],
+            ['Analysis Based On:', 'Classroom observation notes' + (' and lesson plan' if data.get('lesson_plan_analysis') else '')],
+            ['Status:', 'Original AI-generated content - unmodified']
+        ]
+        
+        summary_table = Table(summary_data, colWidths=[2.5*inch, 4*inch])
+        summary_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),
+            ('BORDER', (0, 0), (-1, -1), 1, colors.HexColor('#dee2e6')),
+            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('PADDING', (0, 0), (-1, -1), 12),
+        ]))
+        
+        elements.append(summary_table)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        return elements
+    
+    def _create_observation_notes_section(self, data: Dict[str, Any]) -> list:
+        """Create observation notes section"""
+        elements = []
+        
+        elements.append(Paragraph("Classroom Observation Notes", self.styles['CustomSubtitle']))
+        elements.append(Paragraph("(Used as basis for AI analysis)", self.styles['CustomItalic']))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Observation notes in a bordered box
+        notes_text = data.get('observation_notes', 'No observation notes provided')
+        notes_style = ParagraphStyle(
+            name='ObservationNotes',
+            parent=self.styles['Normal'],
+            fontSize=10,
+            leading=14,
+            alignment=TA_JUSTIFY,
+            spaceAfter=12
+        )
+        
+        # Split notes into paragraphs for better formatting
+        notes_lines = notes_text.split('\n')
+        for line in notes_lines:
+            if line.strip():
+                elements.append(Paragraph(line, notes_style))
+        
+        return elements
+    
+    def _create_ai_competency_analyses(self, data: Dict[str, Any]) -> list:
+        """Create AI competency analyses section"""
+        elements = []
+        
+        elements.append(Paragraph("AI-Generated Competency Analyses", self.styles['CustomSubtitle']))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Get items for proper names
+        items = data.get('items', [])
+        item_dict = {item['id']: item for item in items}
+        
+        # AI analyses
+        ai_analyses = data.get('ai_analyses', {})
+        justifications = data.get('justifications', {})
+        scores = data.get('scores', {})
+        
+        for item_id, analysis in ai_analyses.items():
+            item = item_dict.get(item_id, {})
+            
+            # Competency header
+            comp_header = f"{item.get('name', item_id)}"
+            elements.append(Paragraph(comp_header, self.styles['CompetencyHeader']))
+            
+            # Score if available
+            if item_id in scores and scores[item_id] is not None:
+                score_text = f"AI Suggested Score: Level {scores[item_id]}"
+                elements.append(Paragraph(score_text, self.styles['ScoreStyle']))
+            
+            # AI analysis/justification
+            analysis_text = analysis or justifications.get(item_id, 'No AI analysis generated')
+            elements.append(Paragraph("AI Analysis:", self.styles['CustomBold']))
+            elements.append(Paragraph(analysis_text, self.styles['JustificationStyle']))
+            
+            elements.append(Spacer(1, 0.3*inch))
+        
+        return elements
+    
+    def _create_ai_version_footer(self, data: Dict[str, Any]) -> list:
+        """Create footer for AI version PDF"""
+        elements = []
+        
+        # Separator line
+        line_data = [['']]
+        line_table = Table(line_data, colWidths=[6.5*inch])
+        line_table.setStyle(TableStyle([
+            ('LINEABOVE', (0, 0), (-1, 0), 1, colors.black),
+        ]))
+        elements.append(line_table)
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Footer information
+        footer_style = ParagraphStyle(
+            name='Footer',
+            parent=self.styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor('#6c757d'),
+            alignment=TA_CENTER
+        )
+        
+        if data.get('is_redownload'):
+            footer_text = f"Originally generated: {data.get('time_generated', 'Unknown')} | Re-downloaded: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        else:
+            footer_text = f"Generated by AI-STER on {datetime.now().strftime('%Y-%m-%d at %H:%M:%S')}"
+        
+        elements.append(Paragraph(footer_text, footer_style))
+        elements.append(Paragraph("This is an AI-generated document for research and review purposes", footer_style))
         
         return elements
