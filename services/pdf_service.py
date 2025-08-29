@@ -781,9 +781,16 @@ class PDFService:
         
         # Footer
         elements.append(Spacer(1, 0.5*inch))
+        footer_style = ParagraphStyle(
+            name='ComparisonFooter',
+            parent=self.styles['Normal'],
+            fontSize=8,
+            textColor=colors.HexColor('#666666'),
+            alignment=TA_CENTER
+        )
         elements.append(Paragraph(
             f"Report generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}",
-            self.styles['Footer']
+            footer_style
         ))
         
         # Build PDF
