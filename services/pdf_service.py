@@ -538,7 +538,7 @@ class PDFService:
         # Summary box
         summary_data = [
             ['Total Competencies Analyzed:', str(data.get('competencies_analyzed', 0))],
-            ['AI Model:', 'GPT-5-mini (Balanced)'],
+            ['AI Model:', f'{data.get("model_used", "gpt-5-mini")}'],
             ['Analysis Based On:', 'Classroom observation notes' + (' and lesson plan' if data.get('lesson_plan_analysis') else '')],
             ['Status:', 'Original AI-generated content - unmodified']
         ]
