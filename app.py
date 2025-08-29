@@ -9,7 +9,7 @@ This software is proprietary and confidential property of Utah Valley University
 School of Education. Licensed for educational use only within accredited 
 educational institutions for student teacher evaluation and assessment.
 
-For licensing inquiries: education@uvu.edu
+For licensing inquiries: email school_of_education@uvu.edu
 
 IMPORTANT: This software is protected by copyright law. Unauthorized copying,
 distribution, or modification is strictly prohibited.
@@ -900,8 +900,8 @@ def show_research_comparison():
         st.write("To use this feature:")
         st.write("1. Create a new evaluation")
         st.write("2. Generate AI analysis")
-        st.write("3. Click '💾 Save AI Version' button before making modifications")
-        st.write("4. Complete the evaluation with your modifications")
+        st.write("3. Make your modifications to the evaluation")
+        st.write("4. Complete the evaluation")
         return
     
     # Selection dropdown
@@ -1609,8 +1609,7 @@ def show_evaluation_form():
         st.session_state.ai_analyses = {}
     if 'current_evaluation_id' not in st.session_state:
         st.session_state.current_evaluation_id = None
-    if 'ai_version_saved' not in st.session_state:
-        st.session_state.ai_version_saved = False
+
     if 'ai_original_data' not in st.session_state:
         st.session_state.ai_original_data = None
     if 'show_ai_comparison' not in st.session_state:
@@ -2009,13 +2008,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     st.success("✅ AI Analysis Complete")
                     st.metric("Competencies Analyzed", len(st.session_state.ai_analyses))
                     
-                    # Simple status indicator
-                    if st.session_state.get('ai_version_saved', False):
-                        st.info("📌 AI original version saved - download available below")
-                    
                     if st.button("🔄 Regenerate Analysis", key="regenerate_analysis"):
                         st.session_state.ai_analyses = {}
-                        st.session_state.ai_version_saved = False
                         st.session_state.ai_original_data = None
                         st.rerun()
                 else:
@@ -2451,8 +2445,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'class_size': extracted_info.get('class_size', 20)
             }
             
-            # Add AI original data if saved
-            if st.session_state.get('ai_version_saved', False) and st.session_state.get('ai_original_data'):
+            # Add AI original data if available
+            if st.session_state.get('ai_original_data'):
                 evaluation['ai_original'] = st.session_state.ai_original_data
                 evaluation['has_ai_original'] = True
                 evaluation['ai_original_saved_at'] = st.session_state.ai_original_data.get('saved_at')
@@ -2524,8 +2518,8 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'class_size': extracted_info.get('class_size', 20)
             }
             
-            # Add AI original data if saved
-            if st.session_state.get('ai_version_saved', False) and st.session_state.get('ai_original_data'):
+            # Add AI original data if available
+            if st.session_state.get('ai_original_data'):
                 evaluation['ai_original'] = st.session_state.ai_original_data
                 evaluation['has_ai_original'] = True
                 evaluation['ai_original_saved_at'] = st.session_state.ai_original_data.get('saved_at')
@@ -2739,102 +2733,23 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     )
                 
                 with col_dl2:
-                    # AI Version Download button
-                    if st.session_state.get('ai_analyses'):
-                        if not st.session_state.get('ai_version_saved', False):
-                            try:
-                                # Prepare data for AI version PDF
-                                ai_version_data = {
-                                    'evaluation_type': 'AI_ORIGINAL_VERSION',
-                                    'rubric_type': rubric_type,
-                                    'student_name': student_name,
-                                    'evaluator_name': evaluator_name,
-                                    'date': datetime.now().strftime('%Y-%m-%d'),
-                                    'time_generated': datetime.now().strftime('%H:%M:%S'),
-                                    'school': st.session_state.get('school_name', 'N/A'),
-                                    'subject': st.session_state.get('subject_area', 'N/A'),
-                                    'grade_levels': st.session_state.get('grade_levels', 'N/A'),
-                                    'class_size': st.session_state.get('class_size', 'N/A'),
-                                    'observation_notes': st.session_state.get('observation_notes', ''),
-                                    'lesson_plan_analysis': st.session_state.get('lesson_plan_analysis', None),
-                                    'scores': st.session_state.get('scores', {}),
-                                    'justifications': st.session_state.get('justifications', {}),
-                                    'ai_analyses': st.session_state.get('ai_analyses', {}),
-                                    'competencies_analyzed': len(st.session_state.get('ai_analyses', {})),
-                                    'items': items,  # Pass the competency items for proper formatting
-                                    'is_ai_original': True  # Flag to indicate this is AI original version
-                                }
-                                
-                                # Generate AI version PDF using existing PDF service
-                                ai_pdf_bytes = pdf_service.generate_ai_version_pdf(ai_version_data)
-                                
-                                # Store AI data in session state BEFORE the download button
-                                if not st.session_state.get('ai_version_saved', False):
-                                    st.session_state.ai_original_data = {
-                                        'justifications': st.session_state.get('justifications', {}).copy(),
-                                        'ai_analyses': st.session_state.get('ai_analyses', {}).copy(),
-                                        'scores': st.session_state.get('scores', {}).copy(),
-                                        'observation_notes': st.session_state.get('observation_notes', ''),
-                                        'lesson_plan_analysis': st.session_state.get('lesson_plan_analysis', None),
-                                        'saved_at': datetime.now().isoformat()
-                                    }
-                                    st.session_state.ai_version_saved = True
-                                
-                                st.download_button(
-                                    label="💾 Save AI Version (PDF)",
-                                    data=ai_pdf_bytes,
-                                    file_name=f"AI_Original_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                                    mime="application/pdf",
-                                    key="save_ai_version_download",
-                                    help="Download the AI-generated content as a PDF before making modifications"
-                                )
-                            except Exception as e:
-                                st.error(f"Error generating AI version PDF: {str(e)}")
-                                # Fallback to JSON if PDF fails
-                                st.button("💾 Save AI Version", disabled=True, help="PDF generation failed")
-                        else:
-                            # Re-download option
-                            try:
-                                ai_redownload_data = {
-                                    'evaluation_type': 'AI_ORIGINAL_VERSION',
-                                    'rubric_type': rubric_type,
-                                    'student_name': student_name,
-                                    'evaluator_name': evaluator_name,
-                                    'date': datetime.now().strftime('%Y-%m-%d'),
-                                    'time_generated': st.session_state.ai_original_data.get('saved_at', 'Unknown'),
-                                    'school': st.session_state.get('school_name', 'N/A'),
-                                    'subject': st.session_state.get('subject_area', 'N/A'),
-                                    'grade_levels': st.session_state.get('grade_levels', 'N/A'),
-                                    'class_size': st.session_state.get('class_size', 'N/A'),
-                                    'observation_notes': st.session_state.ai_original_data.get('observation_notes', ''),
-                                    'lesson_plan_analysis': st.session_state.ai_original_data.get('lesson_plan_analysis', None),
-                                    'scores': st.session_state.ai_original_data.get('scores', {}),
-                                    'justifications': st.session_state.ai_original_data.get('justifications', {}),
-                                    'ai_analyses': st.session_state.ai_original_data.get('ai_analyses', {}),
-                                    'competencies_analyzed': len(st.session_state.ai_original_data.get('ai_analyses', {})),
-                                    'items': items,
-                                    'is_ai_original': True,
-                                    'is_redownload': True
-                                }
-                                
-                                ai_pdf_bytes = pdf_service.generate_ai_version_pdf(ai_redownload_data)
-                                
-                                st.download_button(
-                                    label="📥 Re-download AI Version (PDF)",
-                                    data=ai_pdf_bytes,
-                                    file_name=f"AI_Original_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                                    mime="application/pdf",
-                                    key="redownload_ai_version",
-                                    help="Download the previously saved AI version again"
-                                )
-                            except Exception as e:
-                                st.error(f"Error generating AI version PDF: {str(e)}")
-                    else:
-                        st.button("💾 Save AI Version", disabled=True, help="Generate AI analysis first")
+                    # Store AI original data automatically when AI analysis is available
+                    if st.session_state.get('ai_analyses') and not st.session_state.get('ai_original_data'):
+                        st.session_state.ai_original_data = {
+                            'justifications': st.session_state.get('justifications', {}).copy(),
+                            'ai_analyses': st.session_state.get('ai_analyses', {}).copy(),
+                            'scores': st.session_state.get('scores', {}).copy(),
+                            'observation_notes': st.session_state.get('observation_notes', ''),
+                            'lesson_plan_analysis': st.session_state.get('lesson_plan_analysis', None),
+                            'saved_at': datetime.now().isoformat()
+                        }
+                    
+                    # Empty column for spacing (removed Save AI Version button)
+                    st.empty()
                 
                 with col_dl3:
                     # AI Performance Evaluation button - shows comparison
-                    if st.session_state.get('ai_version_saved', False) and st.session_state.get('ai_original_data'):
+                    if st.session_state.get('ai_analyses'):
                         if st.button("🤖 AI Performance Evaluation", key="ai_performance_eval",
                                    help="View comparison between AI-generated and supervisor-revised feedback"):
                             st.session_state.show_ai_comparison = True
@@ -2842,7 +2757,7 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     else:
                         st.button("🤖 AI Performance Evaluation", key="ai_performance_eval_disabled",
                                  disabled=True,
-                                 help="Save AI version first to enable comparison")
+                                 help="Generate AI analysis first to enable comparison")
                 
                 # Show status information
                 if len(st.session_state.scores) < len(items):
