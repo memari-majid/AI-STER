@@ -2958,15 +2958,29 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'export_timestamp': datetime.now().isoformat()
             }
             
-            comparison_json = json.dumps(comparison_data, indent=2)
-            
-            st.download_button(
-                "📥 Download Comparison Data (JSON)",
-                comparison_json,
-                f"ai_comparison_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                "application/json",
-                help="Download the complete comparison data for research analysis"
-            )
+            # Generate PDF comparison report
+            try:
+                comparison_data['items'] = items  # Add items for PDF generation
+                comparison_pdf_bytes = pdf_service.generate_comparison_pdf(comparison_data)
+                
+                st.download_button(
+                    "📥 Download Comparison Report (PDF)",
+                    comparison_pdf_bytes,
+                    f"AI_Comparison_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                    "application/pdf",
+                    help="Download the comparison report as a formatted PDF"
+                )
+            except Exception as e:
+                st.error(f"Error generating comparison PDF: {str(e)}")
+                # Fallback to JSON
+                comparison_json = json.dumps(comparison_data, indent=2)
+                st.download_button(
+                    "📥 Download Comparison Data (JSON)",
+                    comparison_json,
+                    f"ai_comparison_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                    "application/json",
+                    help="Download the comparison data as JSON"
+                )
 
 def show_test_data():
     """Test data generation and management"""
