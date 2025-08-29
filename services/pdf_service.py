@@ -655,3 +655,145 @@ class PDFService:
         elements.append(Paragraph("This is an AI-generated document for research and review purposes", footer_style))
         
         return elements
+    
+    def generate_comparison_pdf(self, comparison_data: Dict[str, Any]) -> bytes:
+        """Generate PDF report for AI vs Supervisor comparison"""
+        doc = SimpleDocTemplate(
+            "temp_comparison.pdf",
+            pagesize=letter,
+            topMargin=0.75*inch,
+            bottomMargin=0.75*inch,
+            leftMargin=0.75*inch,
+            rightMargin=0.75*inch
+        )
+        
+        elements = []
+        
+        # Header
+        elements.append(Paragraph("AI Performance Evaluation - Comparison Report", self.styles['CustomTitle']))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Evaluation info
+        eval_info = comparison_data.get('evaluation_info', {})
+        info_data = [
+            ['Student Name:', eval_info.get('student_name', 'N/A')],
+            ['Evaluator:', eval_info.get('evaluator_name', 'N/A')],
+            ['Evaluation Date:', eval_info.get('evaluation_date', 'N/A')[:10] if eval_info.get('evaluation_date') else 'N/A'],
+            ['Rubric Type:', eval_info.get('rubric_type', 'N/A').replace('_', ' ').title()]
+        ]
+        
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.append(info_table)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Summary metrics
+        summary = comparison_data.get('comparison_summary', {})
+        elements.append(Paragraph("Comparison Summary", self.styles['SectionHeader']))
+        
+        summary_data = [
+            ['Total Competencies:', str(summary.get('total_competencies', 0))],
+            ['Modified Justifications:', str(summary.get('modified_justifications', 0))],
+            ['Score Changes:', str(summary.get('score_changes', 0))],
+            ['AI Version Saved:', summary.get('ai_version_saved_at', 'Unknown')[:19] if summary.get('ai_version_saved_at') else 'Unknown']
+        ]
+        
+        summary_table = Table(summary_data, colWidths=[2.5*inch, 3.5*inch])
+        summary_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#f0f0f0")),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.append(summary_table)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Detailed comparisons
+        elements.append(Paragraph("Competency-by-Competency Comparison", self.styles['SectionHeader']))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        ai_data = comparison_data.get('ai_original', {})
+        supervisor_data = comparison_data.get('supervisor_final', {})
+        items = comparison_data.get('items', [])
+        
+        for item in items:
+            item_id = item['id']
+            
+            # Only show items that have AI analysis
+            if item_id in ai_data.get('justifications', {}):
+                # Competency header
+                comp_title = f"{item['code']}: {item['title']}"
+                elements.append(Paragraph(comp_title, self.styles['CompetencyHeader']))
+                
+                # Create comparison table
+                ai_score = ai_data.get('scores', {}).get(item_id, 'Not scored')
+                supervisor_score = supervisor_data.get('scores', {}).get(item_id, 'Not scored')
+                ai_just = ai_data.get('justifications', {}).get(item_id, 'No justification')
+                supervisor_just = supervisor_data.get('justifications', {}).get(item_id, 'No justification')
+                
+                # Score comparison
+                score_changed = ai_score != supervisor_score
+                score_text = f"Score: {supervisor_score}"
+                if score_changed:
+                    score_text += f" (changed from {ai_score})"
+                
+                # Justification comparison
+                just_changed = ai_just != supervisor_just
+                
+                comp_data = []
+                comp_data.append([
+                    Paragraph("<b>AI Original</b>", self.styles['Normal']),
+                    Paragraph("<b>Supervisor Revised</b>", self.styles['Normal'])
+                ])
+                comp_data.append([
+                    Paragraph(f"Score: {ai_score}", self.styles['Normal']),
+                    Paragraph(score_text, self.styles['Normal'])
+                ])
+                comp_data.append([
+                    Paragraph(ai_just, self.styles['Normal']),
+                    Paragraph(supervisor_just, self.styles['Normal'])
+                ])
+                
+                comp_table = Table(comp_data, colWidths=[3*inch, 3*inch])
+                comp_table.setStyle(TableStyle([
+                    ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                    ('BACKGROUND', (0, 0), (1, 0), colors.HexColor("#e8e8e8")),
+                ]))
+                
+                elements.append(comp_table)
+                elements.append(Spacer(1, 0.2*inch))
+        
+        # Footer
+        elements.append(Spacer(1, 0.5*inch))
+        elements.append(Paragraph(
+            f"Report generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}",
+            self.styles['Footer']
+        ))
+        
+        # Build PDF
+        doc.build(elements)
+        
+        # Read and return PDF content
+        with open("temp_comparison.pdf", 'rb') as f:
+            pdf_content = f.read()
+        
+        # Clean up temp file
+        os.remove("temp_comparison.pdf")
+        
+        return pdf_content
