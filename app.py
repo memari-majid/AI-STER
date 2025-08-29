@@ -3085,6 +3085,13 @@ def show_settings():
         help=f"Currently using: {current_model}. Choose a different model to override for this session."
     )
     
+    # Update model if changed
+    if model != current_model and openai_service:
+        if st.button("🔄 Apply Model Change"):
+            openai_service.model = model
+            st.success(f"Model updated to {model}")
+            st.rerun()
+    
     # App Configuration
     st.subheader("📱 Application Settings")
     
