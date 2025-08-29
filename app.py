@@ -2011,23 +2011,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     st.success("✅ AI Analysis Complete")
                     st.metric("Competencies Analyzed", len(st.session_state.ai_analyses))
                     
-                    # Save AI Original Version button
-                    if not st.session_state.get('ai_version_saved', False):
-                        if st.button("💾 Save AI Version", key="save_ai_version", 
-                                   help="Save the current AI-generated content before making any modifications (for research purposes)"):
-                            # Store AI data in session state
-                            st.session_state.ai_original_data = {
-                                'justifications': st.session_state.get('justifications', {}).copy(),
-                                'ai_analyses': st.session_state.get('ai_analyses', {}).copy(),
-                                'scores': st.session_state.get('scores', {}).copy(),
-                                'observation_notes': st.session_state.get('observation_notes', ''),
-                                'saved_at': datetime.now().isoformat()
-                            }
-                            st.session_state.ai_version_saved = True
-                            st.success("✅ AI version saved! It will be preserved when you save the evaluation.")
-                            st.rerun()
-                    else:
-                        st.info("📌 AI original version saved")
+                    # Simple status indicator
+                    if st.session_state.get('ai_version_saved', False):
+                        st.info("📌 AI original version saved - download available below")
                     
                     if st.button("🔄 Regenerate Analysis", key="regenerate_analysis"):
                         st.session_state.ai_analyses = {}
@@ -2743,7 +2729,7 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 status_indicator = "DRAFT" if (len(st.session_state.scores) < len(items)) else "COMPLETE"
                 filename = f"{student_name.replace(' ', '_')}_{rubric_type}_{status_indicator}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 
-                col_dl1, col_dl2 = st.columns(2)
+                col_dl1, col_dl2, col_dl3 = st.columns(3)
                 
                 with col_dl1:
                     st.download_button(
@@ -2755,6 +2741,95 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     )
                 
                 with col_dl2:
+                    # AI Version Download button
+                    if st.session_state.get('ai_analyses'):
+                        if not st.session_state.get('ai_version_saved', False):
+                            # Prepare AI data with nice formatting
+                            ai_data_to_save = {
+                                "AI-STER Evaluation - AI Generated Version": {
+                                    "Generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    "System": "AI-STER v1.0"
+                                },
+                                "Evaluation Information": {
+                                    "Student Teacher": student_name,
+                                    "Evaluator": evaluator_name,
+                                    "Type": rubric_type.replace('_', ' ').title(),
+                                    "Date": datetime.now().strftime("%Y-%m-%d")
+                                },
+                                "AI Generated Content": {
+                                    "Competency Justifications": st.session_state.get('justifications', {}),
+                                    "AI Analyses": st.session_state.get('ai_analyses', {}),
+                                    "Initial Scores": st.session_state.get('scores', {}),
+                                    "Observation Notes Used": st.session_state.get('observation_notes', ''),
+                                    "Lesson Plan Analysis": st.session_state.get('lesson_plan_analysis', None)
+                                },
+                                "Summary": {
+                                    "Total Competencies Analyzed": len(st.session_state.get('ai_analyses', {})),
+                                    "Timestamp": datetime.now().isoformat(),
+                                    "Note": "This is the original AI-generated content before any supervisor modifications"
+                                }
+                            }
+                            
+                            # Convert to nicely formatted JSON
+                            ai_json = json.dumps(ai_data_to_save, indent=4, ensure_ascii=False, sort_keys=False)
+                            
+                            downloaded = st.download_button(
+                                label="💾 Save AI Version",
+                                data=ai_json,
+                                file_name=f"AI_Original_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                                mime="application/json",
+                                key="save_ai_version_download",
+                                help="Download the AI-generated content before making modifications"
+                            )
+                            
+                            if downloaded:
+                                # Store AI data in session state
+                                st.session_state.ai_original_data = {
+                                    'justifications': st.session_state.get('justifications', {}).copy(),
+                                    'ai_analyses': st.session_state.get('ai_analyses', {}).copy(),
+                                    'scores': st.session_state.get('scores', {}).copy(),
+                                    'observation_notes': st.session_state.get('observation_notes', ''),
+                                    'lesson_plan_analysis': st.session_state.get('lesson_plan_analysis', None),
+                                    'saved_at': datetime.now().isoformat()
+                                }
+                                st.session_state.ai_version_saved = True
+                                st.rerun()
+                        else:
+                            # Re-download option
+                            ai_redownload_data = {
+                                "AI-STER Evaluation - AI Generated Version (Re-download)": {
+                                    "Originally Saved": st.session_state.ai_original_data.get('saved_at', 'Unknown'),
+                                    "Re-downloaded": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    "System": "AI-STER v1.0"
+                                },
+                                "Evaluation Information": {
+                                    "Student Teacher": student_name,
+                                    "Evaluator": evaluator_name,
+                                    "Type": rubric_type.replace('_', ' ').title(),
+                                    "Date": datetime.now().strftime("%Y-%m-%d")
+                                },
+                                "AI Generated Content": {
+                                    "Competency Justifications": st.session_state.ai_original_data.get('justifications', {}),
+                                    "AI Analyses": st.session_state.ai_original_data.get('ai_analyses', {}),
+                                    "Initial Scores": st.session_state.ai_original_data.get('scores', {}),
+                                    "Observation Notes Used": st.session_state.ai_original_data.get('observation_notes', ''),
+                                    "Lesson Plan Analysis": st.session_state.ai_original_data.get('lesson_plan_analysis', None)
+                                },
+                                "Note": "This is the original AI-generated content that was saved before supervisor modifications"
+                            }
+                            
+                            st.download_button(
+                                label="📥 Re-download AI Version",
+                                data=json.dumps(ai_redownload_data, indent=4, ensure_ascii=False, sort_keys=False),
+                                file_name=f"AI_Original_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                                mime="application/json",
+                                key="redownload_ai_version",
+                                help="Download the previously saved AI version again"
+                            )
+                    else:
+                        st.button("💾 Save AI Version", disabled=True, help="Generate AI analysis first")
+                
+                with col_dl3:
                     # AI Performance Evaluation button - shows comparison
                     if st.session_state.get('ai_version_saved', False) and st.session_state.get('ai_original_data'):
                         if st.button("🤖 AI Performance Evaluation", key="ai_performance_eval",
