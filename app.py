@@ -2873,6 +2873,100 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 st.metric("Dispositions", f"{scored_dispositions}/{total_dispositions}")
         else:
             st.info("Fill in the basic information above to enable PDF download.")
+    
+    # AI Performance Evaluation Comparison View
+    if st.session_state.get('show_ai_comparison', False):
+        st.markdown("---")
+        st.subheader("🤖 AI Performance Evaluation - Comparison Report")
+        st.caption("Showing AI-generated content vs. Supervisor revisions")
+        
+        # Close button
+        if st.button("✖️ Close Comparison", key="close_comparison_form"):
+            st.session_state.show_ai_comparison = False
+            st.rerun()
+        
+        if st.session_state.get('ai_original_data'):
+            ai_data = st.session_state.ai_original_data
+            current_data = {
+                'justifications': st.session_state.get('justifications', {}),
+                'scores': st.session_state.get('scores', {}),
+                'observation_notes': st.session_state.get('observation_notes', '')
+            }
+            
+            # Summary metrics
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                ai_saved_time = ai_data.get('saved_at', 'Unknown')
+                st.metric("AI Version Saved", ai_saved_time[:19] if len(ai_saved_time) > 19 else ai_saved_time)
+            with col2:
+                total_items = len(items)
+                st.metric("Total Competencies", total_items)
+            with col3:
+                modified_count = sum(1 for item_id in ai_data.get('justifications', {})
+                                   if ai_data['justifications'].get(item_id, '') != current_data['justifications'].get(item_id, ''))
+                st.metric("Modified Justifications", modified_count)
+            with col4:
+                score_changes = sum(1 for item_id in ai_data.get('scores', {})
+                                  if ai_data['scores'].get(item_id) != current_data['scores'].get(item_id))
+                st.metric("Score Changes", score_changes)
+            
+            # Detailed comparison for each competency
+            st.markdown("### 📋 Competency-by-Competency Comparison")
+            
+            for item in items:
+                item_id = item['id']
+                if item_id in ai_data.get('justifications', {}):
+                    with st.expander(f"{item['code']}: {item['title']}", expanded=False):
+                        col1_comp, col2_comp = st.columns(2)
+                        
+                        with col1_comp:
+                            st.markdown("**🤖 AI Original:**")
+                            ai_score = ai_data.get('scores', {}).get(item_id, 'Not scored')
+                            st.info(f"Score: {ai_score}")
+                            st.write(ai_data['justifications'].get(item_id, 'No justification'))
+                        
+                        with col2_comp:
+                            st.markdown("**✏️ Supervisor Revised:**")
+                            current_score = current_data['scores'].get(item_id, 'Not scored')
+                            if current_score != ai_score:
+                                st.warning(f"Score: {current_score} (changed from {ai_score})")
+                            else:
+                                st.success(f"Score: {current_score} (unchanged)")
+                            
+                            current_just = current_data['justifications'].get(item_id, 'No justification')
+                            if current_just != ai_data['justifications'].get(item_id):
+                                st.markdown("📝 _Modified justification:_")
+                            st.write(current_just)
+            
+            # Export comparison data
+            st.markdown("### 📊 Export Comparison Data")
+            comparison_data = {
+                'evaluation_info': {
+                    'student_name': student_name,
+                    'evaluator_name': evaluator_name,
+                    'evaluation_date': evaluation_date.isoformat() if 'evaluation_date' in locals() else datetime.now().isoformat(),
+                    'rubric_type': rubric_type
+                },
+                'ai_original': ai_data,
+                'supervisor_final': current_data,
+                'comparison_summary': {
+                    'total_competencies': len(items),
+                    'modified_justifications': modified_count,
+                    'score_changes': score_changes,
+                    'ai_version_saved_at': ai_data.get('saved_at', 'Unknown')
+                },
+                'export_timestamp': datetime.now().isoformat()
+            }
+            
+            comparison_json = json.dumps(comparison_data, indent=2)
+            
+            st.download_button(
+                "📥 Download Comparison Data (JSON)",
+                comparison_json,
+                f"ai_comparison_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                "application/json",
+                help="Download the complete comparison data for research analysis"
+            )
 
 def show_test_data():
     """Test data generation and management"""
