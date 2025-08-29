@@ -32,7 +32,7 @@ from data.rubrics import get_field_evaluation_items, get_ster_items, get_profess
 from data.synthetic import generate_synthetic_evaluations
 from services.openai_service import OpenAIService
 from services.pdf_service import PDFService
-from utils.storage import save_evaluation, load_evaluations, export_data, import_data
+from utils.storage import save_evaluation, load_evaluations, export_data, import_data, save_ai_original, get_evaluation_comparison, get_evaluation_by_id
 from utils.validation import validate_evaluation, calculate_score
 
 # Page configuration
@@ -765,6 +765,221 @@ def show_detailed_evaluation_view(evaluation):
     
     with col2_export:
         st.info("💡 **Tip**: Download the PDF report for archival or distribution purposes.")
+    
+    # AI Performance Evaluation Comparison View
+    if st.session_state.get('show_ai_comparison', False):
+        st.markdown("---")
+        st.subheader("🤖 AI Performance Evaluation - Comparison Report")
+        st.caption("Showing AI-generated content vs. Supervisor revisions")
+        
+        # Close button
+        if st.button("✖️ Close Comparison", key="close_comparison"):
+            st.session_state.show_ai_comparison = False
+            st.rerun()
+        
+        if st.session_state.get('ai_original_data'):
+            ai_data = st.session_state.ai_original_data
+            current_data = {
+                'justifications': st.session_state.get('justifications', {}),
+                'scores': st.session_state.get('scores', {}),
+                'observation_notes': st.session_state.get('observation_notes', '')
+            }
+            
+            # Summary metrics
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                ai_saved_time = ai_data.get('saved_at', 'Unknown')
+                st.metric("AI Version Saved", ai_saved_time[:19] if len(ai_saved_time) > 19 else ai_saved_time)
+            with col2:
+                total_items = len(items)
+                st.metric("Total Competencies", total_items)
+            with col3:
+                modified_count = sum(1 for item_id in ai_data.get('justifications', {})
+                                   if ai_data['justifications'].get(item_id, '') != current_data['justifications'].get(item_id, ''))
+                st.metric("Modified Justifications", modified_count)
+            with col4:
+                score_changes = sum(1 for item_id in ai_data.get('scores', {})
+                                  if ai_data['scores'].get(item_id) != current_data['scores'].get(item_id))
+                st.metric("Score Changes", score_changes)
+            
+            # Detailed comparison for each competency
+            st.markdown("### 📋 Competency-by-Competency Comparison")
+            
+            for item in items:
+                item_id = item['id']
+                ai_justification = ai_data.get('justifications', {}).get(item_id, '')
+                current_justification = current_data['justifications'].get(item_id, '')
+                ai_score = ai_data.get('scores', {}).get(item_id)
+                current_score = current_data['scores'].get(item_id)
+                
+                # Check if there are differences
+                has_changes = (ai_justification != current_justification) or (ai_score != current_score)
+                
+                with st.expander(f"{item['name']} {'🔄' if has_changes else '✓'}", expanded=has_changes):
+                    # Score comparison
+                    if ai_score is not None or current_score is not None:
+                        score_col1, score_col2 = st.columns(2)
+                        with score_col1:
+                            st.markdown("**AI Score:**")
+                            if ai_score is not None:
+                                st.write(f"Level {ai_score}")
+                            else:
+                                st.write("Not scored")
+                        with score_col2:
+                            st.markdown("**Final Score:**")
+                            if current_score is not None:
+                                st.write(f"Level {current_score}")
+                                if ai_score is not None and ai_score != current_score:
+                                    change = current_score - ai_score
+                                    st.caption(f"{'↑' if change > 0 else '↓'} {abs(change)} level{'s' if abs(change) > 1 else ''}")
+                            else:
+                                st.write("Not scored")
+                    
+                    # Justification comparison
+                    st.markdown("---")
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("**🤖 AI-Generated Justification:**")
+                        if ai_justification:
+                            st.text_area(f"AI: {item_id}", ai_justification, height=200, disabled=True, key=f"ai_just_{item_id}")
+                        else:
+                            st.info("No AI justification generated")
+                    
+                    with col2:
+                        st.markdown("**👨‍🏫 Supervisor Final Version:**")
+                        if current_justification:
+                            st.text_area(f"Final: {item_id}", current_justification, height=200, disabled=True, key=f"final_just_{item_id}")
+                        else:
+                            st.info("No justification provided")
+                    
+                    # Highlight differences
+                    if has_changes and ai_justification and current_justification:
+                        st.caption("💡 Supervisor made modifications to this competency")
+            
+            # Export comparison data
+            st.markdown("### 📊 Export Comparison Data")
+            comparison_data = {
+                'evaluation_info': {
+                    'student_name': student_name,
+                    'evaluator_name': evaluator_name,
+                    'evaluation_date': evaluation_date.isoformat() if 'evaluation_date' in locals() else datetime.now().isoformat(),
+                    'rubric_type': rubric_type
+                },
+                'ai_original': ai_data,
+                'supervisor_final': current_data,
+                'comparison_summary': {
+                    'total_competencies': len(items),
+                    'modified_justifications': modified_count,
+                    'score_changes': score_changes,
+                    'ai_version_saved_at': ai_data.get('saved_at', 'Unknown')
+                },
+                'export_timestamp': datetime.now().isoformat()
+            }
+            
+            comparison_json = json.dumps(comparison_data, indent=2)
+            
+            st.download_button(
+                "📥 Download Comparison Data (JSON)",
+                comparison_json,
+                f"ai_comparison_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                "application/json",
+                help="Download the complete comparison data for research analysis"
+            )
+
+def show_research_comparison():
+    """Research comparison view for AI vs Supervisor modifications"""
+    st.header("🔬 Research Comparison: AI vs Supervisor Modifications")
+    
+    # Get all evaluations with AI originals
+    evaluations = load_evaluations()
+    ai_evaluations = [e for e in evaluations if e.get('has_ai_original', False)]
+    
+    if not ai_evaluations:
+        st.info("No evaluations with saved AI versions found.")
+        st.write("To use this feature:")
+        st.write("1. Create a new evaluation")
+        st.write("2. Generate AI analysis")
+        st.write("3. Click '💾 Save AI Version' button before making modifications")
+        st.write("4. Complete the evaluation with your modifications")
+        return
+    
+    # Selection dropdown
+    selected_eval = st.selectbox(
+        "Select an evaluation to compare:",
+        ai_evaluations,
+        format_func=lambda e: f"{e['student_name']} - {e['date']} - {e.get('rubric_type', 'Unknown').replace('_', ' ').title()}"
+    )
+    
+    if selected_eval:
+        comparison = get_evaluation_comparison(selected_eval['id'])
+        
+        if comparison and comparison['has_changes']:
+            st.success(f"Found {len(comparison['differences'])} differences between AI and supervisor versions")
+            
+            # Display comparison metrics
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Changes", len(comparison['differences']))
+            with col2:
+                score_changes = len([d for d in comparison['differences'] if d['field'] == 'score'])
+                st.metric("Score Changes", score_changes)
+            with col3:
+                just_changes = len([d for d in comparison['differences'] if d['field'] == 'justification'])
+                st.metric("Justification Changes", just_changes)
+            
+            # Detailed comparison
+            st.markdown("### 📋 Detailed Comparison")
+            
+            # Group by competency
+            from data.rubrics import get_field_evaluation_items, get_ster_items
+            items = get_field_evaluation_items() if selected_eval['rubric_type'] == 'field_evaluation' else get_ster_items()
+            item_dict = {item['id']: item for item in items}
+            
+            for diff in comparison['differences']:
+                item_id = diff['item_id']
+                item = item_dict.get(item_id, {})
+                
+                with st.expander(f"{item.get('name', 'Unknown')} - {diff['field'].title()} Changed"):
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("**🤖 AI Generated:**")
+                        if diff['field'] == 'score':
+                            st.write(f"Score: {diff['ai_value']}")
+                        else:
+                            st.text_area("AI Justification", diff['ai_value'], height=150, disabled=True)
+                    
+                    with col2:
+                        st.markdown("**👨‍🏫 Supervisor Modified:**")
+                        if diff['field'] == 'score':
+                            st.write(f"Score: {diff['current_value']}")
+                            if diff['ai_value'] != diff['current_value']:
+                                change = diff['current_value'] - diff['ai_value']
+                                st.write(f"Change: {'↑' if change > 0 else '↓'} {abs(change)}")
+                        else:
+                            st.text_area("Supervisor Justification", diff['current_value'], height=150, disabled=True)
+            
+            # Export comparison data
+            st.markdown("### 📊 Export Data")
+            export_data = {
+                'evaluation': selected_eval,
+                'comparison': comparison,
+                'export_date': datetime.now().isoformat()
+            }
+            
+            st.download_button(
+                "Download Comparison JSON",
+                json.dumps(export_data, indent=2),
+                f"ai_comparison_{selected_eval['student_name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.json",
+                "application/json"
+            )
+            
+        else:
+            st.info("No differences found between AI and current versions.")
+            st.write("This could mean:")
+            st.write("- The supervisor accepted all AI-generated content")
+            st.write("- The evaluation hasn't been completed yet")
 
 def show_evaluation_form():
     """Evaluation form for creating new evaluations"""
@@ -1172,6 +1387,31 @@ def show_evaluation_form():
         else:
             st.caption("Enter evaluation information manually")
         
+        # Add synthetic data button
+        if st.button("🧪 Fill with Test Data", key="fill_synthetic_data", 
+                    help="Auto-fill form with synthetic data for testing"):
+            import random
+            from data.sample_observation_notes import get_sample_observation_notes
+            
+            # Generate synthetic names
+            student_first_names = ["Sarah", "Michael", "Jessica", "David", "Emily", "John", "Amanda", "Robert"]
+            student_last_names = ["Johnson", "Smith", "Williams", "Brown", "Davis", "Miller", "Wilson", "Moore"]
+            
+            supervisor_first_names = ["Dr. Patricia", "Dr. James", "Dr. Linda", "Dr. William", "Dr. Susan", "Dr. Richard"]
+            supervisor_last_names = ["Anderson", "Thompson", "Martinez", "Taylor", "Clark", "Rodriguez", "Lewis", "Walker"]
+            
+            # Set synthetic data in session state
+            st.session_state.student_name = f"{random.choice(student_first_names)} {random.choice(student_last_names)}"
+            st.session_state.evaluator_name = f"{random.choice(supervisor_first_names)} {random.choice(supervisor_last_names)}"
+            st.session_state.subject_area_manual = random.choice(["Mathematics", "Science", "English Language Arts", "Social Studies"])
+            st.session_state.school_name_manual = random.choice(["Lincoln Elementary", "Washington Middle School", "Jefferson High School", "Roosevelt Academy"])
+            st.session_state.grade_levels_manual = random.choice(["3rd Grade", "4th Grade", "5th Grade", "6th Grade", "7th Grade", "8th Grade"])
+            st.session_state.class_size_manual = random.randint(18, 28)
+            st.session_state.observation_notes = get_sample_observation_notes()
+            
+            st.success("✅ Test data filled! Observation notes have been pre-populated.")
+            st.rerun()
+        
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -1367,6 +1607,14 @@ def show_evaluation_form():
         st.session_state.observation_notes = ""
     if 'ai_analyses' not in st.session_state:
         st.session_state.ai_analyses = {}
+    if 'current_evaluation_id' not in st.session_state:
+        st.session_state.current_evaluation_id = None
+    if 'ai_version_saved' not in st.session_state:
+        st.session_state.ai_version_saved = False
+    if 'ai_original_data' not in st.session_state:
+        st.session_state.ai_original_data = None
+    if 'show_ai_comparison' not in st.session_state:
+        st.session_state.show_ai_comparison = False
     
     # STEP 3: Classroom Observation Notes
     st.subheader("📝 Step 3: Classroom Observation Notes")
@@ -1744,6 +1992,9 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                                 
                                 # Store AI analyses in session state
                                 st.session_state.ai_analyses = ai_analyses
+                                # Also store as justifications for the save functionality
+                                for item_id, analysis in ai_analyses.items():
+                                    st.session_state.justifications[item_id] = analysis
                                 success_message = f"✅ Generated AI analysis for {len(ai_analyses)} competencies!"
                                 if not st.session_state.lesson_plan_analysis:
                                     success_message += " (Based on observation notes only)"
@@ -1757,8 +2008,15 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 if st.session_state.get('ai_analyses'):
                     st.success("✅ AI Analysis Complete")
                     st.metric("Competencies Analyzed", len(st.session_state.ai_analyses))
+                    
+                    # Simple status indicator
+                    if st.session_state.get('ai_version_saved', False):
+                        st.info("📌 AI original version saved - download available below")
+                    
                     if st.button("🔄 Regenerate Analysis", key="regenerate_analysis"):
                         st.session_state.ai_analyses = {}
+                        st.session_state.ai_version_saved = False
+                        st.session_state.ai_original_data = None
                         st.rerun()
                 else:
                     # Show lesson plan status
@@ -2162,8 +2420,12 @@ Be as detailed as possible - these notes will be used to generate evidence-based
             # Get extracted info for additional fields
             extracted_info = st.session_state.get('extracted_info', {})
             
+            # Generate or use existing evaluation ID
+            eval_id = st.session_state.get('current_evaluation_id', str(uuid.uuid4()))
+            st.session_state.current_evaluation_id = eval_id
+            
             evaluation = {
-                'id': str(uuid.uuid4()),
+                'id': eval_id,
                 'student_name': student_name,
                 'evaluator_name': evaluator_name,
                 'evaluator_role': evaluator_role,
@@ -2188,6 +2450,13 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'school_name': extracted_info.get('school_name', ''),
                 'class_size': extracted_info.get('class_size', 20)
             }
+            
+            # Add AI original data if saved
+            if st.session_state.get('ai_version_saved', False) and st.session_state.get('ai_original_data'):
+                evaluation['ai_original'] = st.session_state.ai_original_data
+                evaluation['has_ai_original'] = True
+                evaluation['ai_original_saved_at'] = st.session_state.ai_original_data.get('saved_at')
+            
             save_evaluation(evaluation)
             st.success("Evaluation saved as draft!")
     
@@ -2223,8 +2492,12 @@ Be as detailed as possible - these notes will be used to generate evidence-based
             # Get extracted info for additional fields
             extracted_info = st.session_state.get('extracted_info', {})
             
+            # Generate or use existing evaluation ID
+            eval_id = st.session_state.get('current_evaluation_id', str(uuid.uuid4()))
+            st.session_state.current_evaluation_id = eval_id
+            
             evaluation = {
-                'id': str(uuid.uuid4()),
+                'id': eval_id,
                 'student_name': student_name,
                 'evaluator_name': evaluator_name,
                 'evaluator_role': evaluator_role,
@@ -2250,6 +2523,13 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 'school_name': extracted_info.get('school_name', ''),
                 'class_size': extracted_info.get('class_size', 20)
             }
+            
+            # Add AI original data if saved
+            if st.session_state.get('ai_version_saved', False) and st.session_state.get('ai_original_data'):
+                evaluation['ai_original'] = st.session_state.ai_original_data
+                evaluation['has_ai_original'] = True
+                evaluation['ai_original_saved_at'] = st.session_state.ai_original_data.get('saved_at')
+            
             save_evaluation(evaluation)
             
             if errors:
@@ -2447,13 +2727,123 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 status_indicator = "DRAFT" if (len(st.session_state.scores) < len(items)) else "COMPLETE"
                 filename = f"{student_name.replace(' ', '_')}_{rubric_type}_{status_indicator}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 
-                st.download_button(
-                    label="📄 Download Current Report (PDF)",
-                    data=pdf_bytes,
-                    file_name=filename,
-                    mime="application/pdf",
-                    help="Download the evaluation report in its current state"
-                )
+                col_dl1, col_dl2, col_dl3 = st.columns(3)
+                
+                with col_dl1:
+                    st.download_button(
+                        label="📄 Download Current Report (PDF)",
+                        data=pdf_bytes,
+                        file_name=filename,
+                        mime="application/pdf",
+                        help="Download the evaluation report in its current state"
+                    )
+                
+                with col_dl2:
+                    # AI Version Download button
+                    if st.session_state.get('ai_analyses'):
+                        if not st.session_state.get('ai_version_saved', False):
+                            try:
+                                # Prepare data for AI version PDF
+                                ai_version_data = {
+                                    'evaluation_type': 'AI_ORIGINAL_VERSION',
+                                    'rubric_type': rubric_type,
+                                    'student_name': student_name,
+                                    'evaluator_name': evaluator_name,
+                                    'date': datetime.now().strftime('%Y-%m-%d'),
+                                    'time_generated': datetime.now().strftime('%H:%M:%S'),
+                                    'school': st.session_state.get('school_name', 'N/A'),
+                                    'subject': st.session_state.get('subject_area', 'N/A'),
+                                    'grade_levels': st.session_state.get('grade_levels', 'N/A'),
+                                    'class_size': st.session_state.get('class_size', 'N/A'),
+                                    'observation_notes': st.session_state.get('observation_notes', ''),
+                                    'lesson_plan_analysis': st.session_state.get('lesson_plan_analysis', None),
+                                    'scores': st.session_state.get('scores', {}),
+                                    'justifications': st.session_state.get('justifications', {}),
+                                    'ai_analyses': st.session_state.get('ai_analyses', {}),
+                                    'competencies_analyzed': len(st.session_state.get('ai_analyses', {})),
+                                    'items': items,  # Pass the competency items for proper formatting
+                                    'is_ai_original': True  # Flag to indicate this is AI original version
+                                }
+                                
+                                # Generate AI version PDF using existing PDF service
+                                ai_pdf_bytes = pdf_service.generate_ai_version_pdf(ai_version_data)
+                                
+                                downloaded = st.download_button(
+                                    label="💾 Save AI Version (PDF)",
+                                    data=ai_pdf_bytes,
+                                    file_name=f"AI_Original_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                                    mime="application/pdf",
+                                    key="save_ai_version_download",
+                                    help="Download the AI-generated content as a PDF before making modifications"
+                                )
+                                
+                                if downloaded:
+                                    # Store AI data in session state
+                                    st.session_state.ai_original_data = {
+                                        'justifications': st.session_state.get('justifications', {}).copy(),
+                                        'ai_analyses': st.session_state.get('ai_analyses', {}).copy(),
+                                        'scores': st.session_state.get('scores', {}).copy(),
+                                        'observation_notes': st.session_state.get('observation_notes', ''),
+                                        'lesson_plan_analysis': st.session_state.get('lesson_plan_analysis', None),
+                                        'saved_at': datetime.now().isoformat()
+                                    }
+                                    st.session_state.ai_version_saved = True
+                                    st.rerun()
+                            except Exception as e:
+                                st.error(f"Error generating AI version PDF: {str(e)}")
+                                # Fallback to JSON if PDF fails
+                                st.button("💾 Save AI Version", disabled=True, help="PDF generation failed")
+                        else:
+                            # Re-download option
+                            try:
+                                ai_redownload_data = {
+                                    'evaluation_type': 'AI_ORIGINAL_VERSION',
+                                    'rubric_type': rubric_type,
+                                    'student_name': student_name,
+                                    'evaluator_name': evaluator_name,
+                                    'date': datetime.now().strftime('%Y-%m-%d'),
+                                    'time_generated': st.session_state.ai_original_data.get('saved_at', 'Unknown'),
+                                    'school': st.session_state.get('school_name', 'N/A'),
+                                    'subject': st.session_state.get('subject_area', 'N/A'),
+                                    'grade_levels': st.session_state.get('grade_levels', 'N/A'),
+                                    'class_size': st.session_state.get('class_size', 'N/A'),
+                                    'observation_notes': st.session_state.ai_original_data.get('observation_notes', ''),
+                                    'lesson_plan_analysis': st.session_state.ai_original_data.get('lesson_plan_analysis', None),
+                                    'scores': st.session_state.ai_original_data.get('scores', {}),
+                                    'justifications': st.session_state.ai_original_data.get('justifications', {}),
+                                    'ai_analyses': st.session_state.ai_original_data.get('ai_analyses', {}),
+                                    'competencies_analyzed': len(st.session_state.ai_original_data.get('ai_analyses', {})),
+                                    'items': items,
+                                    'is_ai_original': True,
+                                    'is_redownload': True
+                                }
+                                
+                                ai_pdf_bytes = pdf_service.generate_ai_version_pdf(ai_redownload_data)
+                                
+                                st.download_button(
+                                    label="📥 Re-download AI Version (PDF)",
+                                    data=ai_pdf_bytes,
+                                    file_name=f"AI_Original_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                                    mime="application/pdf",
+                                    key="redownload_ai_version",
+                                    help="Download the previously saved AI version again"
+                                )
+                            except Exception as e:
+                                st.error(f"Error generating AI version PDF: {str(e)}")
+                    else:
+                        st.button("💾 Save AI Version", disabled=True, help="Generate AI analysis first")
+                
+                with col_dl3:
+                    # AI Performance Evaluation button - shows comparison
+                    if st.session_state.get('ai_version_saved', False) and st.session_state.get('ai_original_data'):
+                        if st.button("🤖 AI Performance Evaluation", key="ai_performance_eval",
+                                   help="View comparison between AI-generated and supervisor-revised feedback"):
+                            st.session_state.show_ai_comparison = True
+                            st.rerun()
+                    else:
+                        st.button("🤖 AI Performance Evaluation", key="ai_performance_eval_disabled",
+                                 disabled=True,
+                                 help="Save AI version first to enable comparison")
                 
                 # Show status information
                 if len(st.session_state.scores) < len(items):
