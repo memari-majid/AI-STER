@@ -2979,7 +2979,7 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                     comparison_json,
                     f"ai_comparison_{student_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
                     "application/json",
-                    help="Download the comparison data as JSON"
+                    help="Download the comparison data as JSON (fallback)"
                 )
 
 def show_test_data():

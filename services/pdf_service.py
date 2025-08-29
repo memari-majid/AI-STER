@@ -4,6 +4,7 @@ Handles creation of professional PDF reports from evaluation data
 """
 
 import io
+import os
 from datetime import datetime
 from typing import Dict, Any, Optional
 from reportlab.lib import colors
