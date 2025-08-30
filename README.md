@@ -41,8 +41,9 @@
 ### 🤖 **AI-Powered Assistance**
 - **Smart Justifications**: One-click AI-generated evaluation justifications
 - **Evaluation Analysis**: Comprehensive feedback and improvement recommendations
+- **Automatic AI Version Tracking**: AI originals are preserved automatically for research comparison
 - **Context-Aware Responses**: Professional, evidence-based AI assistance
-- **Cost-Efficient**: Uses OpenAI GPT-5-nano (~$0.12 per 100 evaluations)
+- **Cost-Efficient**: Uses OpenAI GPT-5-mini by default (configurable)
 
 ### 📊 **Analytics & Management**
 - **Interactive Dashboard**: Real-time evaluation metrics and visualizations
@@ -83,9 +84,9 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### **2. Configure AI Features (Optional)**
+### **2. Configure AI Features**
 ```bash
-cp docs/env_template.txt .env
+cp env.example .env
 # Edit .env and add your OpenAI API key
 ```
 
@@ -104,8 +105,8 @@ See [📖 Deployment Guide](docs/STREAMLIT_CLOUD_DEPLOYMENT.md) for step-by-step
 | Document | Description |
 |----------|-------------|
 | [📚 Documentation Hub](docs/README.md) | Complete documentation index and navigation |
-| [🚀 Deployment Guide](docs/STREAMLIT_CLOUD_DEPLOYMENT.md) | Step-by-step Streamlit Cloud deployment |
-| [⚙️ Advanced Deployment](docs/DEPLOYMENT_GUIDE.md) | Railway, Docker, and self-hosting options |
+| [🚀 Ngrok Deployment](deploy/README.md) | Start locally with public URL via ngrok |
+| [⚙️ Advanced Deployment](docs/DEPLOYMENT_GUIDE.md) | Cloud, Docker, self-hosting options |
 | [🏗️ Technical Architecture](docs/technical_architecture.md) | System design and architecture |
 | [🛣️ Development Roadmap](docs/development_roadmap.md) | Feature roadmap and development phases |
 | [🔧 Environment Setup](docs/env_template.txt) | Environment variables template |
@@ -142,8 +143,8 @@ See [📖 Deployment Guide](docs/STREAMLIT_CLOUD_DEPLOYMENT.md) for step-by-step
 # Required for AI features
 OPENAI_API_KEY=your_openai_api_key_here
 
-# Optional: Model selection (default: gpt-5-nano)  
-OPENAI_MODEL=gpt-5-nano
+# Model selection (default: gpt-5-mini)
+OPENAI_MODEL=gpt-5-mini
 ```
 
 ### **Cost Estimation**

@@ -9,8 +9,8 @@ This directory contains comprehensive documentation for the AI-STER project, org
 - **[env_template.txt](env_template.txt)** - Environment variables template for setup
 
 ### Deployment Guides
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Comprehensive deployment options (Railway, Docker, self-hosting)
-- **[STREAMLIT_CLOUD_DEPLOYMENT.md](STREAMLIT_CLOUD_DEPLOYMENT.md)** - Step-by-step Streamlit Cloud deployment
+- **[../deploy/README.md](../deploy/README.md)** - Start locally with ngrok public URL
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Cloud/Docker/self-hosting options
 
 ## 🔧 Technical Documentation
 
