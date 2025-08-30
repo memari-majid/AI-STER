@@ -41,12 +41,11 @@ pip install -r requirements.txt
 4. **Configure Environment**
 ```bash
 # Copy template
-cp docs/env_template.txt .env
+cp env.example .env
 
 # Edit .env with your values
 OPENAI_API_KEY=your_api_key_here
-APP_PASSWORD=your_password_here
-ADMIN_PASSWORD=your_admin_password_here
+OPENAI_MODEL=gpt-5-mini
 ```
 
 5. **Run Application**
@@ -88,8 +87,7 @@ The application will be available at `http://localhost:8501`
 ```toml
 # Streamlit Cloud Secrets Format
 OPENAI_API_KEY = "sk-..."
-APP_PASSWORD = "your-secure-password"
-ADMIN_PASSWORD = "your-admin-password"
+OPENAI_MODEL = "gpt-5-mini"
 
 # Optional: Database credentials
 [database]
@@ -178,6 +176,7 @@ Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/ai-ster
 Environment="PATH=/home/ubuntu/ai-ster/venv/bin"
+Environment="OPENAI_MODEL=gpt-5-mini"
 ExecStart=/home/ubuntu/ai-ster/venv/bin/streamlit run app.py --server.port=8501 --server.address=0.0.0.0
 Restart=always
 

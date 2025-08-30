@@ -176,7 +176,7 @@ sudo kill -9 PID
 ## 📚 More Information
 
 For detailed deployment documentation, see:
-- [Ngrok Deployment Guide](../docs/NGROK_DEPLOYMENT_GUIDE.md)
+- [Ngrok Deployment Guide](deploy/README.md)
 - [General Deployment Guide](../docs/DEPLOYMENT_GUIDE.md)
 - [AI-STER Documentation](../docs/README.md)
 
