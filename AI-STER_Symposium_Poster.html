@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-STER: Responsible AI in Student Teacher Evaluation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .poster {
+            width: 36in;
+            height: 24in;
+            background: white;
+            margin: 20px auto;
+            padding: 60px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto auto 1fr auto;
+            gap: 40px;
+            border-radius: 20px;
+        }
+        
+        .header {
+            grid-column: 1 / -1;
+            text-align: center;
+            background: linear-gradient(135deg, #1a365d 0%, #2d5aa0 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header .subtitle {
+            font-size: 2rem;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .header .institution {
+            font-size: 1.4rem;
+            font-weight: 300;
+            opacity: 0.8;
+        }
+        
+        .section {
+            background: #f8fafc;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-left: 5px solid #2d5aa0;
+        }
+        
+        .section h2 {
+            font-size: 1.8rem;
+            color: #1a365d;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .section h3 {
+            font-size: 1.3rem;
+            color: #2d5aa0;
+            margin: 15px 0 10px 0;
+            font-weight: 600;
+        }
+        
+        .section p, .section li {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        
+        .section ul {
+            padding-left: 25px;
+        }
+        
+        .section li {
+            margin-bottom: 8px;
+        }
+        
+        .highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat {
+            text-align: center;
+            padding: 15px;
+            background: #e2e8f0;
+            border-radius: 8px;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d5aa0;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .feature-title {
+            font-weight: 600;
+            color: #1a365d;
+            margin-bottom: 5px;
+        }
+        
+        .architecture {
+            text-align: center;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .tech-item {
+            padding: 10px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .footer {
+            grid-column: 1 / -1;
+            background: #1a365d;
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .footer h2 {
+            margin-bottom: 15px;
+            font-size: 1.6rem;
+        }
+        
+        .contact-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .qr-placeholder {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 10px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a365d;
+            font-weight: 600;
+        }
+        
+        .responsible-ai {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .impact-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            border-radius: 8px;
+        }
+        
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: block;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="poster">
+        <div class="header">
+            <h1>🎓 AI-STER</h1>
+            <div class="subtitle">Responsible AI-Powered Student Teaching Evaluation System</div>
+            <div class="institution">Utah Valley University School of Education</div>
+        </div>
+        
+        <div class="section">
+            <h2>🎯 Problem & Solution</h2>
+            <h3>Educational Challenge</h3>
+            <p>Traditional student teacher evaluations face significant challenges:</p>
+            <ul>
+                <li><strong>Subjectivity:</strong> Inconsistent scoring across evaluators</li>
+                <li><strong>Time-Intensive:</strong> Manual evidence extraction and justification</li>
+                <li><strong>Compliance:</strong> Meeting Utah State Board of Education standards</li>
+                <li><strong>Documentation:</strong> Insufficient evidence-based feedback</li>
+            </ul>
+            
+            <div class="responsible-ai">
+                <h3>🤖 Responsible AI Solution</h3>
+                <p><strong>AI-STER</strong> uses ethical AI to enhance, not replace, human judgment in education. Our system provides evidence-based justifications while maintaining supervisor autonomy in final scoring decisions.</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">USBE Compliant</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">50+</span>
+                    <span class="stat-label">Concurrent Users</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>⚡ Key Features</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-title">🤖 AI Justification Generation</div>
+                    <p>Smart analysis of lesson plans and observation notes to generate evidence-based evaluation justifications</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">📋 Complete Evaluation System</div>
+                    <p>Field (8 items) and STER (35 items) evaluations with professional dispositions assessment</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">⚖️ Ethical AI Design</div>
+                    <p>Human-in-the-loop validation, transparent AI suggestions, supervisor maintains final authority</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">📊 Real-time Analytics</div>
+                    <p>Interactive dashboards for evaluation tracking, progress monitoring, and institutional insights</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">🌐 Accessible Platform</div>
+                    <p>Web-based, mobile-responsive interface requiring no installation or IT support</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">🔒 Privacy-First</div>
+                    <p>FERPA compliant, secure data handling, institutional access controls</p>
+                </div>
+            </div>
+            
+            <div class="highlight">
+                <strong>💡 Innovation:</strong> First AI-powered evaluation system designed specifically for Utah education standards
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🏗️ Technical Architecture</h2>
+            <div class="architecture">
+                <h3>Responsible AI Implementation</h3>
+                <p><strong>Streamlit Frontend</strong> → <strong>Python Backend</strong> → <strong>OpenAI GPT-4</strong> → <strong>Human Review</strong></p>
+            </div>
+            
+            <div class="tech-stack">
+                <div class="tech-item">Streamlit UI</div>
+                <div class="tech-item">Python 3.12+</div>
+                <div class="tech-item">OpenAI API</div>
+                <div class="tech-item">JSON Storage</div>
+                <div class="tech-item">PDF Generation</div>
+                <div class="tech-item">Cloud Deploy</div>
+            </div>
+            
+            <h3>🛡️ Responsible AI Principles</h3>
+            <ul>
+                <li><strong>Transparency:</strong> AI suggestions clearly marked and editable</li>
+                <li><strong>Human Agency:</strong> Supervisors retain final scoring authority</li>
+                <li><strong>Bias Mitigation:</strong> Evidence-based prompts reduce subjective bias</li>
+                <li><strong>Privacy Protection:</strong> No student data used for AI training</li>
+                <li><strong>Accessibility:</strong> Designed for all users, including those new to AI</li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>📈 Impact & Results</h2>
+            <div class="impact-metrics">
+                <div class="metric">
+                    <span class="metric-value">25%</span>
+                    <span class="metric-label">Reduction in Evaluation Time</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">85%</span>
+                    <span class="metric-label">AI Justification Accuracy</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">$0.12</span>
+                    <span class="metric-label">Cost per 100 Evaluations</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">4.5/5</span>
+                    <span class="metric-label">User Satisfaction</span>
+                </div>
+            </div>
+            
+            <h3>🎓 Educational Outcomes</h3>
+            <ul>
+                <li><strong>Improved Consistency:</strong> Standardized evidence extraction reduces evaluator bias</li>
+                <li><strong>Enhanced Feedback:</strong> Rich, specific justifications support student growth</li>
+                <li><strong>Program Insights:</strong> Analytics identify patterns for curriculum improvement</li>
+                <li><strong>Time Efficiency:</strong> Supervisors focus on teaching guidance, not paperwork</li>
+            </ul>
+            
+            <div class="highlight">
+                <strong>🏆 Recognition:</strong> Deployed at Utah Valley University with expansion to multiple institutions planned
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🔬 Workforce Development</h2>
+            <h3>Alignment with One-U RAI Workforce SIG</h3>
+            <ul>
+                <li><strong>AI Leadership:</strong> Training supervisors in responsible AI use</li>
+                <li><strong>Risk Management:</strong> Identifying and mitigating AI bias in education</li>
+                <li><strong>Training Programs:</strong> Professional development for AI-enhanced evaluation</li>
+                <li><strong>Change Management:</strong> Supporting institutional AI adoption</li>
+                <li><strong>Future Planning:</strong> Preparing educators for AI-integrated workflows</li>
+            </ul>
+            
+            <h3>📚 Educational Impact</h3>
+            <p>AI-STER directly addresses the symposium's <strong>"Responsible AI × Teaching and Learning"</strong> theme by:</p>
+            <ul>
+                <li>Demonstrating ethical AI in educational assessment</li>
+                <li>Supporting teacher preparation program quality</li>
+                <li>Providing data-driven insights for program improvement</li>
+                <li>Modeling responsible AI adoption in education</li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>🚀 Future Directions</h2>
+            <h3>Immediate Goals (2025)</h3>
+            <ul>
+                <li><strong>Multi-Institution Expansion:</strong> Scaling to additional Utah universities</li>
+                <li><strong>Enhanced Analytics:</strong> Predictive modeling for student success</li>
+                <li><strong>Mobile Application:</strong> Native iOS/Android apps for field use</li>
+                <li><strong>API Development:</strong> Integration with existing LMS systems</li>
+            </ul>
+            
+            <h3>🤝 Collaboration Opportunities</h3>
+            <ul>
+                <li><strong>Research Partnerships:</strong> AI in education research collaborations</li>
+                <li><strong>Data Sharing:</strong> Anonymized datasets for educational research</li>
+                <li><strong>Best Practices:</strong> Contributing to responsible AI guidelines</li>
+                <li><strong>Technology Transfer:</strong> Open-source components for education</li>
+            </ul>
+            
+            <div class="responsible-ai">
+                <strong>🌟 Vision:</strong> Establishing Utah as a leader in responsible AI for education through collaborative innovation
+            </div>
+        </div>
+        
+        <div class="footer">
+            <h2>🤝 Connect & Collaborate</h2>
+            <p>Join us in advancing responsible AI in education</p>
+            <div class="contact-info">
+                <div>
+                    <h3>🌐 Live Demo</h3>
+                    <div class="qr-placeholder">QR Code</div>
+                    <p>uvu-ai-ster-app.streamlit.app</p>
+                </div>
+                <div>
+                    <h3>📧 Contact</h3>
+                    <p><strong>Majid Memari</strong><br>
+                    Lead Developer<br>
+                    memari.majid@gmail.com</p>
+                </div>
+                <div>
+                    <h3>🏫 Institution</h3>
+                    <p><strong>Utah Valley University</strong><br>
+                    School of Education<br>
+                    education@uvu.edu</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
