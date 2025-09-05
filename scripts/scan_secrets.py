@@ -90,6 +90,10 @@ def main():
             continue
             
         if file_path.is_file():
+            # Skip binary files
+            if file_path.name in ['cloudflared'] or file_path.suffix in ['.exe', '.bin', '.so', '.dylib']:
+                continue
+                
             findings = scan_file(file_path)
             if findings:
                 file_findings.extend([(str(file_path), *f) for f in findings])
