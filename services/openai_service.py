@@ -13,6 +13,7 @@ from typing import Dict, List, Optional
 import openai
 from openai import OpenAI
 import json
+from datetime import datetime
 
 try:
     import streamlit as st
@@ -178,8 +179,18 @@ class OpenAIService:
                 }
                 
                 # Log detailed error for debugging
-                error_details = f"All JSON parsing methods failed. Errors: {'; '.join(parsing_errors)}. Full response: {response_text}"
+                error_details = f"All JSON parsing methods failed. Errors: {'; '.join(parsing_errors)}"
                 print(f"DEBUG: {error_details}")
+                print(f"DEBUG: AI Response Preview: {response_text[:500]}...")
+                
+                # Try to save the full response for debugging if in Streamlit
+                if HAS_STREAMLIT and hasattr(st, 'session_state'):
+                    st.session_state['last_ai_error'] = {
+                        'timestamp': datetime.now().isoformat(),
+                        'errors': parsing_errors,
+                        'response_preview': response_text[:1000],
+                        'model': self.model
+                    }
                 
                 # Return fallback instead of raising exception
                 return self._validate_lesson_plan_extraction(fallback_response)
@@ -192,43 +203,52 @@ class OpenAIService:
     def _build_lesson_plan_analysis_prompt(self, lesson_plan_text: str) -> str:
         """Build prompt for lesson plan analysis"""
         
-        prompt = f"""Analyze the following lesson plan and extract key information. You must respond with ONLY a valid JSON object, nothing else.
+        prompt = f"""You are analyzing a lesson plan document. Extract the requested information and return ONLY a valid JSON object.
 
 LESSON PLAN TEXT:
-{lesson_plan_text}
+{lesson_plan_text[:3000]}... [truncated if longer]
 
-Extract the following information and return it as a JSON object:
+TASK: Extract the following information and calculate a confidence score based on how much information was successfully found.
 
+Return this exact JSON structure with extracted values (use null for missing information):
 {{
-    "teacher_name": "Full name of the teacher/student teacher",
-    "lesson_date": "Date of the lesson (YYYY-MM-DD format if possible, or as written)",
-    "subject_area": "Subject being taught",
-    "grade_levels": "Grade level(s) of students",
-    "school_name": "Name of the school",
-    "lesson_topic": "Main topic or title of the lesson",
-    "class_period": "Class period or time if mentioned",
-    "duration": "Lesson duration if mentioned",
-    "total_students": "Number of students in class",
-    "utah_core_standards": "Utah Core Standards referenced if mentioned",
-    "learning_objectives": ["List", "of", "learning", "objectives"],
-    "materials": ["List", "of", "materials", "needed"],
-    "assessment_methods": ["Types", "of", "assessment", "mentioned"],
-    "lesson_structure": "Brief description of lesson flow/structure",
-    "notes": "Any additional notes or special considerations",
-    "confidence_score": 0.95
+    "teacher_name": null,
+    "lesson_date": null,
+    "subject_area": null,
+    "grade_levels": null,
+    "school_name": null,
+    "lesson_topic": null,
+    "class_period": null,
+    "duration": null,
+    "total_students": null,
+    "utah_core_standards": null,
+    "learning_objectives": [],
+    "materials": [],
+    "assessment_methods": [],
+    "lesson_structure": null,
+    "notes": null,
+    "confidence_score": 0.0
 }}
 
-CRITICAL REQUIREMENTS:
-1. If information is not found or unclear, use null for that field
-2. For grade_levels, extract the specific grade(s) mentioned (e.g., "3rd Grade", "6-8", "K-5")
-3. For lesson_date, convert to YYYY-MM-DD format if possible, otherwise keep as written
-4. Be very careful to extract the actual teacher name, not example names
-5. For total_students, look for class size information
-6. confidence_score should reflect how clear and complete the information is (0.0-1.0)
-7. Your response must be ONLY valid JSON - no explanations, no markdown, no additional text
-8. Start your response with {{ and end with }}
+EXTRACTION RULES:
+- teacher_name: Full name of the teacher/student teacher (null if not found)
+- lesson_date: Date in YYYY-MM-DD format if possible, otherwise as written
+- subject_area: Subject being taught (e.g., "Math", "Science", "Language Arts")
+- grade_levels: Specific grade(s) (e.g., "3rd Grade", "6-8", "K-5")
+- school_name: Name of the school
+- lesson_topic: Main topic or title of the lesson
+- class_period: Class period or time if mentioned
+- duration: Lesson duration (e.g., "45 minutes", "1 hour")
+- total_students: Number of students as integer (null if not mentioned)
+- utah_core_standards: Utah Core Standards referenced (null if none)
+- learning_objectives: Array of learning objectives (empty array if none)
+- materials: Array of materials needed (empty array if none)
+- assessment_methods: Array of assessment types (empty array if none)
+- lesson_structure: Brief description of lesson flow
+- notes: Any additional relevant information
+- confidence_score: Calculate as (number of non-null fields found / 15)
 
-Respond with the JSON object now:"""
+IMPORTANT: Return ONLY the JSON object. No explanations, no markdown, no extra text."""
         
         return prompt
     
@@ -252,7 +272,7 @@ Respond with the JSON object now:"""
             'assessment_methods': extracted_info.get('assessment_methods', []),
             'lesson_structure': extracted_info.get('lesson_structure', None),
             'notes': extracted_info.get('notes', None),
-            'confidence_score': extracted_info.get('confidence_score', 0.8),
+            'confidence_score': extracted_info.get('confidence_score', 0.0),
             'extraction_timestamp': None  # Will be set when used
         }
         
@@ -267,6 +287,33 @@ Respond with the JSON object now:"""
                 validated['total_students'] = int(validated['total_students'])
             except (ValueError, TypeError):
                 validated['total_students'] = None
+        
+        # Calculate confidence score based on extracted fields
+        total_fields = 15  # Total number of extractable fields
+        extracted_count = 0
+        
+        # Count non-null single value fields
+        single_fields = ['teacher_name', 'lesson_date', 'subject_area', 'grade_levels', 
+                        'school_name', 'lesson_topic', 'class_period', 'duration', 
+                        'total_students', 'utah_core_standards', 'lesson_structure']
+        
+        for field in single_fields:
+            if validated[field] is not None and validated[field] != "":
+                extracted_count += 1
+        
+        # Count non-empty list fields
+        list_fields = ['learning_objectives', 'materials', 'assessment_methods']
+        for field in list_fields:
+            if validated[field] and len(validated[field]) > 0:
+                extracted_count += 1
+        
+        # Calculate dynamic confidence score
+        if extracted_count > 0:
+            calculated_confidence = extracted_count / total_fields
+            # Use the higher of calculated or provided confidence
+            validated['confidence_score'] = max(calculated_confidence, validated.get('confidence_score', 0))
+        else:
+            validated['confidence_score'] = 0.0
         
         return validated
     
