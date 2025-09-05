@@ -46,3 +46,56 @@ ai-ster-env/
 docs/Meeting_Notes_AI-STER_PRIVATE.md
 *_PRIVATE.md
 *PRIVATE*
+<<<<<<< Current (Your changes)
+=======
+
+# Secrets and credentials
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+*.cert
+*.crt
+secrets/
+credentials/
+config/secrets.yml
+config/database.yml
+config/credentials.yml.enc
+
+# API keys patterns (as backup protection)
+*api_key*
+*apikey*
+*secret_key*
+*access_token*
+*private_key*
+*credential*
+
+# AWS
+.aws/
+aws_credentials
+
+# Google Cloud
+.gcloud/
+gcloud_credentials.json
+service-account-key.json
+
+# Azure
+.azure/
+azure_credentials.json
+
+# Docker secrets
+docker-compose.override.yml
+.dockerignore
+
+# Kubernetes secrets
+*-secret.yaml
+*-secret.yml
+
+# Certificates
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.truststore
+>>>>>>> Incoming (Background Agent changes)
