@@ -1269,49 +1269,109 @@ def show_evaluation_form():
         st.session_state.lesson_plan_analysis = None
         
     elif input_method == "🧪 Use Synthetic Data":
-        # Load available synthetic lesson plans
-        evaluations = load_evaluations()
-        synthetic_evaluations = [e for e in evaluations if e.get('is_synthetic', False) and e.get('lesson_plan')]
+        # Try to load test lesson plans with confidence levels first
+        import json
+        from pathlib import Path
         
-        if synthetic_evaluations:
-            st.info(f"Found {len(synthetic_evaluations)} synthetic lesson plans available for testing")
+        test_catalog_path = Path("test_data/TEST_DATA_CATALOG.json")
+        if test_catalog_path.exists():
+            with open(test_catalog_path, 'r') as f:
+                catalog = json.load(f)
             
-            # Create selection options
-            eval_options = []
-            for i, eval_data in enumerate(synthetic_evaluations):
-                student_name = eval_data.get('student_name', f'Student {i+1}')
-                subject = eval_data.get('subject_area', 'Unknown Subject')
-                grade = eval_data.get('grade_levels', 'Unknown Grade')
-                school = eval_data.get('school_name', 'Unknown School')
-                option_text = f"{student_name} - {subject} ({grade}) at {school}"
-                eval_options.append(option_text)
-            
-            selected_index = st.selectbox(
-                "Select a synthetic lesson plan:",
-                range(len(eval_options)),
-                format_func=lambda x: eval_options[x],
-                help="Choose from available synthetic lesson plans for testing"
-            )
-            
-            if selected_index is not None:
-                selected_evaluation = synthetic_evaluations[selected_index]
-                lesson_plan_text = selected_evaluation.get('lesson_plan', '')
+            test_plans = catalog.get("test_lesson_plans", [])
+            if test_plans:
+                st.info(f"Found {len(test_plans)} test lesson plans with expected confidence levels")
                 
-                # Show preview
-                with st.expander("📋 Preview Selected Lesson Plan"):
-                    st.text_area(
-                        "Lesson Plan Content:",
-                        value=lesson_plan_text[:500] + "..." if len(lesson_plan_text) > 500 else lesson_plan_text,
-                        height=200,
-                        disabled=True
-                    )
+                # Create selection options with confidence levels
+                eval_options = []
+                for plan in test_plans:
+                    option_text = f"{plan['name']} - {plan['subject']} ({plan['grade_level']}) - Expected: {plan['expected_confidence']}"
+                    eval_options.append((option_text, plan))
+            
                 
-                st.success(f"✅ Loaded synthetic lesson plan for {selected_evaluation.get('student_name', 'Unknown Student')}")
+                selected_index = st.selectbox(
+                    "Select a synthetic lesson plan:",
+                    range(len(eval_options)),
+                    format_func=lambda x: eval_options[x][0],
+                    help="Choose from available test lesson plans with known confidence levels"
+                )
+                
+                if selected_index is not None:
+                    selected_option, selected_plan = eval_options[selected_index]
+                    
+                    # Load the actual lesson plan content
+                    lesson_file_path = Path(f"test_data/lesson_plans/{selected_plan['filename']}")
+                    if lesson_file_path.exists():
+                        with open(lesson_file_path, 'r') as f:
+                            lesson_plan_text = f.read()
+                        
+                        # Show preview with confidence info
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            with st.expander("📋 Preview Selected Lesson Plan"):
+                                st.text_area(
+                                    "Lesson Plan Content:",
+                                    value=lesson_plan_text[:500] + "..." if len(lesson_plan_text) > 500 else lesson_plan_text,
+                                    height=200,
+                                    disabled=True
+                                )
+                        with col2:
+                            st.metric("Expected Confidence", selected_plan['expected_confidence'])
+                            st.caption(f"Format: {selected_plan['format']}")
+                        
+                        st.success(f"✅ Loaded test lesson plan: {selected_plan['name']}")
+                        st.info(f"📊 This is a {selected_plan['category']} lesson plan with {selected_plan['expected_confidence']} expected AI confidence")
+                    else:
+                        st.error(f"Lesson plan file not found: {selected_plan['filename']}")
+                        lesson_plan_text = None
+            else:
+                # No test plans in catalog, fall back to old synthetic evaluations
+                st.warning("No test lesson plans found in catalog.")
+                lesson_plan_text = None
         else:
-            st.warning("No synthetic lesson plans available. Generate some test data first!")
-            if st.button("🧪 Go to Test Data Generation"):
-                st.session_state.page = "🧪 Test Data"
-                st.rerun()
+            # Fallback to original synthetic evaluations if no test catalog
+            evaluations = load_evaluations()
+            synthetic_evaluations = [e for e in evaluations if e.get('is_synthetic', False) and e.get('lesson_plan')]
+            
+            if synthetic_evaluations:
+                st.info(f"Found {len(synthetic_evaluations)} synthetic lesson plans (without confidence levels)")
+                
+                # Create selection options
+                eval_options = []
+                for i, eval_data in enumerate(synthetic_evaluations):
+                    student_name = eval_data.get('student_name', f'Student {i+1}')
+                    subject = eval_data.get('subject_area', 'Unknown Subject')
+                    grade = eval_data.get('grade_levels', 'Unknown Grade')
+                    school = eval_data.get('school_name', 'Unknown School')
+                    option_text = f"{student_name} - {subject} ({grade}) at {school}"
+                    eval_options.append(option_text)
+                
+                selected_index = st.selectbox(
+                    "Select a synthetic lesson plan:",
+                    range(len(eval_options)),
+                    format_func=lambda x: eval_options[x],
+                    help="Choose from available synthetic lesson plans"
+                )
+                
+                if selected_index is not None:
+                    selected_evaluation = synthetic_evaluations[selected_index]
+                    lesson_plan_text = selected_evaluation.get('lesson_plan', '')
+                    
+                    # Show preview
+                    with st.expander("📋 Preview Selected Lesson Plan"):
+                        st.text_area(
+                            "Lesson Plan Content:",
+                            value=lesson_plan_text[:500] + "..." if len(lesson_plan_text) > 500 else lesson_plan_text,
+                            height=200,
+                            disabled=True
+                        )
+                    
+                    st.success(f"✅ Loaded synthetic lesson plan for {selected_evaluation.get('student_name', 'Unknown Student')}")
+            else:
+                st.warning("No synthetic lesson plans available. Generate some test data first!")
+                if st.button("🧪 Go to Test Data Generation"):
+                    st.session_state.page = "🧪 Test Data"
+                    st.rerun()
     
     elif input_method == "📤 Upload File":
         uploaded_file = st.file_uploader(
@@ -1522,6 +1582,23 @@ def show_evaluation_form():
                                 st.warning(f"⚠️ Limited information extracted (confidence: {confidence:.1%}). Some fields may need manual entry.")
                             else:
                                 st.success("✅ Lesson plan analyzed successfully!")
+                            
+                            # Show confidence explanation
+                            with st.expander("🤔 What does the confidence score mean?"):
+                                st.markdown(f"""
+                                **Your confidence score: {confidence:.1%}** ({int(confidence * 15)}/15 fields extracted)
+                                
+                                The AI confidence score shows how many of the 15 expected fields were successfully extracted:
+                                - 🟢 **85-100%**: Excellent - Most fields found (13-15 fields)
+                                - 🟡 **70-84%**: Good - Many fields found (10-12 fields)
+                                - 🔴 **Below 70%**: Limited - Few fields found (<10 fields)
+                                
+                                **Common reasons for low confidence:**
+                                - Missing teacher name, date, or school information
+                                - No clear section headers or labels
+                                - Very brief or outline-only format
+                                - Information embedded in paragraphs instead of structured lists
+                                """)
                             
                             st.rerun()
                         except Exception as e:
@@ -3160,80 +3237,84 @@ Be as detailed as possible - these notes will be used to generate evidence-based
                 )
 
 def show_test_data():
-    """Simple demo and visualization page"""
-    st.header("🧪 Demo & Visualizations")
+    """Demo, visualization, and AI testing page"""
+    st.header("🧪 Testing & Demonstrations")
     
-    # Simple two-column layout for quick actions
-    col1, col2 = st.columns(2)
+    # Tab navigation for different test features
+    main_tab1, main_tab2 = st.tabs(["📊 Demo & Visualizations", "🤖 AI Confidence Testing"])
     
-    with col1:
-        st.markdown("### 🚀 Quick Start")
-        st.info("Click the button below to generate demo data and visualizations")
-        
-        if st.button("📊 Generate Demo Data & Charts", type="primary", use_container_width=True):
-            with st.spinner("Creating demo scenarios and visualizations..."):
-                # Generate everything automatically
-                try:
-                    # Import at the top of the function to check early
-                    import matplotlib.pyplot as plt
-                    import numpy as np
-                    
-                    # Load or generate demo data
-                    evaluations = load_evaluations()
-                    if len(evaluations) < 5:
-                        st.info("Loading demo scenarios...")
-                        os.system("python load_demo_data.py")
+    with main_tab1:
+        # Simple two-column layout for quick actions
+        col1, col2 = st.columns(2)
+    
+        with col1:
+            st.markdown("### 🚀 Quick Start")
+            st.info("Click the button below to generate demo data and visualizations")
+            
+            if st.button("📊 Generate Demo Data & Charts", type="primary", use_container_width=True):
+                with st.spinner("Creating demo scenarios and visualizations..."):
+                    # Generate everything automatically
+                    try:
+                        # Import at the top of the function to check early
+                        import matplotlib.pyplot as plt
+                        import numpy as np
+                        
+                        # Load or generate demo data
                         evaluations = load_evaluations()
-                    
-                    # Generate all visualizations
-                    st.success("✅ Demo data loaded! Generating visualizations...")
-                    
-                    # Store in session state
-                    st.session_state.demo_ready = True
-                    st.session_state.evaluations = evaluations
-                    st.rerun()
-                    
-                except ImportError as e:
-                    st.error(f"Missing required package: {e}")
-                    st.info("Run: pip install matplotlib seaborn")
-    
-    with col2:
-        st.markdown("### 📋 What You'll Get")
-        st.markdown("""
-        - 5 realistic demo scenarios
-        - Performance distribution chart
-        - AI impact comparison
-        - Time savings visualization
-        - Subject area breakdown
-        """)
-    
-    # If demo is ready, show everything
-    if st.session_state.get('demo_ready', False) and st.session_state.get('evaluations'):
-        st.markdown("---")
-        st.success("✅ Demo Ready! Here are your visualizations:")
+                        if len(evaluations) < 5:
+                            st.info("Loading demo scenarios...")
+                            os.system("python load_demo_data.py")
+                            evaluations = load_evaluations()
+                        
+                        # Generate all visualizations
+                        st.success("✅ Demo data loaded! Generating visualizations...")
+                        
+                        # Store in session state
+                        st.session_state.demo_ready = True
+                        st.session_state.evaluations = evaluations
+                        st.rerun()
+                        
+                    except ImportError as e:
+                        st.error(f"Missing required package: {e}")
+                        st.info("Run: pip install matplotlib seaborn")
         
-        # Create simple tabs
-        tab1, tab2, tab3 = st.tabs(["📊 Charts for Poster", "👥 Demo Scenarios", "📸 Export Graphics"])
+        with col2:
+            st.markdown("### 📋 What You'll Get")
+            st.markdown("""
+            - 5 realistic demo scenarios
+            - Performance distribution chart
+            - AI impact comparison
+            - Time savings visualization
+            - Subject area breakdown
+            """)
         
-        with tab1:
-            st.markdown("### 📊 Research-Based Visualizations")
+        # If demo is ready, show everything
+        if st.session_state.get('demo_ready', False) and st.session_state.get('evaluations'):
+            st.markdown("---")
+            st.success("✅ Demo Ready! Here are your visualizations:")
             
-            # Option to choose visualization type
-            viz_type = st.radio(
-                "Select visualization category:",
-                ["Quick Summary", "Detailed Research Metrics", "Generate All"],
-                horizontal=True
-            )
+            # Create simple tabs
+            tab1, tab2, tab3 = st.tabs(["📊 Charts for Poster", "👥 Demo Scenarios", "📸 Export Graphics"])
             
-            if viz_type == "Quick Summary":
-                # Show the most important charts for poster
-                col1, col2 = st.columns(2)
+            with tab1:
+                st.markdown("### 📊 Research-Based Visualizations")
                 
-                with col1:
-                    st.markdown("#### Time & Efficiency Impact")
-                    # Import and generate
-                    import matplotlib.pyplot as plt
-                    import numpy as np
+                # Option to choose visualization type
+                viz_type = st.radio(
+                    "Select visualization category:",
+                    ["Quick Summary", "Detailed Research Metrics", "Generate All"],
+                    horizontal=True
+                )
+                
+                if viz_type == "Quick Summary":
+                    # Show the most important charts for poster
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("#### Time & Efficiency Impact")
+                        # Import and generate
+                        import matplotlib.pyplot as plt
+                        import numpy as np
                     
                     fig, ax = plt.subplots(figsize=(8, 6))
                     
@@ -3266,203 +3347,436 @@ def show_test_data():
                     st.pyplot(fig)
                     plt.close()
                 
-                with col2:
-                    st.markdown("#### Evidence Quality Improvement")
-                    
-                    fig, ax = plt.subplots(figsize=(8, 6))
-                    
-                    # Evidence extraction improvements
-                    evidence_types = ['Specific\nExamples', 'Standards\nAlignment', 'Student\nImpact', 'Teaching\nStrategies']
-                    manual_evidence = [2.1, 1.8, 1.5, 2.3]
-                    ai_evidence = [5.4, 4.8, 4.2, 5.1]
-                    
-                    x = np.arange(len(evidence_types))
-                    
-                    bars1 = ax.bar(x - width/2, manual_evidence, width, label='Manual', color='#AAAAAB')
-                    bars2 = ax.bar(x + width/2, ai_evidence, width, label='AI-Assisted', color='#185C33')
-                    
-                    ax.set_ylabel('Average Evidence Items')
-                    ax.set_title('Evidence Extraction Quality', fontsize=14, fontweight='bold')
-                    ax.set_xticks(x)
-                    ax.set_xticklabels(evidence_types)
+                    with col2:
+                        st.markdown("#### Evidence Quality Improvement")
+                        
+                        fig, ax = plt.subplots(figsize=(8, 6))
+                        
+                        # Evidence extraction improvements
+                        evidence_types = ['Specific\nExamples', 'Standards\nAlignment', 'Student\nImpact', 'Teaching\nStrategies']
+                        manual_evidence = [2.1, 1.8, 1.5, 2.3]
+                        ai_evidence = [5.4, 4.8, 4.2, 5.1]
+                        
+                        x = np.arange(len(evidence_types))
+                        
+                        bars1 = ax.bar(x - width/2, manual_evidence, width, label='Manual', color='#AAAAAB')
+                        bars2 = ax.bar(x + width/2, ai_evidence, width, label='AI-Assisted', color='#185C33')
+                        
+                        ax.set_ylabel('Average Evidence Items')
+                        ax.set_title('Evidence Extraction Quality', fontsize=14, fontweight='bold')
+                        ax.set_xticks(x)
+                        ax.set_xticklabels(evidence_types)
+                        ax.legend()
+                        
+                        # Add improvement factors
+                        for i, (manual, ai) in enumerate(zip(manual_evidence, ai_evidence)):
+                            factor = ai / manual
+                            ax.text(x[i], ai + 0.2, f'{factor:.1f}x', ha='center', 
+                                   fontweight='bold', color='#78BE3F')
+                        
+                        plt.tight_layout()
+                        st.pyplot(fig)
+                        plt.close()
+                
+                    # Key Research Findings
+                    st.markdown("### 🔬 Key Research Findings")
+                
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        st.metric("Time Reduction", "67%", "30 min saved per evaluation")
+                    with col2:
+                        st.metric("Evidence Increase", "172%", "3.2 → 8.7 items extracted")
+                    with col3:
+                        st.metric("Consistency Score", "31%", "72 → 94 points improvement")
+                    with col4:
+                        st.metric("Feedback Length", "3x", "~45 → ~130 words")
+                
+                    # Semester impact
+                    st.markdown("### 📅 Semester Impact Analysis")
+                
+                    fig, ax = plt.subplots(figsize=(12, 6))
+                
+                    weeks = np.arange(1, 17)
+                    evals_per_week = 5
+                    manual_hours = weeks * evals_per_week * 45 / 60
+                    ai_hours = weeks * evals_per_week * 15 / 60
+                
+                    ax.plot(weeks, manual_hours, 'o-', color='#AAAAAB', linewidth=2, markersize=6, label='Manual Process')
+                    ax.plot(weeks, ai_hours, 's-', color='#185C33', linewidth=2, markersize=6, label='AI-Assisted')
+                    ax.fill_between(weeks, ai_hours, manual_hours, alpha=0.3, color='#78BE3F', label='Time Saved')
+                
+                    ax.set_xlabel('Weeks in Semester')
+                    ax.set_ylabel('Cumulative Hours')
+                    ax.set_title('Cumulative Time Investment Over One Semester', fontsize=14, fontweight='bold')
                     ax.legend()
-                    
-                    # Add improvement factors
-                    for i, (manual, ai) in enumerate(zip(manual_evidence, ai_evidence)):
-                        factor = ai / manual
-                        ax.text(x[i], ai + 0.2, f'{factor:.1f}x', ha='center', 
-                               fontweight='bold', color='#78BE3F')
-                    
-                    plt.tight_layout()
-                    st.pyplot(fig)
-                    plt.close()
+                    ax.grid(True, alpha=0.3)
                 
-                # Key Research Findings
-                st.markdown("### 🔬 Key Research Findings")
-                
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    st.metric("Time Reduction", "67%", "30 min saved per evaluation")
-                with col2:
-                    st.metric("Evidence Increase", "172%", "3.2 → 8.7 items extracted")
-                with col3:
-                    st.metric("Consistency Score", "31%", "72 → 94 points improvement")
-                with col4:
-                    st.metric("Feedback Length", "3x", "~45 → ~130 words")
-                
-                # Semester impact
-                st.markdown("### 📅 Semester Impact Analysis")
-                
-                fig, ax = plt.subplots(figsize=(12, 6))
-                
-                weeks = np.arange(1, 17)
-                evals_per_week = 5
-                manual_hours = weeks * evals_per_week * 45 / 60
-                ai_hours = weeks * evals_per_week * 15 / 60
-                
-                ax.plot(weeks, manual_hours, 'o-', color='#AAAAAB', linewidth=2, markersize=6, label='Manual Process')
-                ax.plot(weeks, ai_hours, 's-', color='#185C33', linewidth=2, markersize=6, label='AI-Assisted')
-                ax.fill_between(weeks, ai_hours, manual_hours, alpha=0.3, color='#78BE3F', label='Time Saved')
-                
-                ax.set_xlabel('Weeks in Semester')
-                ax.set_ylabel('Cumulative Hours')
-                ax.set_title('Cumulative Time Investment Over One Semester', fontsize=14, fontweight='bold')
-                ax.legend()
-                ax.grid(True, alpha=0.3)
-                
-                # Add annotation
-                total_saved = manual_hours[-1] - ai_hours[-1]
-                ax.annotate(f'{total_saved:.0f} hours saved\nper semester',
+                    # Add annotation
+                    total_saved = manual_hours[-1] - ai_hours[-1]
+                    ax.annotate(f'{total_saved:.0f} hours saved\nper semester',
                            xy=(12, manual_hours[11]), xytext=(10, manual_hours[11] + 10),
                            arrowprops=dict(arrowstyle='->', color='#B45336'),
                            bbox=dict(boxstyle="round,pad=0.5", facecolor='#78BE3F', alpha=0.8),
                            fontsize=12, ha='center')
                 
-                plt.tight_layout()
-                st.pyplot(fig)
-                plt.close()
+                    plt.tight_layout()
+                    st.pyplot(fig)
+                    plt.close()
             
-            elif viz_type == "Detailed Research Metrics":
-                st.info("📈 Generating comprehensive research visualizations...")
+                elif viz_type == "Detailed Research Metrics":
+                    st.info("📈 Generating comprehensive research visualizations...")
                 
-                # Run the research visualization generator
-                with st.spinner("Creating research-based charts..."):
-                    from generate_research_visualizations import create_all_research_visualizations
-                    create_all_research_visualizations()
-                
-                # Display the generated images
-                st.success("✅ Research visualizations generated!")
-                
-                # Show generated images in a grid
-                col1, col2 = st.columns(2)
-                
-                research_images = [
-                    ("research_quality_comparison.png", "Evaluation Quality Improvements"),
-                    ("research_performance_analysis.png", "Performance Level Analysis"),
-                    ("research_workflow_efficiency.png", "Workflow Efficiency Analysis"),
-                    ("research_feedback_quality.png", "Feedback Quality Analysis")
-                ]
-                
-                for i, (filename, title) in enumerate(research_images):
-                    with col1 if i % 2 == 0 else col2:
-                        if os.path.exists(filename):
-                            st.markdown(f"#### {title}")
-                            st.image(filename, use_column_width=True)
-                
-                # Show comprehensive summary separately
-                if os.path.exists("research_comprehensive_summary.png"):
-                    st.markdown("#### Comprehensive Research Impact Summary")
-                    st.image("research_comprehensive_summary.png", use_column_width=True)
-            
-            else:  # Generate All
-                if st.button("🎨 Generate All Visualizations", type="primary", use_container_width=True):
-                    with st.spinner("Generating all research visualizations and graphics..."):
-                        # Generate research visualizations
+                    # Run the research visualization generator
+                    with st.spinner("Creating research-based charts..."):
                         from generate_research_visualizations import create_all_research_visualizations
                         create_all_research_visualizations()
-                        
-                        # Also generate presentation graphics
-                        from generate_presentation_graphics import generate_all_graphics
-                        generate_all_graphics()
-                        
-                        st.success("✅ All visualizations generated!")
-                        st.balloons()
-                        
-                        st.markdown("""
-                        ### 📁 Files Created:
-                        
-                        **Research Visualizations:**
-                        - `research_quality_comparison.png`
-                        - `research_performance_analysis.png` 
-                        - `research_workflow_efficiency.png`
-                        - `research_feedback_quality.png`
-                        - `research_comprehensive_summary.png`
-                        
-                        **Presentation Graphics:**
-                        - `performance_distribution.png`
-                        - `ai_impact_comparison.png`
-                        - `evaluation_timeline.png`
-                        - `rubric_scores_radar.png`
-                        - `subject_area_distribution.png`
-                        - `evaluation_workflow.png`
-                        """)
-        
-        with tab2:
-            st.markdown("### 5 Demo Scenarios Available")
+                
+                    # Display the generated images
+                    st.success("✅ Research visualizations generated!")
+                
+                    # Show generated images in a grid
+                    col1, col2 = st.columns(2)
+                    
+                    research_images = [
+                        ("research_quality_comparison.png", "Evaluation Quality Improvements"),
+                        ("research_performance_analysis.png", "Performance Level Analysis"),
+                        ("research_workflow_efficiency.png", "Workflow Efficiency Analysis"),
+                        ("research_feedback_quality.png", "Feedback Quality Analysis")
+                    ]
+                
+                    for i, (filename, title) in enumerate(research_images):
+                        with col1 if i % 2 == 0 else col2:
+                            if os.path.exists(filename):
+                                st.markdown(f"#### {title}")
+                                st.image(filename, use_column_width=True)
+                
+                    # Show comprehensive summary separately
+                    if os.path.exists("research_comprehensive_summary.png"):
+                        st.markdown("#### Comprehensive Research Impact Summary")
+                        st.image("research_comprehensive_summary.png", use_column_width=True)
             
-            # Simple list of scenarios
-            scenarios = [
-                {"name": "Sarah Martinez", "subject": "Elementary Science", "performance": "Exemplary (91%)", "highlight": "Best practices demonstration"},
-                {"name": "Michael Chen", "subject": "Secondary Math", "performance": "Progressing (55%)", "highlight": "Growth tracking example"},
-                {"name": "Emily Johnson", "subject": "Special Education", "performance": "Highly Proficient (80%)", "highlight": "Inclusive practices"},
-                {"name": "Jessica Taylor", "subject": "Kindergarten", "performance": "Exemplary (95%)", "highlight": "Early childhood excellence"},
-                {"name": "David Park", "subject": "High School English", "performance": "Proficient (75%)", "highlight": "Technology integration"}
-            ]
+                else:  # Generate All
+                    if st.button("🎨 Generate All Visualizations", type="primary", use_container_width=True):
+                        with st.spinner("Generating all research visualizations and graphics..."):
+                            # Generate research visualizations
+                            from generate_research_visualizations import create_all_research_visualizations
+                            create_all_research_visualizations()
+                            
+                            # Also generate presentation graphics
+                            from generate_presentation_graphics import generate_all_graphics
+                            generate_all_graphics()
+                            
+                            st.success("✅ All visualizations generated!")
+                            st.balloons()
+                            
+                            st.markdown("""
+                            ### 📁 Files Created:
+                            
+                            **Research Visualizations:**
+                            - `research_quality_comparison.png`
+                            - `research_performance_analysis.png` 
+                            - `research_workflow_efficiency.png`
+                            - `research_feedback_quality.png`
+                            - `research_comprehensive_summary.png`
+                            
+                            **Presentation Graphics:**
+                            - `performance_distribution.png`
+                            - `ai_impact_comparison.png`
+                            - `evaluation_timeline.png`
+                            - `rubric_scores_radar.png`
+                            - `subject_area_distribution.png`
+                            - `evaluation_workflow.png`
+                            """)
             
-            for i, scenario in enumerate(scenarios):
-                with st.expander(f"**{scenario['name']}** - {scenario['subject']}"):
-                    col1, col2 = st.columns([2, 1])
-                    with col1:
-                        st.markdown(f"**Performance:** {scenario['performance']}")
-                        st.markdown(f"**Key Feature:** {scenario['highlight']}")
-                    with col2:
-                        st.info("Ready for demo")
-        
-        with tab3:
-            st.markdown("### 📸 Export Options")
+            with tab2:
+                st.markdown("### 5 Demo Scenarios Available")
+                
+                # Simple list of scenarios
+                scenarios = [
+                    {"name": "Sarah Martinez", "subject": "Elementary Science", "performance": "Exemplary (91%)", "highlight": "Best practices demonstration"},
+                    {"name": "Michael Chen", "subject": "Secondary Math", "performance": "Progressing (55%)", "highlight": "Growth tracking example"},
+                    {"name": "Emily Johnson", "subject": "Special Education", "performance": "Highly Proficient (80%)", "highlight": "Inclusive practices"},
+                    {"name": "Jessica Taylor", "subject": "Kindergarten", "performance": "Exemplary (95%)", "highlight": "Early childhood excellence"},
+                    {"name": "David Park", "subject": "High School English", "performance": "Proficient (75%)", "highlight": "Technology integration"}
+                ]
+                
+                for i, scenario in enumerate(scenarios):
+                    with st.expander(f"**{scenario['name']}** - {scenario['subject']}"):
+                        col1, col2 = st.columns([2, 1])
+                        with col1:
+                            st.markdown(f"**Performance:** {scenario['performance']}")
+                            st.markdown(f"**Key Feature:** {scenario['highlight']}")
+                        with col2:
+                            st.info("Ready for demo")
             
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if st.button("💾 Save All Charts as PNG", type="primary", use_container_width=True):
-                    with st.spinner("Generating high-resolution graphics..."):
-                        from generate_presentation_graphics import generate_all_graphics
-                        generate_all_graphics()
-                        st.success("✅ Saved 6 PNG files to project directory!")
-                        
-                        st.markdown("""
-                        **Files created:**
-                        - performance_distribution.png
-                        - ai_impact_comparison.png
-                        - evaluation_timeline.png
-                        - rubric_scores_radar.png
-                        - subject_area_distribution.png
-                        - evaluation_workflow.png
-                        """)
-            
-            with col2:
-                st.info("""
-                **Tips for poster:**
-                - Take screenshots of charts above
-                - Or use the PNG files generated
-                - All charts use UVU colors
-                - 300 DPI resolution for printing
-                """)
+            with tab3:
+                st.markdown("### 📸 Export Options")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if st.button("💾 Save All Charts as PNG", type="primary", use_container_width=True):
+                        with st.spinner("Generating high-resolution graphics..."):
+                            from generate_presentation_graphics import generate_all_graphics
+                            generate_all_graphics()
+                            st.success("✅ Saved 6 PNG files to project directory!")
+                            
+                            st.markdown("""
+                            **Files created:**
+                            - performance_distribution.png
+                            - ai_impact_comparison.png
+                            - evaluation_timeline.png
+                            - rubric_scores_radar.png
+                            - subject_area_distribution.png
+                            - evaluation_workflow.png
+                            """)
+                
+                with col2:
+                    st.info("""
+                    **Tips for poster:**
+                    - Take screenshots of charts above
+                    - Or use the PNG files generated
+                    - All charts use UVU colors
+                    - 300 DPI resolution for printing
+                    """)
     
-    else:
-        # Show instructions if demo not ready
+        else:
+            # Show instructions if demo not ready
+            st.markdown("---")
+            st.info("👆 Click the **Generate Demo Data & Charts** button above to get started!")
+    
+    with main_tab2:
+        # AI Confidence Testing
+        st.markdown("### 🤖 AI Confidence Testing")
+        st.info("Test how well the AI extracts information from different lesson plan formats")
+        
+        # Import required modules
+        import json
+        from pathlib import Path
+        import pandas as pd
+        
+        # Load test data catalog
+        catalog_path = Path("test_data/TEST_DATA_CATALOG.json")
+        if not catalog_path.exists():
+            st.error("Test data catalog not found. Please ensure test_data/TEST_DATA_CATALOG.json exists.")
+            return
+        
+        with open(catalog_path, 'r') as f:
+            catalog = json.load(f)
+        
+        # Initialize OpenAI service
+        ai_service = openai_service  # Use the global instance
+        
+        if not ai_service.is_enabled():
+            st.warning("⚠️ AI service is not configured. Please set up your OpenAI API key in Settings.")
+            st.info("Without the AI service, you can still view the test lesson plans but cannot analyze them.")
+        
+        # Category selector
+        st.markdown("#### Select Test Category")
+        
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            category_descriptions = {
+                "All": "View all test lesson plans",
+                "High Confidence": "Well-structured plans (85%+ expected)",
+                "Medium Confidence": "Mixed format plans (70-85% expected)",
+                "Low Confidence": "Minimal plans (<30% expected)",
+                "Demo - Exemplary": "Professional examples",
+                "Demo - Specialized": "Special population examples"
+            }
+            
+            selected_category = st.selectbox(
+                "Choose a category:",
+                ["All"] + list(catalog["categories"].keys()),
+                format_func=lambda x: f"{x} - {category_descriptions.get(x, '')}"
+            )
+        
+        # Filter lesson plans
+        if selected_category == "All":
+            filtered_plans = catalog["test_lesson_plans"]
+        else:
+            filtered_plans = [p for p in catalog["test_lesson_plans"] if p["category"] == selected_category]
+        
+        # Display category info
+        if selected_category != "All":
+            cat_info = catalog["categories"][selected_category]
+            st.info(f"""
+            **{selected_category}**
+            - {cat_info['description']}
+            - Expected extraction: {cat_info['field_count']}
+            - Use case: {cat_info['use_case']}
+            """)
+        
         st.markdown("---")
-        st.info("👆 Click the **Generate Demo Data & Charts** button above to get started!")
+        
+        # Lesson plan selector
+        st.markdown("#### Select Test Lesson Plan")
+        
+        if not filtered_plans:
+            st.warning("No lesson plans found in this category.")
+        else:
+            # Create selection options
+            plan_options = {
+                f"{p['name']} ({p['expected_confidence']})": p 
+                for p in filtered_plans
+            }
+            
+            selected_plan_key = st.selectbox(
+                "Choose a lesson plan to test:",
+                list(plan_options.keys())
+            )
+            
+            selected_plan = plan_options[selected_plan_key]
+            
+            # Display plan details
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Grade Level", selected_plan['grade_level'])
+            with col2:
+                st.metric("Subject", selected_plan['subject'])
+            with col3:
+                st.metric("Expected Confidence", selected_plan['expected_confidence'])
+            
+            st.info(f"**Format**: {selected_plan['format']} - {selected_plan['description']}")
+            
+            # Load and display lesson plan
+            st.markdown("#### Lesson Plan Content")
+            
+            lesson_file_path = Path(f"test_data/lesson_plans/{selected_plan['filename']}")
+            
+            if not lesson_file_path.exists():
+                st.error(f"Lesson plan file not found: {selected_plan['filename']}")
+            else:
+                with open(lesson_file_path, 'r') as f:
+                    lesson_content = f.read()
+                
+                with st.expander("View Lesson Plan", expanded=False):
+                    st.text(lesson_content)
+                
+                # AI Analysis section
+                st.markdown("#### AI Analysis")
+                
+                if ai_service.is_enabled():
+                    if st.button("🤖 Analyze with AI", type="primary"):
+                        with st.spinner("Analyzing lesson plan..."):
+                            try:
+                                # Analyze the lesson plan
+                                analysis = ai_service.analyze_lesson_plan(lesson_content)
+                                
+                                # Calculate actual vs expected
+                                actual_confidence = analysis.get('confidence_score', 0)
+                                expected_range = selected_plan['expected_confidence'].replace('%', '').split('-')
+                                min_expected = float(expected_range[0]) / 100
+                                max_expected = float(expected_range[1]) / 100
+                                
+                                # Display results
+                                st.markdown("##### Results")
+                                
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    st.metric(
+                                        "Actual Confidence", 
+                                        f"{actual_confidence:.1%}",
+                                        delta=f"Expected: {selected_plan['expected_confidence']}"
+                                    )
+                                
+                                with col2:
+                                    if min_expected <= actual_confidence <= max_expected:
+                                        st.success("✅ Within Expected Range")
+                                    else:
+                                        st.error("❌ Outside Expected Range")
+                                
+                                with col3:
+                                    # Count extracted fields
+                                    extracted_count = sum(1 for field in [
+                                        'teacher_name', 'lesson_date', 'subject_area', 'grade_levels',
+                                        'school_name', 'lesson_topic', 'class_period', 'duration',
+                                        'total_students', 'utah_core_standards', 'lesson_structure'
+                                    ] if analysis.get(field) is not None and analysis.get(field) != "")
+                                    
+                                    extracted_count += sum(1 for field in [
+                                        'learning_objectives', 'materials', 'assessment_methods'
+                                    ] if analysis.get(field) and len(analysis.get(field)) > 0)
+                                    
+                                    st.metric("Fields Extracted", f"{extracted_count}/15")
+                                
+                                # Field extraction details
+                                st.markdown("##### Field Extraction Details")
+                                
+                                field_data = []
+                                all_fields = [
+                                    ('teacher_name', 'Teacher Name'),
+                                    ('lesson_date', 'Date'),
+                                    ('subject_area', 'Subject'),
+                                    ('grade_levels', 'Grade Level'),
+                                    ('school_name', 'School'),
+                                    ('lesson_topic', 'Topic'),
+                                    ('class_period', 'Period'),
+                                    ('duration', 'Duration'),
+                                    ('total_students', 'Students'),
+                                    ('utah_core_standards', 'Standards'),
+                                    ('learning_objectives', 'Objectives'),
+                                    ('materials', 'Materials'),
+                                    ('assessment_methods', 'Assessments'),
+                                    ('lesson_structure', 'Structure'),
+                                    ('notes', 'Notes')
+                                ]
+                                
+                                for field_key, field_name in all_fields:
+                                    value = analysis.get(field_key)
+                                    if isinstance(value, list):
+                                        extracted = "✅" if value and len(value) > 0 else "❌"
+                                        display_value = f"{len(value)} items" if value else "None"
+                                    else:
+                                        extracted = "✅" if value is not None and value != "" else "❌"
+                                        display_value = str(value) if value else "None"
+                                    
+                                    field_data.append({
+                                        "Field": field_name,
+                                        "Extracted": extracted,
+                                        "Value": display_value[:50] + "..." if len(display_value) > 50 else display_value
+                                    })
+                                
+                                df = pd.DataFrame(field_data)
+                                st.dataframe(df, use_container_width=True, hide_index=True)
+                                
+                            except Exception as e:
+                                st.error(f"Analysis failed: {str(e)}")
+                else:
+                    st.warning("AI service not available. Configure OpenAI API key in Settings to enable analysis.")
+        
+        # Information section
+        st.markdown("---")
+        st.markdown("#### Understanding AI Confidence")
+        
+        with st.expander("How AI Confidence Works", expanded=False):
+            st.markdown("""
+            The AI confidence score represents how successfully the system extracted information from the lesson plan:
+            
+            **Calculation**: `Confidence = (Fields Extracted / 15) × 100%`
+            
+            **The 15 Fields**:
+            1. Teacher name
+            2. Lesson date
+            3. Subject area
+            4. Grade levels
+            5. School name
+            6. Lesson topic
+            7. Class period
+            8. Duration
+            9. Total students
+            10. Utah Core Standards
+            11. Learning objectives (list)
+            12. Materials (list)
+            13. Assessment methods (list)
+            14. Lesson structure
+            15. Notes
+            
+            **Confidence Levels**:
+            - 🟢 **High (85-100%)**: Well-structured, most fields clearly labeled
+            - 🟡 **Medium (70-84%)**: Good structure, some fields may be embedded in text
+            - 🔴 **Low (<70%)**: Minimal structure, missing many required fields
+            """)
 
 def show_settings():
     """Settings and configuration"""

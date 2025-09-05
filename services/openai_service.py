@@ -27,7 +27,7 @@ class OpenAIService:
     def __init__(self):
         """Initialize OpenAI service"""
         self.client = None
-        self.model = os.getenv('OPENAI_MODEL', 'gpt-5-mini')
+        self.model = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
         self._initialize_client()
     
     def _initialize_client(self):
@@ -35,10 +35,15 @@ class OpenAIService:
         api_key = self._get_api_key()
         if api_key:
             try:
+                print(f"DEBUG: Initializing OpenAI client with model: {self.model}")
+                print(f"DEBUG: API key length: {len(api_key)}")
                 self.client = OpenAI(api_key=api_key)
+                print(f"DEBUG: OpenAI client initialized successfully")
             except Exception as e:
-                print(f"Failed to initialize OpenAI client: {e}")
+                print(f"ERROR: Failed to initialize OpenAI client: {e}")
                 self.client = None
+        else:
+            print("ERROR: No API key found for OpenAI")
     
     def _get_api_key(self) -> Optional[str]:
         """Get OpenAI API key from Streamlit secrets or environment variables"""
@@ -73,6 +78,7 @@ class OpenAIService:
         prompt = self._build_lesson_plan_analysis_prompt(lesson_plan_text)
         
         try:
+            print(f"DEBUG: Calling OpenAI API with model: {self.model}")
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -91,6 +97,7 @@ class OpenAIService:
             
             # Parse the JSON response
             response_text = response.choices[0].message.content.strip()
+            print(f"DEBUG: Got API response of length: {len(response_text)}")
             
             # Try multiple approaches to extract JSON
             extracted_info = None

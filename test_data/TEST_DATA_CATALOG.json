@@ -1,0 +1,130 @@
+{
+  "test_lesson_plans": [
+    {
+      "id": "high_conf_01",
+      "name": "5th Grade Math - Fractions",
+      "filename": "high_confidence_math_structured.txt",
+      "category": "High Confidence",
+      "expected_confidence": "90-95%",
+      "grade_level": "5th Grade",
+      "subject": "Mathematics",
+      "format": "Fully Structured",
+      "description": "Complete lesson plan with all 15 fields clearly labeled"
+    },
+    {
+      "id": "high_conf_02",
+      "name": "ESL Daily Routines",
+      "filename": "high_confidence_esl_elementary.txt",
+      "category": "High Confidence",
+      "expected_confidence": "90-95%",
+      "grade_level": "3rd-5th Grade",
+      "subject": "ESL",
+      "format": "Well-Structured",
+      "description": "Comprehensive ESL lesson with language objectives"
+    },
+    {
+      "id": "high_conf_03",
+      "name": "Special Ed Reading Intervention",
+      "filename": "high_confidence_special_ed_iep.txt",
+      "category": "High Confidence",
+      "expected_confidence": "85-90%",
+      "grade_level": "2nd-4th Grade",
+      "subject": "Special Education",
+      "format": "IEP-Aligned",
+      "description": "Detailed special education lesson with accommodations"
+    },
+    {
+      "id": "med_conf_01",
+      "name": "3rd Grade ELA Main Ideas",
+      "filename": "medium_confidence_ela_narrative.txt",
+      "category": "Medium Confidence",
+      "expected_confidence": "70-80%",
+      "grade_level": "3rd Grade",
+      "subject": "Language Arts",
+      "format": "Narrative Style",
+      "description": "Paragraph format with embedded information"
+    },
+    {
+      "id": "med_conf_02",
+      "name": "7th Grade Social Studies",
+      "filename": "medium_confidence_history_table.txt",
+      "category": "Medium Confidence",
+      "expected_confidence": "75-85%",
+      "grade_level": "7th Grade",
+      "subject": "Social Studies",
+      "format": "Table/Box Layout",
+      "description": "Structured with visual formatting elements"
+    },
+    {
+      "id": "low_conf_01",
+      "name": "Elementary Science Outline",
+      "filename": "low_confidence_science_minimal.txt",
+      "category": "Low Confidence",
+      "expected_confidence": "10-30%",
+      "grade_level": "Elementary",
+      "subject": "Science",
+      "format": "Minimal Outline",
+      "description": "Basic outline missing most required fields"
+    },
+    {
+      "id": "low_conf_02",
+      "name": "Generic Standards Only",
+      "filename": "low_confidence_generic_minimal.txt",
+      "category": "Low Confidence",
+      "expected_confidence": "6-7%",
+      "grade_level": "K-5",
+      "subject": "Undefined",
+      "format": "Standards Only",
+      "description": "Reproduces the 6.7% confidence issue"
+    },
+    {
+      "id": "demo_01",
+      "name": "Exemplary Secondary English",
+      "filename": "demo_secondary_english.md",
+      "category": "Demo - Exemplary",
+      "expected_confidence": "85-95%",
+      "grade_level": "9th-10th Grade",
+      "subject": "English",
+      "format": "Professional Template",
+      "description": "Model lesson plan for demonstration"
+    },
+    {
+      "id": "demo_02",
+      "name": "Early Childhood Activities",
+      "filename": "demo_early_childhood.md",
+      "category": "Demo - Specialized",
+      "expected_confidence": "80-90%",
+      "grade_level": "Pre-K/Kindergarten",
+      "subject": "Early Childhood",
+      "format": "Age-Appropriate",
+      "description": "Developmentally appropriate early learning"
+    }
+  ],
+  "categories": {
+    "High Confidence": {
+      "description": "Well-structured lesson plans with 85%+ expected confidence",
+      "field_count": "13-15 fields extracted",
+      "use_case": "Best practices example"
+    },
+    "Medium Confidence": {
+      "description": "Mixed format plans with 70-85% expected confidence",
+      "field_count": "10-12 fields extracted",
+      "use_case": "Common submission format"
+    },
+    "Low Confidence": {
+      "description": "Minimal plans with <30% expected confidence",
+      "field_count": "1-5 fields extracted",
+      "use_case": "Problem cases to improve"
+    },
+    "Demo - Exemplary": {
+      "description": "Professional examples for training",
+      "field_count": "14-15 fields expected",
+      "use_case": "Show ideal format"
+    },
+    "Demo - Specialized": {
+      "description": "Special population examples",
+      "field_count": "12-15 fields expected",
+      "use_case": "Diverse learner needs"
+    }
+  }
+}

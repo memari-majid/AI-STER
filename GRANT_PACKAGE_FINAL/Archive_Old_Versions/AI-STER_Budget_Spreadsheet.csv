@@ -1,0 +1,32 @@
+Category,Item Description,Quantity,Unit Cost,Total Cost,Justification
+Student Wages,Computer Science Senior - Lead Developer,140 hours,$15/hour,"$2,100","10 hrs/week x 14 weeks @ $15/hour for architecture design and LLM implementation"
+Student Wages,Computer Science Junior - Backend Developer,140 hours,$15/hour,"$2,100","10 hrs/week x 14 weeks @ $15/hour for API development and testing"
+Student Wages,Education Junior - UX/UI Designer,140 hours,$15/hour,"$2,100","10 hrs/week x 14 weeks @ $15/hour for interface design and usability testing"
+Student Wages,Computer Science Sophomore - Frontend Developer,140 hours,$15/hour,"$2,100","10 hrs/week x 14 weeks @ $15/hour for React development and mobile app"
+Materials/Supplies,AWS GPU Server Time for LLM Training,200 hours,$4/hour,$800,"P3.2xlarge instance for model fine-tuning and optimization experiments"
+Materials/Supplies,GitHub Enterprise License,1 year,$50,$50,"Secure code repository with advanced collaboration features"
+Materials/Supplies,Monitoring Tools (Sentry/DataDog),1 year,$150,$150,"Application performance monitoring and error tracking"
+Materials/Supplies,Testing Infrastructure (BrowserStack),1 year,$100,$100,"Cross-browser and mobile testing platform"
+Materials/Supplies,API Testing Tools (Postman Team),1 year,$100,$100,"API development and testing collaboration platform"
+Professional Development,Tech Conference Registration,2 students,$150/each,$300,"Regional education technology conference for student presentations"
+Professional Development,AI/ML Online Training Courses,4 students,$25/each,$100,"Coursera/Udemy courses for specialized AI skills development"
+,,,,,"$10,000",Total Budget Request
+,,,,,
+BUDGET NOTES:,,,,,
+"1. Student wages include 15% benefits as required, calculated into the hourly rate",,,,,
+"2. All students limited to 10 hours/week to comply with financial aid regulations",,,,,
+"3. GPU server time is essential for training local LLM to reduce long-term costs",,,,,
+"4. Development tools are minimum required for professional software development",,,,,
+"5. Conference attendance provides networking and presentation experience",,,,,
+,,,,,
+COST-BENEFIT ANALYSIS:,,,,,
+Current Annual OpenAI API Cost:,,,,"$6,000",
+Projected Annual Local LLM Cost:,,,,$600,
+API Cost Savings:,,,,"$5,400",
+"Faculty Time Saved in Education (400 hrs @ $50/hr):",,,,"$20,000",
+"CS Department TA Savings (30% of $70,000):",,,,"$21,000",
+Total First Year Benefit:,,,,"$46,400",
+Return on Investment (Year 1):,,,,464%,
+"CS Department Savings Year 2+ (90% of $70,000):",,,,"$63,000",
+Total Annual Benefit (Year 2+):,,,,"$88,400",
+Return on Investment (Year 2+):,,,,884%,
