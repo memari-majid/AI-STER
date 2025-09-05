@@ -1,0 +1,131 @@
+Subject: Request for Feedback: AI-Powered Lesson Plan Analysis in AI-STER System
+
+Dear Education Subject Matter Experts,
+
+I hope this email finds you well. I'm reaching out to request your valuable expertise and feedback on the AI-powered lesson plan analysis feature in our AI-STER (AI-Supported Teacher Evaluation and Reflection) system.
+
+OVERVIEW OF AI-STER
+AI-STER is a digital platform designed to support student teachers and evaluators by streamlining the lesson plan submission and evaluation process. One of our key features uses artificial intelligence to automatically extract and analyze information from uploaded lesson plans.
+
+HOW THE AI CONFIDENCE SYSTEM WORKS
+
+1. Information Extraction Process
+When a lesson plan is uploaded, our AI system (powered by GPT-4) attempts to extract 15 specific fields:
+   • Teacher Information: Teacher name, school name
+   • Lesson Metadata: Date, subject area, grade levels, class period, duration, number of students
+   • Educational Content: Lesson topic, Utah Core Standards alignment
+   • Pedagogical Elements: Learning objectives, materials needed, assessment methods
+   • Structure: Lesson flow/structure description
+   • Additional: Any supplementary notes
+
+2. Confidence Score Calculation
+The AI confidence score represents how successfully the system extracted information:
+   • Formula: Confidence = (Number of fields extracted) ÷ 15 × 100%
+   • Example: If 13 out of 15 fields are found, confidence = 86.7%
+
+3. Current Performance Metrics
+Based on our testing with sample lesson plans:
+   • Well-structured lesson plans: 85-95% confidence
+   • Narrative-style plans: 75-85% confidence
+   • Minimal/outline-only plans: 10-30% confidence
+
+REAL-WORLD EXAMPLE
+High Confidence (93%) - Structured Format:
+   ✓ Extracted: Teacher name, date, subject, grade level, school, topic, period, duration, student count, standards, objectives, materials, assessments, structure
+   ✗ Missing: Additional notes
+
+Low Confidence (7%) - Minimal Format:
+   ✓ Extracted: Standards reference only
+   ✗ Missing: All other fields
+
+AREAS WHERE WE NEED YOUR EXPERT FEEDBACK
+
+1. Field Relevance
+   • Are we tracking the right 15 fields?
+   • What essential information might we be missing?
+   • Are some fields more critical than others for evaluation purposes?
+
+2. Format Flexibility
+   • How do real-world lesson plans vary in format across different schools/districts?
+   • Should the AI adapt to district-specific templates?
+   • What formats are most commonly used by student teachers?
+
+3. Extraction Accuracy
+   • What level of AI confidence would be considered acceptable for practical use?
+   • Should the system infer missing information or strictly extract only explicit data?
+   • How should the system handle non-standard lesson plan formats?
+
+4. Educational Standards
+   • Beyond Utah Core Standards, what other standards should we support?
+   • How do standards references typically appear in lesson plans?
+   • Should the system validate standards against official databases?
+
+REQUEST FOR TEST DATA
+To improve our AI system, we need diverse, real-world lesson plans. We're specifically looking for:
+
+1. Variety in Formats
+   • Traditional structured lesson plans
+   • Narrative/descriptive plans
+   • Unit plans vs. daily plans
+   • Digital vs. scanned handwritten plans
+
+2. Grade Level Coverage
+   • Elementary (K-5)
+   • Middle School (6-8)
+   • High School (9-12)
+   • Special Education plans
+   • ESL/ELL lesson plans
+
+3. Subject Diversity
+   • Core subjects (Math, Science, Language Arts, Social Studies)
+   • Specials (Art, Music, PE, Technology)
+   • Integrated/Cross-curricular lessons
+
+4. Quality Range
+   • Exemplary lesson plans (for benchmarking)
+   • Typical student teacher submissions
+   • Plans that need improvement (to test system limitations)
+
+HOW TEST DATA WILL BE EVALUATED
+When you provide test lesson plans, we will:
+1. Run AI Analysis - Process each plan through our extraction system
+2. Measure Extraction Success - Document which fields were successfully identified
+3. Calculate Confidence Scores - Determine the percentage of information extracted
+4. Compare Against Manual Review - Verify AI results against human analysis
+5. Identify Patterns - Find common extraction failures or format issues
+6. Refine the System - Update our AI prompts and validation logic based on findings
+
+DATA PRIVACY AND USAGE
+• All lesson plans will be anonymized (names, schools removed)
+• Data will only be used for system improvement
+• We can provide aggregated analysis results back to contributors
+• No individual lesson plans will be shared publicly
+
+QUESTIONS FOR YOUR CONSIDERATION
+1. What information is most critical for evaluating a student teacher's lesson plan?
+2. How much variation in lesson plan formats should we expect and accommodate?
+3. What would make this AI tool most useful for supervising teachers and evaluators?
+4. Are there specific rubrics or evaluation criteria we should align with?
+
+NEXT STEPS
+If you're willing to help, please:
+• Share lesson plan samples (with any sensitive information removed)
+• Provide feedback on our current field list and approach
+• Suggest improvements based on your educational expertise
+• Identify edge cases we should consider
+
+You can send materials and feedback to: [your email]
+
+Thank you for taking the time to review this request. Your expertise is invaluable in helping us create a tool that genuinely supports the education community. The goal is to reduce administrative burden while maintaining high standards for lesson planning and evaluation.
+
+I'm happy to schedule a call to discuss this further or answer any questions you might have about the system.
+
+Best regards,
+
+[Your Name]
+[Your Title]
+AI-STER Development Team
+
+Attachments:
+1. AI_Analysis_Sample_Report.pdf - Detailed examples of how different lesson plan formats are analyzed
+2. Quick_AI_Guide_for_Educators.pdf - One-page visual guide for creating AI-friendly lesson plans
