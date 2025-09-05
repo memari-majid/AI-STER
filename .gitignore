@@ -1,6 +1,8 @@
 # Environment variables (sensitive information)
 .env
 *.env
+.env.*
+env.local
 
 # Python
 __pycache__/
@@ -8,41 +10,140 @@ __pycache__/
 *$py.class
 *.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
 env/
 venv/
 ai-ster-env/
 ENV/
 env.bak/
 venv.bak/
+pythonenv*
+.venv
 
 # Streamlit
 streamlit.log
-.streamlit/
+.streamlit/secrets.toml
+*.streamlit/
 
-# Data storage (will be recreated)
+# Data storage and temporary files
 data_storage/
+temp/
+tmp/
+cache/
+.cache/
 
 # Backup files
 *_backup.py
 *.backup
-
-# IDE
-.vscode/
-.idea/
+*.bak
 *.swp
 *.swo
+*~
 
-# OS
+# IDE and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.settings/
+.atom/
+.history/
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# Logs
+# Logs and databases
 *.log
+*.sql
+*.sqlite
+*.sqlite3
+*.db
 
-# Virtual environments (specific)
-ai-ster-env/
+# Testing
+.coverage
+.coverage.*
+.pytest_cache/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+htmlcov/
 
-# Private documentation (contains sensitive client information)
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+site/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Private/sensitive documentation
 docs/Meeting_Notes_AI-STER_PRIVATE.md
 *_PRIVATE.md
 *PRIVATE*
+*_private*
+*.private.*
+
+# Binary files (except necessary ones)
+*.exe
+*.dll
+*.dylib
+*.bin
+
+# Deployment specific
+deploy/bin/cloudflared
+*.pem
+*.key
+*.crt
+*.p12
+
+# Generated files
+generated_graphics/
+AI-STER_Symposium_Poster_Print.html
+generate_exact_pdf.sh
+
+# Development artifacts
+*.pid
+*.seed
+*.pid.lock
+
+# Package manager directories
+node_modules/
+jspm_packages/
+.npm
+.yarn/
+
+# Output directories (keep structure but not contents)
+tests/test_output/*
+!tests/test_output/.gitkeep

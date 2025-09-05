@@ -298,7 +298,7 @@ def main():
     # Sidebar navigation - clean and professional
     with st.sidebar:
         # Logo
-        st.image("logo.png", width=180)
+        st.image("assets/logo.png", width=180)
         
         st.markdown("### Navigation")
         
